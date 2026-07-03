@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Algo Kid — Olympiad Learning</title>
+<meta name="theme-color" content="#7C5CFC" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Algo Kid" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+<link rel="manifest" href="manifest.json" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#241C3B; --muted:#8B84A3; --line:#EEE9F7;
+    --bg1:#EEF4FF; --bg2:#FCEEF8; --bg3:#FFF6EA;
+    --purple:#7C5CFC; --green:#22C55E; --amber:#F5A623; --blue:#3B82F6; --pink:#EC4899; --teal:#14B8A6; --red:#EF4444;
+    --card:#ffffff; --shadow:0 6px 18px rgba(90,60,160,.10), 0 2px 5px rgba(90,60,160,.06);
+    --shadow-lg:0 14px 40px rgba(90,60,160,.18);
+    --head:'Baloo 2', system-ui, sans-serif; --body:'Nunito', system-ui, sans-serif;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{
+    font-family:var(--body); color:var(--ink);
+    background:linear-gradient(165deg,var(--bg1) 0%,var(--bg2) 55%,var(--bg3) 100%);
+    background-attachment:fixed; min-height:100vh;
+  }
+  h1,h2,h3,.head{ font-family:var(--head); }
+  .app{ max-width:600px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; }
+  /* Tablet & large screens */
+  @media (min-width:720px){
+    .app{ max-width:900px; }
+    .nav{ max-width:900px; }
+    .screen{ padding:20px 28px 120px; }
+    .worlds-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .worlds-grid .world{ margin-bottom:0; }
+    .topics-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .topics-grid .topic{ margin-bottom:0; }
+    .topics-grid .grouphdr{ grid-column:1/-1; }
+    .hero h2{ font-size:30px; } .hero p{ font-size:17px; }
+    .qcard{ max-width:640px; margin:0 auto; }
+    #opts,.tiles,.mgrid,.bwrap,.fbtns{ max-width:640px; margin-left:auto; margin-right:auto; }
+    .qtext{ font-size:24px; } .opt{ font-size:22px; }
+    .mgrid{ grid-template-columns:repeat(6,1fr); }
+    .readiness,.rcard{ max-width:720px; margin-left:auto; margin-right:auto; }
+    .badges-grid{ grid-template-columns:repeat(4,1fr)!important; }
+  }
+  @media (min-width:1000px){ .app,.nav{ max-width:1000px; } }
+  .kbtn{ transition:transform .09s ease, box-shadow .09s ease, background .2s; cursor:pointer; border:none; font-family:inherit; }
+  .kbtn:active{ transform:translateY(3px) scale(.99); }
+  .screen{ padding:14px 16px 108px; animation:fade .28s ease; }
+  @keyframes fade{ from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none} }
+
+  /* Top app bar */
+  .appbar{ position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between;
+    padding:12px 16px; background:rgba(255,255,255,.72); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  .appbar .brand{ display:flex; align-items:center; gap:9px; font-family:var(--head); font-weight:800; font-size:20px; color:var(--purple); }
+  .appbar .brand .logo{ width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,#8B6BFF,#6D9CFF); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(124,92,252,.4); }
+  .chip{ display:inline-flex; align-items:center; gap:6px; background:#fff; border-radius:999px; padding:7px 13px; font-weight:800; box-shadow:var(--shadow); font-size:15px; }
+
+  /* Hero */
+  .hero{ position:relative; border-radius:26px; padding:20px; color:#fff; overflow:hidden;
+    background:linear-gradient(135deg,#7C5CFC,#5B8DEF); box-shadow:var(--shadow-lg); margin-bottom:6px; }
+  .hero h2{ font-size:24px; font-weight:800; }
+  .hero p{ opacity:.92; font-weight:600; margin-top:2px; }
+  .hero .bubbles{ position:absolute; inset:0; pointer-events:none; }
+  .hero .bub{ position:absolute; border-radius:50%; background:rgba(255,255,255,.14); }
+
+  .sec-title{ font-family:var(--head); font-weight:800; font-size:16px; color:var(--muted); margin:18px 6px 10px; text-transform:uppercase; letter-spacing:.6px; }
+
+  /* World cards */
+  .world{ display:flex; align-items:center; gap:15px; width:100%; text-align:left; border-radius:24px; padding:18px; margin-bottom:14px;
+    background:var(--card); box-shadow:var(--shadow); position:relative; overflow:hidden; }
+  .world .ic{ width:62px; height:62px; border-radius:18px; display:flex; align-items:center; justify-content:center; font-size:34px; flex-shrink:0; }
+  .world .t{ font-family:var(--head); font-size:22px; font-weight:800; display:block; }
+  .world .s{ font-size:13.5px; color:var(--muted); font-weight:700; display:block; margin-top:1px; }
+  .world .go{ margin-left:auto; color:var(--muted); font-size:26px; }
+  .world .strip{ position:absolute; left:0; top:0; bottom:0; width:6px; }
+
+  /* Topic cards */
+  .topic{ display:flex; align-items:center; gap:14px; width:100%; text-align:left; border-radius:20px; padding:14px 15px; margin-bottom:12px;
+    background:var(--card); box-shadow:var(--shadow); }
+  .topic .ic{ width:52px; height:52px; border-radius:15px; display:flex; align-items:center; justify-content:center; font-size:27px; flex-shrink:0; }
+  .topic .mid{ flex:1; min-width:0; }
+  .topic .t{ font-family:var(--head); font-size:18px; font-weight:700; display:block; }
+  .topic .meta{ font-size:12.5px; color:var(--muted); font-weight:700; display:flex; align-items:center; gap:6px; margin-top:3px; }
+  .badge{ font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px; color:#fff; }
+  .ring{ flex-shrink:0; }
+  .segwrap{ display:flex; gap:6px; background:#EDE7F7; border-radius:16px; padding:6px; margin:14px 0 4px; }
+  .seg{ flex:1; border:none; background:none; border-radius:12px; padding:11px 8px; font-family:var(--head); font-weight:800; font-size:15px; color:var(--muted); cursor:pointer; transition:all .18s; }
+  .seg.active{ background:#fff; color:var(--purple); box-shadow:0 3px 8px rgba(124,92,252,.18); }
+  .seg .lk{ font-size:12px; }
+  .lockmsg{ text-align:center; background:#fff; border-radius:20px; padding:26px 20px; box-shadow:var(--shadow); margin-top:14px; }
+  .grouphdr{ display:flex; align-items:center; gap:8px; font-family:var(--head); font-weight:800; font-size:15px; color:var(--ink); margin:18px 4px 10px; }
+  .grouphdr .line{ flex:1; height:2px; background:var(--line); border-radius:2px; }
+
+  /* Buttons */
+  .btn{ border-radius:16px; padding:13px 22px; font-family:var(--head); font-weight:700; font-size:17px; }
+  .btn-primary{ background:linear-gradient(135deg,#7C5CFC,#6D9CFF); color:#fff; box-shadow:0 6px 16px rgba(124,92,252,.4); }
+  .btn-ghost{ background:#fff; color:var(--purple); box-shadow:var(--shadow); }
+  /* Big premium finish buttons */
+  .fbtns{ display:flex; flex-direction:column; gap:14px; margin-top:26px; padding:0 6px; }
+  .fbtn{ display:flex; align-items:center; justify-content:center; gap:10px; width:100%;
+    border-radius:22px; padding:18px 22px; font-family:var(--head); font-weight:800; font-size:22px;
+    position:relative; border:none; }
+  .fbtn .fic{ font-size:26px; }
+  .fbtn-primary{ color:#fff; background:linear-gradient(135deg,#7C5CFC,#6D9CFF);
+    box-shadow:0 8px 0 #5B3FD6, 0 14px 24px rgba(124,92,252,.45); }
+  .fbtn-primary:active{ transform:translateY(6px); box-shadow:0 2px 0 #5B3FD6, 0 6px 12px rgba(124,92,252,.4); }
+  .fbtn-accent{ color:#fff; background:linear-gradient(135deg,#FDB646,#F5872A);
+    box-shadow:0 8px 0 #D96E12, 0 14px 24px rgba(245,135,42,.45); }
+  .fbtn-accent:active{ transform:translateY(6px); box-shadow:0 2px 0 #D96E12, 0 6px 12px rgba(245,135,42,.4); }
+  .fbtn-ghost{ color:var(--purple); background:#fff;
+    box-shadow:0 6px 0 #E3DBF7, 0 12px 20px rgba(124,92,252,.18); }
+  .fbtn-ghost:active{ transform:translateY(5px); box-shadow:0 1px 0 #E3DBF7, 0 5px 10px rgba(124,92,252,.15); }
+  .fbtn .shine{ position:absolute; top:6px; left:16px; right:16px; height:34%; border-radius:16px; background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0)); pointer-events:none; }
+  .backbtn{ display:inline-flex; align-items:center; gap:6px; background:#fff; color:var(--ink); border-radius:14px; padding:10px 16px; font-weight:800; box-shadow:var(--shadow); margin-top:16px; }
+  /* Quick action tiles */
+  .quick{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0 4px; }
+  .qtile{ border:none; border-radius:18px; color:#fff; padding:14px 6px; font-family:var(--head); font-weight:800; font-size:13px; line-height:1.15; text-align:center; box-shadow:var(--shadow); }
+  .qtile .qe{ display:block; font-size:26px; margin-bottom:4px; }
+  /* Badges & trophy shelf */
+  .badges-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .badge-card{ background:#fff; border-radius:18px; padding:14px 8px; text-align:center; box-shadow:var(--shadow); position:relative; }
+  .badge-card.locked{ opacity:.45; filter:grayscale(.7); }
+  .badge-card .be{ font-size:38px; }
+  .badge-card .bn{ font-family:var(--head); font-weight:800; font-size:12.5px; margin-top:4px; }
+  .badge-card .bd{ font-size:10.5px; color:var(--muted); font-weight:700; margin-top:2px; }
+  .outfit-row{ display:flex; gap:10px; overflow-x:auto; padding:4px 2px 8px; }
+  .outfit{ flex:0 0 auto; width:92px; background:#fff; border-radius:16px; padding:10px 6px; text-align:center; box-shadow:var(--shadow); border:3px solid transparent; }
+  .outfit.on{ border-color:var(--purple); }
+  .outfit.locked{ opacity:.5; }
+  .outfit .oname{ font-family:var(--head); font-weight:800; font-size:11.5px; margin-top:4px; }
+  .outfit .ocost{ font-size:10.5px; color:var(--amber); font-weight:800; }
+  /* Parent dashboard */
+  .pinpad{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; max-width:280px; margin:16px auto; }
+  .pinpad button{ background:#fff; border:none; border-radius:16px; padding:18px; font-family:var(--head); font-weight:800; font-size:24px; box-shadow:var(--shadow); color:var(--ink); cursor:pointer; }
+  .statcard{ background:#fff; border-radius:18px; padding:16px; box-shadow:var(--shadow); text-align:center; }
+  .statcard .sv{ font-family:var(--head); font-weight:800; font-size:26px; color:var(--purple); }
+  .statcard .sl{ font-size:12px; color:var(--muted); font-weight:800; margin-top:2px; }
+  /* Timer chip */
+  .timerchip{ font-family:var(--head); font-weight:800; font-size:16px; padding:6px 12px; border-radius:999px; background:#FEF3C7; color:#B45309; }
+
+  /* Quiz */
+  .qhead{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .qhead .ttl{ font-family:var(--head); font-weight:800; font-size:19px; }
+  .pbar{ height:12px; background:#EDE7F7; border-radius:8px; overflow:hidden; flex:1; }
+  .pbar>div{ height:100%; width:0; border-radius:8px; transition:width .4s ease; }
+  .qcard{ background:#fff; border-radius:24px; padding:20px 16px; text-align:center; box-shadow:var(--shadow); }
+  .qrow{ display:flex; gap:8px; align-items:center; justify-content:center; }
+  .qtext{ font-family:var(--head); font-size:21px; font-weight:700; line-height:1.25; }
+  .readbtn{ width:40px; height:40px; border-radius:50%; color:#fff; font-size:18px; flex-shrink:0; box-shadow:0 4px 10px rgba(0,0,0,.12); }
+  .qbig{ font-size:46px; margin:16px 0 4px; white-space:pre-line; line-height:1.15; }
+  .bwrap{ min-height:46px; display:flex; align-items:center; justify-content:center; margin:12px 0; }
+  .banner{ padding:9px 20px; border-radius:999px; font-family:var(--head); font-weight:700; font-size:18px; animation:pop .32s ease; box-shadow:var(--shadow); }
+  @keyframes pop{ 0%{transform:scale(.5)} 60%{transform:scale(1.12)} 100%{transform:scale(1)} }
+  .opt{ display:flex; align-items:center; gap:15px; width:100%; text-align:left; border-radius:18px; padding:15px 16px; margin-bottom:11px;
+    background:#fff; box-shadow:var(--shadow); font-family:var(--head); font-weight:600; font-size:20px; border:3px solid transparent; }
+  .opt .oe{ font-size:34px; min-width:44px; text-align:center; }
+  .opt .ot{ flex:1; }
+
+  /* Order / tiles */
+  .tiles{ display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:6px; }
+  .tile{ width:84px; height:84px; border-radius:20px; background:#fff; font-family:var(--head); font-size:38px; font-weight:800;
+    display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow); border:3px solid transparent; }
+
+  /* Memory */
+  .mgrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:8px; }
+  .mcard{ aspect-ratio:1; border-radius:16px; font-size:30px; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow);
+    background:linear-gradient(135deg,#8B6BFF,#6D9CFF); color:#fff; position:relative; }
+  .mcard.flipped{ background:#fff; color:var(--ink); }
+  .mcard.matched{ background:#DCFCE7; color:var(--ink); box-shadow:none; opacity:.9; }
+  .mcard .q{ font-size:30px; }
+
+  /* Report */
+  .readiness{ background:#fff; border-radius:24px; padding:20px; box-shadow:var(--shadow); text-align:center; margin-bottom:16px; }
+  .meter{ height:16px; background:#EDE7F7; border-radius:10px; overflow:hidden; margin-top:12px; }
+  .meter>div{ height:100%; border-radius:10px; background:linear-gradient(90deg,#F5A623,#22C55E); transition:width .6s ease; }
+  .rrow{ display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--line); }
+  .rrow:last-child{ border-bottom:none; }
+  .rrow .rn{ font-family:var(--head); font-weight:700; font-size:15px; flex:1; }
+  .rmini{ height:10px; width:120px; background:#EDE7F7; border-radius:6px; overflow:hidden; }
+  .rmini>div{ height:100%; border-radius:6px; }
+  .rcard{ background:#fff; border-radius:22px; padding:8px 16px; box-shadow:var(--shadow); margin-bottom:16px; }
+
+  /* Bottom nav */
+  .nav{ position:fixed; left:0; right:0; bottom:0; z-index:30; max-width:600px; margin:0 auto;
+    background:rgba(255,255,255,.9); backdrop-filter:blur(12px); border-top:1px solid var(--line);
+    display:flex; padding:8px 8px calc(8px + env(safe-area-inset-bottom)); }
+  .nav button{ flex:1; background:none; border:none; padding:8px 0; display:flex; flex-direction:column; align-items:center; gap:3px;
+    font-family:var(--head); font-weight:700; font-size:12px; color:var(--muted); cursor:pointer; }
+  .nav button .ni{ font-size:22px; line-height:1; }
+  .nav button.active{ color:var(--purple); }
+  .nav button.active .ni{ transform:translateY(-1px); }
+
+  /* Splash */
+  #splash{ position:fixed; inset:0; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:26px; gap:6px; overflow:auto;
+    background:linear-gradient(165deg,var(--bg1),var(--bg2) 55%,var(--bg3)); }
+  #splash h1{ font-family:var(--head); font-size:40px; color:var(--purple); margin-top:10px; }
+  #splash p.tag{ color:var(--muted); font-weight:700; font-size:17px; margin:2px 0 20px; }
+  .splashbtn{ background:linear-gradient(135deg,#7C5CFC,#6D9CFF); color:#fff; border-radius:24px; padding:17px 44px; font-family:var(--head); font-size:24px; font-weight:800; box-shadow:0 10px 26px rgba(124,92,252,.45); }
+  .linkbtn{ background:none; color:var(--purple); font-weight:800; font-size:15px; text-decoration:underline; margin-top:14px; cursor:pointer; border:none; }
+  .diagbox{ margin-top:18px; background:#fff; border-radius:18px; padding:14px 18px; max-width:340px; box-shadow:var(--shadow); font-size:14.5px; line-height:1.5; font-weight:600; }
+  .diagbox b.h{ display:block; margin-bottom:6px; color:var(--purple); font-family:var(--head); }
+
+  /* Settings modal */
+  #settings{ display:none; position:fixed; inset:0; z-index:110; background:rgba(40,20,70,.45); align-items:flex-end; justify-content:center; }
+  .sheet{ background:#fff; border-radius:26px 26px 0 0; padding:22px 20px calc(22px + env(safe-area-inset-bottom)); width:100%; max-width:600px; box-shadow:0 -10px 40px rgba(0,0,0,.2); animation:slideup .3s ease; }
+  @keyframes slideup{ from{transform:translateY(100%)} to{transform:none} }
+  .sheet h2{ font-size:22px; color:var(--purple); margin-bottom:6px; }
+  .sheet label{ display:block; font-weight:800; font-size:14px; margin:14px 0 6px; color:var(--muted); }
+  .sheet select{ width:100%; padding:13px; border:2px solid var(--line); border-radius:14px; font-size:16px; font-family:var(--body); font-weight:700; background:#fff; color:var(--ink); }
+  .sheet .row{ display:flex; gap:10px; margin-top:18px; }
+  .sheet .row button{ flex:1; border-radius:15px; padding:14px; font-family:var(--head); font-weight:800; font-size:16px; }
+  #confetti{ position:fixed; inset:0; pointer-events:none; z-index:90; overflow:hidden; }
+  .conf{ position:absolute; top:-40px; }
+</style>
+</head>
+<body>
+<div id="confetti"></div>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="floaty" id="splashRobot"></div>
+  <h1>Algo Kid</h1>
+  <p class="tag">Algorithms · Data · Olympiad — for little champions</p>
+  <button class="kbtn splashbtn" id="startBtn">▶ Tap to Start</button>
+  <div id="diag"></div>
+  <button class="linkbtn" id="voiceLink">⚙️ Change the voice</button>
+  <p style="font-size:13px;color:var(--muted);margin-top:16px;max-width:320px;font-weight:700" id="splashHint">🔊 Turn up your volume, then tap Start</p>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings">
+  <div class="sheet">
+    <h2>⚙️ Voice &amp; Sound</h2>
+    <label for="voiceSel">Choose a voice</label>
+    <select id="voiceSel"></select>
+    <label for="speedSel">Speaking speed</label>
+    <select id="speedSel">
+      <option value="0.95">Normal</option>
+      <option value="0.82">Slow</option>
+      <option value="0.7">Slower (best for little ones)</option>
+    </select>
+    <div class="row">
+      <button class="kbtn btn-ghost" id="testVoiceBtn">🔊 Test</button>
+      <button class="kbtn btn-primary" id="doneSettingsBtn">Done</button>
+    </div>
+    <label>Background music</label>
+    <button class="kbtn" id="musicBtn" style="width:100%;background:#EDE7F7;color:var(--purple);border-radius:14px;padding:12px;font-family:var(--head);font-weight:800">🎵 Music: On</button>
+    <button class="kbtn" id="parentBtn" style="width:100%;margin-top:12px;background:#E8F0FE;color:#2563EB;border-radius:14px;padding:12px;font-family:var(--head);font-weight:800">👨‍👩‍👧 Parents' Corner</button>
+    <p style="font-size:12.5px;color:var(--muted);margin-top:12px;font-weight:700">Tip: “Google UK English Female” or “Google US English” sound nicest in Chrome.</p>
+    <button class="kbtn" id="resetBtn" style="width:100%;margin-top:4px;background:#FEECEC;color:#EF4444;border-radius:14px;padding:12px;font-family:var(--head);font-weight:800">↺ Reset all progress</button>
+  </div>
+</div>
+
+<!-- PARENT MODAL -->
+<div id="parentModal" style="display:none;position:fixed;inset:0;z-index:115;background:rgba(40,20,70,.5);align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:24px;padding:22px;max-width:440px;width:100%;box-shadow:var(--shadow-lg);max-height:90vh;overflow:auto" id="parentBody"></div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app" style="display:none">
+  <div class="appbar">
+    <div class="brand"><span class="logo">🤖</span> Algo Kid</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="chip" id="starChip">⭐ <span id="totalStars">0</span></span>
+      <button class="kbtn chip" id="muteBtn" style="color:var(--green)">🔊</button>
+    </div>
+  </div>
+  <div id="view"></div>
+  <nav class="nav" id="nav">
+    <button data-tab="home" class="active"><span class="ni">🎮</span>Play</button>
+    <button data-tab="report"><span class="ni">📊</span>Progress</button>
+    <button data-tab="rewards"><span class="ni">🏆</span>Rewards</button>
+    <button data-tab="settings"><span class="ni">⚙️</span>Settings</button>
+  </nav>
+</div>
+
+<script>
+/* ============================================================
+   CONTENT BANK  (injected below by second step)
+   ============================================================ */
+var CONTENT = window.__CONTENT__ || {};
+const PRAISES = ["Wow! Amazing job!","Fantastic! You are so smart!","Yay! That is correct!","Woohoo! You are a champion!","Brilliant! Well done, superstar!","Great work! You did it!","Perfect! You are a genius!","Hooray! Super duper!","Excellent! Keep going, champ!","You nailed it! Awesome!"];
+const CHEERS = ["Oops! Try again, you can do it!","Almost there! Give it another go!","Not quite, buddy. Try once more!","So close! Try again, little champ!","Good try! Have another go!"];
+
+/* ---------------- OUTFITS & FEATURE STATE ---------------- */
+const OUTFITS={
+  none:  {name:'Classic', body:'#7C5CFC', cost:0},
+  party: {name:'Party Hat', body:'#7C5CFC', cost:20},
+  cap:   {name:'Red Cap', body:'#EF4444', cost:60},
+  crown: {name:'Gold Crown', body:'#F5A623', cost:120},
+  wizard:{name:'Wizard', body:'#5B3FD6', cost:220},
+  space: {name:'Astronaut', body:'#3B82F6', cost:350}
+};
+let curOutfit='none', musicOn=true;
+
+/* ---------------- ROBOT ---------------- */
+function robot(size, mood, outfit){
+  outfit = outfit || (typeof curOutfit!=='undefined'? curOutfit : 'none');
+  const eyes = mood==="celebrate"
+    ? `<path d="M40 44 Q46 36 52 44" stroke="#3A2B7A" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M68 44 Q74 36 80 44" stroke="#3A2B7A" stroke-width="4" fill="none" stroke-linecap="round"/>`
+    : `<circle cx="46" cy="42" r="6" fill="#3A2B7A"/><circle cx="74" cy="42" r="6" fill="#3A2B7A"/><circle cx="48" cy="40" r="2" fill="#fff"/><circle cx="76" cy="40" r="2" fill="#fff"/>`;
+  const mouth = mood==="sad"
+    ? `<path d="M48 60 Q60 52 72 60" stroke="#3A2B7A" stroke-width="4" fill="none" stroke-linecap="round"/>`
+    : `<path d="M46 54 Q60 66 74 54" stroke="#3A2B7A" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+  const bodyCol = OUTFITS[outfit] && OUTFITS[outfit].body ? OUTFITS[outfit].body : '#7C5CFC';
+  let hat='';
+  if(outfit==='party') hat=`<path d="M60 -2 L48 22 L72 22 Z" fill="#FF7AA2"/><circle cx="60" cy="-4" r="5" fill="#FFD84D"/>`;
+  else if(outfit==='crown') hat=`<path d="M40 20 L44 4 L52 16 L60 2 L68 16 L76 4 L80 20 Z" fill="#FFC94D" stroke="#F5A623" stroke-width="1.5"/><circle cx="60" cy="9" r="3" fill="#EC4899"/>`;
+  else if(outfit==='wizard') hat=`<path d="M60 -6 L44 24 L76 24 Z" fill="#5B3FD6"/><circle cx="56" cy="10" r="2" fill="#FFD84D"/><circle cx="63" cy="16" r="2" fill="#FFD84D"/><path d="M42 24 h36" stroke="#5B3FD6" stroke-width="4" stroke-linecap="round"/>`;
+  else if(outfit==='cap') hat=`<path d="M34 22 Q60 -2 86 22 Z" fill="#EF4444"/><rect x="34" y="20" width="52" height="5" rx="2" fill="#B91C1C"/><circle cx="60" cy="4" r="4" fill="#fff"/>`;
+  else if(outfit==='space') hat=`<path d="M32 26 Q60 -6 88 26" fill="none" stroke="#9DB4FF" stroke-width="5"/><rect x="30" y="22" width="60" height="8" rx="4" fill="#9DB4FF"/>`;
+  const antenna = outfit==='space' ? '' : `<line x1="60" y1="18" x2="60" y2="6" stroke="#FFC94D" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="60" cy="5" r="6" fill="#FF7AA2"><animate attributeName="cy" values="5;1;5" dur="1.4s" repeatCount="indefinite"/></circle>`;
+  return `<svg width="${size}" height="${size}" viewBox="-4 -8 128 124">
+    ${antenna}
+    <rect x="22" y="18" width="76" height="62" rx="20" fill="${bodyCol}"/><rect x="30" y="26" width="60" height="42" rx="14" fill="#EDE7FF"/>
+    ${eyes}${mouth}
+    <circle cx="36" cy="54" r="4" fill="#FF9FBB" opacity=".7"/><circle cx="84" cy="54" r="4" fill="#FF9FBB" opacity=".7"/>
+    <rect x="34" y="80" width="52" height="30" rx="12" fill="${bodyCol}" opacity=".85"/>
+    <circle cx="48" cy="95" r="4" fill="#EDE7FF"/><circle cx="60" cy="95" r="4" fill="#EDE7FF"/><circle cx="72" cy="95" r="4" fill="#EDE7FF"/>
+    <rect x="16" y="84" width="14" height="8" rx="4" fill="${bodyCol}"/><rect x="90" y="84" width="14" height="8" rx="4" fill="${bodyCol}"/>
+    ${hat}</svg>`;
+}
+function ring(pct, color, size){
+  size = size||46; const r=(size-8)/2, c=2*Math.PI*r, off=c*(1-pct/100);
+  return `<svg class="ring" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#EDE7F7" stroke-width="6"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="6" stroke-linecap="round"
+      stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 ${size/2} ${size/2})"/>
+    <text x="50%" y="52%" text-anchor="middle" dominant-baseline="middle" font-family="Baloo 2,sans-serif" font-weight="800" font-size="${size*0.3}" fill="${color}">${pct}%</text></svg>`;
+}
+
+/* ---------------- VOICE / AUDIO ---------------- */
+let muted=false, voice=null, rate=0.95, allVoices=[];
+function lsGet(k){ try{return localStorage.getItem(k)}catch(e){return null} }
+function lsSet(k,v){ try{localStorage.setItem(k,v)}catch(e){} }
+function rankScore(v){ const n=(v.name||'').toLowerCase(); let s=0;
+  if(/en(-|_)?(us|gb|au)/i.test(v.lang)) s+=3; else if(/^en/i.test(v.lang)) s+=1;
+  if(n.includes('google')) s+=7; if(n.includes('natural')) s+=7;
+  if(/samantha|aria|jenny|libby|sonia|emma|zira|karen|moira/.test(n)) s+=5;
+  if(n.includes('female')) s+=3; if(v.localService===false) s+=1; return s; }
+function loadVoices(){ if(!('speechSynthesis' in window)) return;
+  allVoices=speechSynthesis.getVoices();
+  const en=allVoices.filter(v=>/^en/i.test(v.lang)); const pool=en.length?en:allVoices;
+  const saved=lsGet('ak_voice'); let ch=saved?pool.find(v=>v.name===saved):null;
+  if(!ch) ch=pool.slice().sort((a,b)=>rankScore(b)-rankScore(a))[0]||null;
+  voice=ch||allVoices[0]||null; buildVoiceSelect(); }
+if('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged=loadVoices; }
+function buildVoiceSelect(){ const sel=document.getElementById('voiceSel'); if(!sel) return;
+  const en=allVoices.filter(v=>/^en/i.test(v.lang)).sort((a,b)=>rankScore(b)-rankScore(a));
+  const rest=allVoices.filter(v=>!/^en/i.test(v.lang)); const list=en.concat(rest);
+  sel.innerHTML=list.map(v=>`<option value="${(v.name||'').replace(/"/g,'')}" ${voice&&v.name===voice.name?'selected':''}>${v.name} (${v.lang})</option>`).join("");
+  const sp=document.getElementById('speedSel'); if(sp) sp.value=String(rate); }
+function speak(text,opts){ if(muted||!('speechSynthesis' in window)||!text) return; opts=opts||{};
+  try{ speechSynthesis.cancel();
+    setTimeout(()=>{ try{ const u=new SpeechSynthesisUtterance(text);
+      if(voice) u.voice=voice; u.rate=opts.rate||rate; u.pitch=opts.pitch||1.12; u.volume=1;
+      speechSynthesis.resume(); speechSynthesis.speak(u);
+    }catch(e){} },110);
+  }catch(e){} }
+let actx=null;
+function chime(notes,type){ if(muted) return;
+  try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    if(!actx) actx=new AC(); if(actx.state==='suspended') actx.resume();
+    let t=actx.currentTime;
+    notes.forEach(([f,d])=>{ const o=actx.createOscillator(),g=actx.createGain();
+      o.type=type||'sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.25,t+.02); g.gain.exponentialRampToValueAtTime(.0001,t+d);
+      o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+d); t+=d*.9; });
+  }catch(e){} }
+const happy=()=>chime([[523,.12],[659,.12],[784,.12],[1047,.22]]);
+const oops =()=>chime([[300,.18],[220,.22]],'triangle');
+const pop  =()=>chime([[660,.07]]);
+const ding =()=>chime([[880,.09],[1175,.14]]);
+const flip =()=>chime([[520,.06]]);
+
+/* ---------------- PROGRESS / CONFIDENCE ---------------- */
+let totalStars=parseInt(lsGet('ak_stars')||'0',10)||0;
+function addStars(n){ totalStars+=n; lsSet('ak_stars',String(totalStars)); const el=document.getElementById('totalStars'); if(el) el.textContent=totalStars; }
+function getProg(){ try{return JSON.parse(lsGet('ak_prog')||'{}')}catch(e){return{}} }
+function saveProg(p){ lsSet('ak_prog',JSON.stringify(p)); }
+function recordResult(topicId,total,firstTryCorrect){
+  const p=getProg(); const cur=p[topicId]||{plays:0,best:0};
+  const acc= total? Math.max(0,Math.min(1,firstTryCorrect/total)) : 0;
+  cur.plays=(cur.plays||0)+1; cur.best=Math.max(cur.best||0,acc); cur.last=acc;
+  p[topicId]=cur; saveProg(p); }
+function conf(acc,plays){
+  if(!plays) return {label:"New",color:"#B7AEC9",pct:0};
+  const pct=Math.round(acc*100);
+  if(acc>=0.95) return {label:"Champion",color:"#22C55E",pct};
+  if(acc>=0.75) return {label:"Confident",color:"#3B82F6",pct};
+  if(acc>=0.5)  return {label:"Learning",color:"#F5A623",pct};
+  return {label:"Starting",color:"#EF4444",pct};
+}
+function allTopics(){ const arr=[]; for(const k in CONTENT){ CONTENT[k].topics.forEach(t=>arr.push({sec:k,secTitle:CONTENT[k].title,secColor:CONTENT[k].color,topic:t})); } return arr; }
+function topicCount(t){ return t.type==='order'?t.rounds.length : t.type==='memory'?1 : t.type==='tapcount'?t.rounds.length : (t.questions?t.questions.length:0); }
+
+/* ---------------- CONFETTI ---------------- */
+function confetti(){ const box=document.getElementById('confetti'); const items="🎉⭐✨🎈🌟🎊".split("");
+  for(let i=0;i<28;i++){ const s=document.createElement('span'); s.className='conf'; s.textContent=items[i%items.length];
+    s.style.left=Math.random()*100+'%'; s.style.fontSize=(18+Math.random()*22)+'px';
+    const dur=1.4+Math.random()*1.2, delay=Math.random()*.3;
+    s.style.animation=`confFall ${dur}s ${delay}s ease-in forwards`; box.appendChild(s);
+    setTimeout(()=>s.remove(),(dur+delay)*1000+200); } }
+const cfStyle=document.createElement('style'); cfStyle.textContent="@keyframes confFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(540deg);opacity:0}} .floaty{animation:floaty 3s ease-in-out infinite;display:inline-block} @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}"; document.head.appendChild(cfStyle);
+
+/* ---------------- ROUTER ---------------- */
+const view=document.getElementById('view');
+let currentTab='home';
+let curLevel=1;
+function setLevel(key,lv){ curLevel=lv; renderSection(key); }
+function setTab(tab){ currentTab=tab; document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab)); }
+function showNav(on){ document.getElementById('nav').style.display=on?'flex':'none'; }
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>{
+  const tab=b.dataset.tab;
+  if(tab==='settings'){ openSettings(); return; }
+  if(tab==='home') renderHome();
+  if(tab==='report') renderReport();
+  if(tab==='rewards') renderRewards();
+}));
+
+/* ---------------- HOME ---------------- */
+const SECGRAD={ algorithms:'linear-gradient(135deg,#8B6BFF,#6D9CFF)', data:'linear-gradient(135deg,#2FD3A5,#22B07A)', olympiad:'linear-gradient(135deg,#FDB646,#F5872A)' };
+function renderHome(){ setTab('home'); showNav(true); curLevel=1; window.scrollTo(0,0);
+  const prog=getProg();
+  let worlds='';
+  for(const key in CONTENT){ const s=CONTENT[key];
+    const tps=s.topics; const done=tps.filter(t=>(prog[t.id]&&prog[t.id].plays)).length;
+    worlds+=`<button class="kbtn world" onclick="renderSection('${key}')">
+      <span class="strip" style="background:${s.color}"></span>
+      <span class="ic" style="background:${s.color}22">${s.emoji}</span>
+      <span><span class="t" style="color:${s.color}">${s.title}</span><span class="s">${s.subtitle}</span>
+        <span class="s" style="color:${s.color};margin-top:4px">${done}/${tps.length} games played</span></span>
+      <span class="go">›</span></button>`;
+  }
+  const rd=readiness(); const st=getStreak();
+  view.innerHTML=`<div class="screen">
+    <div class="hero"><div class="bubbles"><span class="bub" style="width:90px;height:90px;top:-20px;right:-10px"></span><span class="bub" style="width:50px;height:50px;bottom:-10px;left:30%"></span></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="flex:1"><h2>Hi, champion! 👋</h2><p>Ready to learn and play today?</p></div>
+        <div style="text-align:center;background:rgba(255,255,255,.2);border-radius:16px;padding:8px 12px">
+          <div style="font-size:24px">🔥</div><div style="font-family:var(--head);font-weight:800;font-size:20px;line-height:1">${st.count}</div>
+          <div style="font-size:10px;font-weight:800;opacity:.9">day streak</div></div>
+      </div>
+      <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
+        <div style="flex:1"><div style="font-size:13px;font-weight:800;opacity:.9">Olympiad readiness</div>
+          <div class="meter" style="background:rgba(255,255,255,.3)"><div style="width:${rd}%"></div></div></div>
+        <div style="font-family:var(--head);font-weight:800;font-size:26px">${rd}%</div>
+      </div></div>
+    <div class="quick">
+      <button class="kbtn qtile" style="background:linear-gradient(135deg,#FDB646,#F5872A)" onclick="startSmartPractice()"><span class="qe">🎯</span>Smart<br>Practice</button>
+      <button class="kbtn qtile" style="background:linear-gradient(135deg,#EC4899,#F0708F)" onclick="startChallengePick()"><span class="qe">⏱️</span>Timed<br>Challenge</button>
+      <button class="kbtn qtile" style="background:linear-gradient(135deg,#7C5CFC,#6D9CFF)" onclick="renderRewards()"><span class="qe">🏆</span>My<br>Rewards</button>
+    </div>
+    <div class="sec-title">Choose a world</div>
+    <div class="worlds-grid">${worlds}</div>
+    <button class="kbtn world" style="justify-content:center;color:var(--purple);font-family:var(--head);font-weight:800;font-size:17px;margin-top:14px" onclick="renderReport()">📊 See my progress report</button>
+  </div>`;
+}
+
+/* ---------------- SECTION ---------------- */
+function levelStats(s,prog,lv){ const ts=s.topics.filter(t=>(t.level||1)===lv); let played=0,sum=0;
+  ts.forEach(t=>{ const pr=prog[t.id]; if(pr&&pr.plays){ played++; sum+=pr.best; } });
+  return {count:ts.length, played, avg: played? sum/played : 0}; }
+function levelUnlocked(s,prog,lv){ if(lv<=1) return true; const p=levelStats(s,prog,lv-1); return p.played>=3 && p.avg>=0.5; }
+function renderSection(key){ setTab('home'); showNav(true); window.scrollTo(0,0);
+  const s=CONTENT[key]; const prog=getProg();
+  const maxLevel = Math.max.apply(null, s.topics.map(t=>t.level||1));
+  if(curLevel>maxLevel) curLevel=1;
+  const unlocked = levelUnlocked(s,prog,curLevel);
+  const topics = s.topics.filter(t=>(t.level||1)===curLevel);
+  let lastGroup=null, html='';
+  const LNAME={1:'Level 1 · Basics',2:'Level 2 · Challenge',3:'Level 3 · Master'};
+  if(!unlocked){
+    html=`<div class="lockmsg"><div style="font-size:44px">🔒</div>
+      <div style="font-family:var(--head);font-weight:800;font-size:19px;margin-top:8px">${LNAME[curLevel]} is almost ready!</div>
+      <p style="color:var(--muted);font-weight:700;margin-top:6px;font-size:14px">Play at least 3 games in the level below and score well to unlock these harder challenges. You can do it, champion! 💪</p>
+      <button class="kbtn fbtn fbtn-primary" style="margin-top:16px;font-size:18px;padding:14px" onclick="setLevel('${key}',${curLevel-1})"><span class="shine"></span>▶ Play Level ${curLevel-1}</button></div>`;
+  } else {
+    html+=`<div class="topics-grid">`;
+    topics.forEach(t=>{
+      if(t.group&&t.group!==lastGroup){ html+=`<div class="grouphdr">${t.group}<span class="line"></span></div>`; lastGroup=t.group; }
+      const pr=prog[t.id]||{plays:0,best:0}; const c=conf(pr.best,pr.plays);
+      const gt = t.type==='order'?'🎮 Order game': t.type==='memory'?'🧠 Memory game': t.type==='tapcount'?'👆 Tap game': t.type==='truefalse'?'✅ True or False':'❓ '+topicCount(t)+' questions';
+      html+=`<button class="kbtn topic" onclick="startTopic('${key}','${t.id}')">
+        <span class="ic" style="background:${t.color}22">${t.emoji}</span>
+        <span class="mid"><span class="t">${t.title}</span>
+          <span class="meta">${gt} <span class="badge" style="background:${c.color}">${c.label}</span></span></span>
+        ${ring(c.pct,c.color)}</button>`;
+    });
+    html+=`</div>`;
+    if(!topics.length) html=`<div class="lockmsg"><div style="font-size:40px">✨</div><p style="color:var(--muted);font-weight:700;margin-top:8px">More games coming here soon!</p></div>`;
+  }
+  let segs='';
+  for(let lv=1; lv<=maxLevel; lv++){ const ul=levelUnlocked(s,prog,lv);
+    segs+=`<button class="seg ${curLevel===lv?'active':''}" onclick="setLevel('${key}',${lv})">L${lv}${ul?'':' <span class="lk">🔒</span>'}</button>`; }
+  const toggle = maxLevel>1 ? `<div class="segwrap">${segs}</div>` : '';
+  view.innerHTML=`<div class="screen">
+    <div class="hero" style="background:${SECGRAD[key]||'linear-gradient(135deg,#7C5CFC,#6D9CFF)'}">
+      <h2>${s.emoji} ${s.title}</h2><p>${s.subtitle}</p></div>
+    ${toggle}
+    <div class="quick" style="grid-template-columns:1fr 1fr">
+      <button class="kbtn qtile" style="background:linear-gradient(135deg,#FDB646,#F5872A)" onclick="startSmartPractice('${key}')"><span class="qe">🎯</span>Practice weak spots</button>
+      <button class="kbtn qtile" style="background:linear-gradient(135deg,#EC4899,#F0708F)" onclick="startChallenge('${key}')"><span class="qe">⏱️</span>Timed challenge</button>
+    </div>
+    <div class="sec-title">${LNAME[curLevel]||'Games &amp; topics'}</div>
+    ${html}
+    <button class="kbtn backbtn" onclick="renderHome()">‹ Back to worlds</button>
+  </div>`;
+}
+
+/* ---------------- REPORT ---------------- */
+function readiness(){ const p=getProg(); const all=allTopics(); let sum=0,n=0;
+  all.forEach(x=>{ const pr=p[x.topic.id]; if(pr&&pr.plays){ sum+=pr.best; n++; } });
+  if(!n) return 0; const covered=n/all.length; return Math.round((sum/n)*covered*100); }
+function renderReport(){ setTab('report'); showNav(true); window.scrollTo(0,0);
+  const p=getProg(); const rd=readiness();
+  let body='';
+  for(const key in CONTENT){ const s=CONTENT[key];
+    let rows=''; let sum=0,n=0;
+    s.topics.forEach(t=>{ const pr=p[t.id]||{plays:0,best:0}; const c=conf(pr.best,pr.plays);
+      if(pr.plays){ sum+=pr.best; n++; }
+      rows+=`<div class="rrow"><span style="font-size:22px">${t.emoji}</span>
+        <span class="rn">${t.title}</span>
+        <span class="rmini"><div style="width:${c.pct}%;background:${c.color}"></div></span>
+        <span class="badge" style="background:${c.color};min-width:74px;text-align:center">${pr.plays?c.label:'—'}</span></div>`;
+    });
+    const avg=n?Math.round((sum/n)*100):0;
+    body+=`<div class="sec-title" style="display:flex;justify-content:space-between"><span>${s.emoji} ${s.title}</span><span style="color:${s.color}">${avg}%</span></div><div class="rcard">${rows}</div>`;
+  }
+  let tip;
+  if(rd>=85) tip="Outstanding! Your child is leading and olympiad-ready. 🏆";
+  else if(rd>=60) tip="Great progress! Keep practising the orange topics to reach Champion.";
+  else if(rd>0) tip="Good start! Play a bit each day — confidence will climb fast.";
+  else tip="Play a few games to unlock your progress report!";
+  view.innerHTML=`<div class="screen">
+    <div class="readiness"><div style="font-family:var(--head);font-weight:800;font-size:20px">Olympiad Readiness</div>
+      <div style="font-family:var(--head);font-weight:800;font-size:44px;color:var(--purple);margin-top:4px">${rd}%</div>
+      <div class="meter"><div style="width:${rd}%"></div></div>
+      <p style="color:var(--muted);font-weight:700;margin-top:12px;font-size:14px">${tip}</p>
+      <div style="margin-top:12px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;font-size:12px;font-weight:800">
+        <span class="badge" style="background:#EF4444">Starting</span><span class="badge" style="background:#F5A623">Learning</span>
+        <span class="badge" style="background:#3B82F6">Confident</span><span class="badge" style="background:#22C55E">Champion</span></div>
+    </div>
+    ${body}
+    <button class="kbtn backbtn" onclick="renderHome()">‹ Back home</button>
+  </div>`;
+}
+
+/* ---------------- GAME DISPATCH ---------------- */
+let G=null;
+function startTopic(key,topicId){ const s=CONTENT[key]; const t=s.topics.find(x=>x.id===topicId);
+  showNav(false); window.scrollTo(0,0);
+  if(t.type==='order') return startOrder(key,t);
+  if(t.type==='memory') return startMemory(key,t);
+  if(t.type==='tapcount') return startTap(key,t);
+  if(t.type==='truefalse') return startTF(key,t);
+  return startQuiz(key,t);
+}
+function gameHead(t,accent,cur,total,stars){
+  const tm = (typeof G!=='undefined' && G && G.timed) ? `<span id="timer" class="timerchip">⏱️ ${G.timeLeft}s</span>` : '';
+  return `<div class="qhead"><button class="kbtn readbtn" style="background:${accent}" onclick="exitGame()">‹</button>
+    <span class="ttl" style="color:${accent}">${t.emoji} ${t.title}</span>${tm}</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div class="pbar"><div style="width:${total?(cur/total)*100:0}%;background:${accent}"></div></div>
+      <span style="font-family:var(--head);font-weight:800;color:${accent}">⭐ ${stars}</span></div>`;
+}
+function exitGame(){ clearGTimer(); if(CONTENT[G.key]) renderSection(G.key); else renderHome(); }
+
+/* ---------------- MCQ ---------------- */
+function startQuiz(key,topic){ G={key,topic,accent:topic.color,idx:0,stars:0,solved:false,wrongThis:false,firstTry:0}; renderQuiz(); }
+function renderQuiz(){ const {topic,accent,idx,stars}=G; const q=topic.questions[idx];
+  const order=shuffle(q.options.map((o,i)=>i));
+  G.disp=order.map(i=>q.options[i]); G.correctDisp=order.indexOf(q.correct);
+  const opts=G.disp.map((o,i)=>`<button class="kbtn opt" onclick="answer(${i})"><span class="oe">${o.d}</span><span class="ot">${o.t}</span></button>`).join("");
+  view.innerHTML=`<div class="screen">${gameHead(topic,accent,idx,topic.questions.length,stars)}
+    <div class="qcard"><div class="qrow"><p class="qtext">${q.q}</p>
+      <button class="kbtn readbtn" style="background:${accent}" onclick="speak(${JSON.stringify(q.q).replace(/"/g,'&quot;')})">🔊</button></div>
+      <div class="qbig">${q.big||''}</div></div>
+    <div class="bwrap" id="bw"></div><div id="opts">${opts}</div></div>`;
+  G.wrongThis=false; setTimeout(()=>speak(q.q),300);
+}
+function answer(i){ if(G.solved) return; pop();
+  const opt=G.disp[i]; const btns=document.querySelectorAll('#opts .opt'); const bw=document.getElementById('bw');
+  if(i===G.correctDisp){ G.solved=true; G.stars++; if(!G.wrongThis) G.firstTry++;
+    const pr=PRAISES[Math.floor(Math.random()*PRAISES.length)];
+    btns[i].style.borderColor='#22C55E'; btns[i].style.background='#DCFCE7'; btns[i].innerHTML+='<span style="font-size:26px">✅</span>';
+    bw.innerHTML=`<div class="banner" style="background:#DCFCE7">${pr}</div>`; confetti(); happy(); speak(opt.t+". "+pr,{pitch:1.3});
+    setTimeout(nextQ,1750);
+  } else { G.wrongThis=true; recordMiss(G.topic.id, G.idx); const ch=CHEERS[Math.floor(Math.random()*CHEERS.length)];
+    btns[i].style.borderColor='#EF4444'; btns[i].style.background='#FEE2E2';
+    bw.innerHTML=`<div class="banner" style="background:#FEF3C7">${ch}</div>`; oops(); speak(opt.t+". "+ch);
+    setTimeout(()=>{ btns[i].style.borderColor='transparent'; btns[i].style.background='#fff'; bw.innerHTML=''; },1300);
+  }
+}
+function nextQ(){ if(G.idx+1<G.topic.questions.length){ G.idx++; G.solved=false; renderQuiz(); }
+  else finish(G.topic.questions.length, G.firstTry); }
+
+/* ---------------- ORDER ---------------- */
+function startOrder(key,topic){ G={key,topic,accent:topic.color,ri:0,stars:0,firstTry:0}; setupRound(); }
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function setupRound(){ const r=G.topic.rounds[G.ri]; G.expected=r.items.slice().sort((a,b)=>a.v-b.v).map(x=>x.v); G.pos=0; G.err=false; G.shuf=shuffle(r.items); renderOrder(); }
+function renderOrder(){ const {topic,accent,ri}=G; const r=topic.rounds[ri];
+  const tiles=G.shuf.map((it,i)=>`<button class="kbtn tile" id="t${i}" onclick="tapOrder(${it.v},${i})">${it.d}</button>`).join("");
+  view.innerHTML=`<div class="screen">${gameHead(topic,accent,ri,topic.rounds.length,G.stars)}
+    <div class="qcard"><div class="qrow"><p class="qtext">${r.q}</p>
+      <button class="kbtn readbtn" style="background:${accent}" onclick="speak(${JSON.stringify(r.q).replace(/"/g,'&quot;')})">🔊</button></div></div>
+    <div class="bwrap" id="bw"></div><div class="tiles">${tiles}</div></div>`;
+  setTimeout(()=>speak(r.q),300);
+}
+function tapOrder(v,i){ const btn=document.getElementById('t'+i); if(!btn||btn.dataset.done) return; const bw=document.getElementById('bw');
+  if(v===G.expected[G.pos]){ btn.dataset.done="1"; btn.style.borderColor='#22C55E'; btn.style.background='#DCFCE7'; btn.style.opacity=.85; ding();
+    const it=G.shuf.find(x=>x.v===v); speak(it&&it.say?it.say:String(v)); G.pos++;
+    if(G.pos>=G.expected.length){ G.stars++; if(!G.err) G.firstTry++;
+      const pr=PRAISES[Math.floor(Math.random()*PRAISES.length)]; bw.innerHTML=`<div class="banner" style="background:#DCFCE7">${pr}</div>`;
+      confetti(); happy(); setTimeout(()=>speak(pr,{pitch:1.3}),350); setTimeout(nextRound,1750); }
+  } else { G.err=true; btn.style.borderColor='#EF4444'; btn.style.background='#FEE2E2';
+    const ch=CHEERS[Math.floor(Math.random()*CHEERS.length)]; bw.innerHTML=`<div class="banner" style="background:#FEF3C7">${ch}</div>`; oops(); speak(ch);
+    setTimeout(()=>{ btn.style.borderColor='transparent'; btn.style.background='#fff'; bw.innerHTML=''; },1100);
+  }
+}
+function nextRound(){ if(G.ri+1<G.topic.rounds.length){ G.ri++; setupRound(); } else finish(G.topic.rounds.length,G.firstTry); }
+
+/* ---------------- MEMORY ---------------- */
+function startMemory(key,topic){ G={key,topic,accent:topic.color,stars:0,flip:[],matched:0,moves:0,miss:0};
+  const cards=[]; topic.pairs.forEach((p,idx)=>{ cards.push({pid:idx,face:p[0],say:p.say||p[0]}); cards.push({pid:idx,face:p[1],say:p.say2||p[1]}); });
+  G.cards=shuffle(cards); renderMemory(); speak(topic.intro||"Find the matching pairs!"); }
+function renderMemory(){ const {topic,accent}=G;
+  const grid=G.cards.map((c,i)=>{ const st=c.matched?'matched':(G.flip.includes(i)?'flipped':'');
+    return `<button class="kbtn mcard ${st}" id="m${i}" onclick="tapMem(${i})">${(c.matched||G.flip.includes(i))?c.face:'<span class=q>?</span>'}</button>`; }).join("");
+  view.innerHTML=`<div class="screen">${gameHead(topic,accent,G.matched,topic.pairs.length,G.stars)}
+    <div class="qcard" style="padding:14px"><p class="qtext" style="font-size:18px">${topic.intro||'Match the pairs!'}</p></div>
+    <div class="bwrap" id="bw"></div><div class="mgrid">${grid}</div></div>`;
+}
+function tapMem(i){ const c=G.cards[i]; if(c.matched||G.flip.includes(i)||G.flip.length>=2) return; flip(); G.flip.push(i);
+  const el=document.getElementById('m'+i); el.classList.add('flipped'); el.innerHTML=c.face; speak(c.say);
+  if(G.flip.length===2){ G.moves++; const [a,b]=G.flip;
+    if(G.cards[a].pid===G.cards[b].pid){ G.cards[a].matched=G.cards[b].matched=true; G.matched++; ding();
+      setTimeout(()=>{ document.getElementById('m'+a).classList.add('matched'); document.getElementById('m'+b).classList.add('matched'); G.flip=[];
+        if(G.matched>=G.topic.pairs.length){ G.stars=G.topic.pairs.length; const acc=Math.max(0.3,1-G.miss*0.12); confetti(); happy();
+          setTimeout(()=>finishCustom(G.topic.pairs.length, acc*G.topic.pairs.length, "You matched them all! 🎉"),600); }
+      },500);
+    } else { G.miss++; oops();
+      setTimeout(()=>{ const ea=document.getElementById('m'+a),eb=document.getElementById('m'+b);
+        ea.classList.remove('flipped'); eb.classList.remove('flipped'); ea.innerHTML='<span class=q>?</span>'; eb.innerHTML='<span class=q>?</span>'; G.flip=[]; },850);
+    }
+  }
+}
+
+/* ---------------- TAP-COUNT ---------------- */
+function startTap(key,topic){ G={key,topic,accent:topic.color,ri:0,stars:0,firstTry:0}; setupTap(); }
+function setupTap(){ const r=G.topic.rounds[G.ri]; G.target=r.n; G.tapped=0; G.err=false;
+  const total=r.total||(r.n+ (r.extra||2)); G.field=shuffle(Array.from({length:total},(_,i)=>({i, on:i<r.n?false:false}))); renderTap(); }
+function renderTap(){ const {topic,accent,ri}=G; const r=topic.rounds[ri];
+  const items=G.field.map((f,i)=>`<button class="kbtn tile" id="f${i}" onclick="tapItem(${i})">${r.emoji}</button>`).join("");
+  view.innerHTML=`<div class="screen">${gameHead(topic,accent,ri,topic.rounds.length,G.stars)}
+    <div class="qcard"><div class="qrow"><p class="qtext">${r.q}</p>
+      <button class="kbtn readbtn" style="background:${accent}" onclick="speak(${JSON.stringify(r.q).replace(/"/g,'&quot;')})">🔊</button></div>
+      <div style="font-family:var(--head);font-weight:800;color:${accent};margin-top:8px">Tapped: <span id="cnt">0</span> / ${r.n}</div></div>
+    <div class="bwrap" id="bw"></div><div class="tiles">${items}</div></div>`;
+  setTimeout(()=>speak(r.q),300);
+}
+function tapItem(i){ const btn=document.getElementById('f'+i); if(!btn||btn.dataset.on) return; const bw=document.getElementById('bw');
+  btn.dataset.on="1"; btn.style.borderColor=G.accent; btn.style.background=G.accent+'22'; pop(); G.tapped++;
+  document.getElementById('cnt').textContent=G.tapped; speak(String(G.tapped));
+  if(G.tapped===G.target){ G.stars++; if(!G.err) G.firstTry++; const pr=PRAISES[Math.floor(Math.random()*PRAISES.length)];
+    bw.innerHTML=`<div class="banner" style="background:#DCFCE7">${pr}</div>`; confetti(); happy(); setTimeout(()=>speak(pr,{pitch:1.3}),350); setTimeout(nextTap,1750);
+  } else if(G.tapped>G.target){ G.err=true; const ch="Oops, too many! Let's try again."; bw.innerHTML=`<div class="banner" style="background:#FEF3C7">${ch}</div>`; oops(); speak(ch);
+    setTimeout(setupTap,1300);
+  }
+}
+function nextTap(){ if(G.ri+1<G.topic.rounds.length){ G.ri++; setupTap(); } else finish(G.topic.rounds.length,G.firstTry); }
+
+/* ---------------- FINISH ---------------- */
+function finish(count,firstTry){ finishCustom(count,firstTry,"You are a Class 1 champion!"); }
+function finishCustom(count,firstTryScore,msg){ clearGTimer(); const {topic,accent}=G;
+  addStars(G.stars);
+  const synthetic = !CONTENT[G.key];
+  if(!synthetic) recordResult(topic.id,count,firstTryScore);
+  bumpStreak();
+  const pr=getProg()[topic.id]||{plays:0,best: (count?firstTryScore/count:0)}; const c=conf(pr.best,pr.plays||1);
+  confetti(); happy();
+  const newBadges = checkNewBadges();
+  const againBtn = synthetic
+    ? `<button class="kbtn fbtn fbtn-accent" onclick="${G.replay||'renderHome()'}"><span class="shine"></span><span class="fic">🔁</span> Play Again</button>`
+    : `<button class="kbtn fbtn fbtn-accent" onclick="startTopic('${G.key}','${topic.id}')"><span class="shine"></span><span class="fic">🔁</span> Play Again</button>`;
+  const moreBtn = synthetic
+    ? `<button class="kbtn fbtn fbtn-primary" onclick="renderHome()"><span class="shine"></span><span class="fic">🎮</span> More Games</button>`
+    : `<button class="kbtn fbtn fbtn-primary" onclick="renderSection('${G.key}')"><span class="shine"></span><span class="fic">🎮</span> More Games</button>`;
+  const badgeHtml = newBadges.length ? `<div style="margin-top:14px;background:#FFF7E6;border-radius:16px;padding:12px;box-shadow:var(--shadow)">
+      <div style="font-family:var(--head);font-weight:800;color:#B45309">🎉 New badge unlocked!</div>
+      <div style="font-size:30px;margin-top:4px">${newBadges.map(b=>b.emoji).join(' ')}</div>
+      <div style="font-weight:800;font-size:13px;margin-top:2px">${newBadges.map(b=>b.name).join(', ')}</div></div>` : '';
+  view.innerHTML=`<div class="screen" style="text-align:center;padding-top:24px">
+    ${robot(150,'celebrate')}
+    <h2 style="font-family:var(--head);font-size:32px;color:${accent};margin:8px 0">You did it! 🎉</h2>
+    <div style="font-size:36px;margin:4px 0 10px">${"⭐".repeat(Math.min(count,8))}</div>
+    <p style="color:var(--muted);font-weight:800;margin-bottom:6px">${msg}</p>
+    <div style="display:inline-flex;align-items:center;gap:10px;background:#fff;border-radius:18px;padding:12px 18px;box-shadow:var(--shadow);margin-top:6px">
+      ${ring(c.pct,c.color,54)}<div style="text-align:left"><div style="font-family:var(--head);font-weight:800">${topic.title}</div>
+      <div style="font-weight:800;color:${c.color}">${c.label}</div></div></div>
+    ${badgeHtml}
+    <div class="fbtns">
+      ${againBtn}
+      ${moreBtn}
+      <button class="kbtn fbtn fbtn-ghost" onclick="renderHome()"><span class="fic">🏠</span> Home</button>
+    </div>
+  </div>`;
+  setTimeout(()=>speak(`Hooray! ${msg} You earned ${G.stars} stars.`,{pitch:1.3}),300);
+}
+
+/* ---------------- SPLASH / DIAGNOSTIC ---------------- */
+document.getElementById('splashRobot').innerHTML=robot(150,'happy');
+function enterApp(){ CONTENT = window.__CONTENT__ || CONTENT; curOutfit=lsGet('ak_outfit')||'none'; musicOn=lsGet('ak_music')!=='off';
+  document.getElementById('splash').style.display='none'; document.getElementById('app').style.display='flex';
+  document.getElementById('totalStars').textContent=totalStars; bumpStreak(); startTimeTracking(); if(musicOn) startMusic(); renderHome(); }
+document.getElementById('startBtn').addEventListener('click',()=>{
+  try{ const AC=window.AudioContext||window.webkitAudioContext; if(AC){ if(!actx) actx=new AC(); actx.resume&&actx.resume(); } }catch(e){}
+  try{ if('speechSynthesis' in window){ speechSynthesis.resume(); loadVoices(); } }catch(e){}
+  happy(); enterApp(); });
+function setDiag(vs,voices){ document.getElementById('diag').innerHTML=`<div class="diagbox"><b class="h">Sound check</b>
+  <div>🎵 Did you hear a happy tune?</div><div style="margin-top:6px">🗣️ Voice: <b>${vs}</b></div>
+  <div style="margin-top:4px;color:var(--muted);font-size:12.5px">Voices available: ${voices}</div>
+  <button class="kbtn btn-primary" style="width:100%;margin-top:12px" onclick="enterApp()">Continue →</button></div>`; }
+function runDiagnostic(){ if(!('speechSynthesis' in window)){ setDiag("not supported ✗",0); return; }
+  const synth=speechSynthesis;
+  const run=()=>{ const vs=synth.getVoices(); let started=false; setDiag("testing…",vs.length);
+    try{ synth.cancel(); const u=new SpeechSynthesisUtterance("Hi! I am Algo. Let's become an olympiad champion!");
+      if(voice) u.voice=voice; else { const v=vs.find(x=>/^en/i.test(x.lang))||vs[0]; if(v) u.voice=v; }
+      u.rate=rate; u.pitch=1.12; u.onstart=()=>{ started=true; setDiag("working ✓",vs.length); };
+      u.onend=()=>setDiag(started?"working ✓":"no audio ✗",vs.length); u.onerror=e=>setDiag("error ("+(e.error||'?')+") ✗",vs.length);
+      synth.resume(); synth.speak(u); setTimeout(()=>{ if(!started) setDiag("blocked ✗",vs.length); },1600);
+    }catch(e){ setDiag("error ✗",vs.length); } };
+  if(synth.getVoices().length===0){ setDiag("testing…",0); const h=()=>{ synth.removeEventListener('voiceschanged',h); loadVoices(); run(); };
+    synth.addEventListener('voiceschanged',h); setTimeout(()=>{ synth.removeEventListener('voiceschanged',h); run(); },900); } else run();
+}
+document.getElementById('voiceLink').addEventListener('click',openSettings);
+
+/* ---------------- SETTINGS ---------------- */
+function openSettings(){ buildVoiceSelect(); var mb=document.getElementById('musicBtn'); if(mb) mb.textContent=musicOn?'🎵 Music: On':'🔇 Music: Off'; document.getElementById('settings').style.display='flex'; }
+function closeSettings(){ document.getElementById('settings').style.display='none'; if(document.getElementById('app').style.display!=='none' && currentTab==='report') renderReport(); }
+document.getElementById('doneSettingsBtn').addEventListener('click',closeSettings);
+document.getElementById('testVoiceBtn').addEventListener('click',()=>speak("Hello! I am Algo. Let's play and learn!"));
+document.getElementById('voiceSel').addEventListener('change',function(){ const v=allVoices.find(x=>x.name===this.value); if(v){ voice=v; lsSet('ak_voice',v.name); speak("This is my new voice!"); } });
+document.getElementById('speedSel').addEventListener('change',function(){ rate=parseFloat(this.value)||0.95; lsSet('ak_rate',String(rate)); speak("This is how fast I will talk."); });
+document.getElementById('resetBtn').addEventListener('click',function(){ if(confirm("Reset all stars and progress?")){ try{ localStorage.removeItem('ak_prog'); localStorage.removeItem('ak_stars'); }catch(e){} totalStars=0; document.getElementById('totalStars').textContent=0; closeSettings(); renderHome(); } });
+const sr=parseFloat(lsGet('ak_rate')); if(!isNaN(sr)) rate=sr;
+document.getElementById('muteBtn').addEventListener('click',function(){ muted=!muted;
+  if(muted){ speechSynthesis&&speechSynthesis.cancel(); this.textContent='🔇'; this.style.color='#EF4444'; }
+  else{ this.textContent='🔊'; this.style.color='#22C55E'; } });
+</script>
+<script>
+/* ================= STREAK & TIME ================= */
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function getStreak(){ try{ return JSON.parse(lsGet('ak_streak')||'{"count":0,"last":""}'); }catch(e){ return {count:0,last:''}; } }
+function bumpStreak(){ const s=getStreak(); const t=todayStr(); if(s.last===t) return s;
+  const y=new Date(); y.setDate(y.getDate()-1); const ys=y.getFullYear()+'-'+(y.getMonth()+1)+'-'+y.getDate();
+  s.count=(s.last===ys)?(s.count||0)+1:1; s.last=t; lsSet('ak_streak',JSON.stringify(s)); return s; }
+let timeInt=null;
+function startTimeTracking(){ if(timeInt) return; timeInt=setInterval(()=>{ if(document.hidden) return;
+  try{ let t=parseInt(lsGet('ak_time')||'0',10)||0; lsSet('ak_time',String(t+5));
+    let m={}; try{m=JSON.parse(lsGet('ak_timeday')||'{}')}catch(e){} const d=todayStr(); m[d]=(m[d]||0)+5; lsSet('ak_timeday',JSON.stringify(m)); }catch(e){} },5000); }
+function getTotalTime(){ return parseInt(lsGet('ak_time')||'0',10)||0; }
+function fmtTime(s){ const m=Math.floor(s/60), h=Math.floor(m/60); if(h>0) return h+'h '+(m%60)+'m'; return m+'m'; }
+
+/* ================= BACKGROUND MUSIC ================= */
+let musicInt=null, musicStep=0;
+const MSCALE=[523.25,587.33,659.25,783.99,880.00,659.25,587.33,523.25];
+function startMusic(){ if(!musicOn) return; try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return; if(!actx) actx=new AC(); if(actx.state==='suspended') actx.resume(); }catch(e){ return; }
+  if(musicInt) return;
+  musicInt=setInterval(()=>{ if(muted||!musicOn||!actx) return; try{ const f=MSCALE[musicStep%MSCALE.length]; musicStep++;
+    const o=actx.createOscillator(), g=actx.createGain(); o.type='sine'; o.frequency.value=f;
+    const t=actx.currentTime; g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.05,t+0.4); g.gain.exponentialRampToValueAtTime(0.0001,t+1.4);
+    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+1.5); }catch(e){} },1400); }
+function stopMusic(){ if(musicInt){ clearInterval(musicInt); musicInt=null; } }
+
+/* ================= ADAPTIVE MISS TRACKING ================= */
+function getMiss(){ try{ return JSON.parse(lsGet('ak_miss')||'{}'); }catch(e){ return {}; } }
+function recordMiss(topicId,qIndex){ if(!topicId||topicId==='smart'||topicId==='chal'||topicId.indexOf('__')===0) return;
+  const m=getMiss(); m[topicId]=m[topicId]||{}; m[topicId][qIndex]=(m[topicId][qIndex]||0)+1; lsSet('ak_miss',JSON.stringify(m)); }
+
+/* ================= BADGES ================= */
+const BADGES=[
+  {id:'first',emoji:'🌟',name:'First Steps',desc:'Play a game',test:x=>x.playedCount>=1},
+  {id:'s10',emoji:'⭐',name:'Star Starter',desc:'Earn 10 stars',test:x=>x.stars>=10},
+  {id:'s50',emoji:'✨',name:'Star Collector',desc:'Earn 50 stars',test:x=>x.stars>=50},
+  {id:'s100',emoji:'💫',name:'Star Hero',desc:'Earn 100 stars',test:x=>x.stars>=100},
+  {id:'perfect',emoji:'💯',name:'Perfect!',desc:'Score 100%',test:x=>x.hasPerfect},
+  {id:'champ5',emoji:'🏅',name:'Champion x5',desc:'Master 5 topics',test:x=>x.champions>=5},
+  {id:'explorer',emoji:'🧭',name:'Explorer',desc:'Try all 3 worlds',test:x=>x.worlds>=3},
+  {id:'l2',emoji:'🚀',name:'Level 2',desc:'Reach Level 2',test:x=>x.maxLevelPlayed>=2},
+  {id:'l3',emoji:'👑',name:'Level 3',desc:'Reach Level 3',test:x=>x.maxLevelPlayed>=3},
+  {id:'streak3',emoji:'🔥',name:'3-Day Streak',desc:'Play 3 days',test:x=>x.streak>=3},
+  {id:'streak7',emoji:'🌈',name:'7-Day Streak',desc:'Play 7 days',test:x=>x.streak>=7},
+  {id:'mathwiz',emoji:'🔢',name:'Math Wizard',desc:'Ace Math',test:x=>x.mathAvg>=0.8&&x.mathPlayed>=4}
+];
+function badgeStats(){ const p=getProg(); const all=allTopics(); let playedCount=0,champions=0,hasPerfect=false,maxLevelPlayed=1; const worldsSet={};
+  all.forEach(x=>{ const pr=p[x.topic.id]; if(pr&&pr.plays){ playedCount++; worldsSet[x.sec]=1; const lv=x.topic.level||1; if(lv>maxLevelPlayed)maxLevelPlayed=lv; if(pr.best>=0.95)champions++; if(pr.best>=1)hasPerfect=true; } });
+  let mathSum=0,mathPlayed=0; if(CONTENT.olympiad) CONTENT.olympiad.topics.forEach(t=>{ if((t.group||'').indexOf('Math')>=0){ const pr=p[t.id]; if(pr&&pr.plays){ mathPlayed++; mathSum+=pr.best; } } });
+  return { playedCount, stars:totalStars, champions, hasPerfect, worlds:Object.keys(worldsSet).length, maxLevelPlayed, streak:getStreak().count, mathAvg:mathPlayed?mathSum/mathPlayed:0, mathPlayed }; }
+function earnedBadgeIds(){ const x=badgeStats(); return BADGES.filter(b=>b.test(x)).map(b=>b.id); }
+function checkNewBadges(){ const earned=earnedBadgeIds(); let saved=[]; try{saved=JSON.parse(lsGet('ak_badges')||'[]')}catch(e){}
+  const fresh=earned.filter(id=>saved.indexOf(id)<0); if(fresh.length) lsSet('ak_badges',JSON.stringify(earned));
+  return BADGES.filter(b=>fresh.indexOf(b.id)>=0); }
+
+/* ================= REWARDS SCREEN ================= */
+function renderRewards(){ setTab('rewards'); showNav(true); window.scrollTo(0,0);
+  const earned=earnedBadgeIds(); const st=getStreak();
+  const badges=BADGES.map(b=>{ const on=earned.indexOf(b.id)>=0; return `<div class="badge-card ${on?'':'locked'}"><div class="be">${on?b.emoji:'🔒'}</div><div class="bn">${b.name}</div><div class="bd">${b.desc}</div></div>`; }).join('');
+  const outfits=Object.keys(OUTFITS).map(k=>{ const o=OUTFITS[k]; const owned=(k==='none')||totalStars>=o.cost||curOutfit===k; const on=curOutfit===k;
+    return `<button class="kbtn outfit ${on?'on':''} ${owned?'':'locked'}" onclick="setOutfit('${k}')">${robot(54,'happy',k)}<div class="oname">${o.name}</div><div class="ocost">${k==='none'?'Free':(owned?'Owned ✓':'⭐'+o.cost)}</div></button>`; }).join('');
+  view.innerHTML=`<div class="screen">
+    <div class="hero" style="background:linear-gradient(135deg,#7C5CFC,#6D9CFF)"><h2>🏆 My Rewards</h2><p>Badges, streaks & your buddy Algo</p></div>
+    <div style="display:flex;gap:10px;margin:14px 0">
+      <div class="statcard" style="flex:1"><div class="sv">${totalStars}</div><div class="sl">⭐ Stars</div></div>
+      <div class="statcard" style="flex:1"><div class="sv">${st.count}</div><div class="sl">🔥 Streak</div></div>
+      <div class="statcard" style="flex:1"><div class="sv">${earned.length}/${BADGES.length}</div><div class="sl">🏅 Badges</div></div></div>
+    <div class="sec-title">Dress up Algo</div>
+    <div class="outfit-row">${outfits}</div>
+    <div class="sec-title">My badges</div>
+    <div class="badges-grid">${badges}</div>
+    <button class="kbtn backbtn" onclick="renderHome()">‹ Back home</button></div>`;
+}
+function setOutfit(k){ const o=OUTFITS[k]; if(k!=='none' && totalStars<o.cost && curOutfit!==k){ speak("You need more stars to unlock "+o.name+". Keep playing, champion!"); oops(); return; }
+  curOutfit=k; lsSet('ak_outfit',k); ding(); document.getElementById('splashRobot')&&(document.getElementById('splashRobot').innerHTML=robot(150,'happy')); renderRewards(); }
+
+/* ================= PARENT DASHBOARD ================= */
+let parentAns=12, parentEntry='';
+function openParent(){ closeSettings(); parentEntry=''; const a=Math.floor(Math.random()*4)+3, b=Math.floor(Math.random()*4)+3; parentAns=a*b;
+  document.getElementById('parentModal').style.display='flex'; renderParentGate(a,b); }
+function closeParent(){ document.getElementById('parentModal').style.display='none'; }
+function renderParentGate(a,b){ const pad=[1,2,3,4,5,6,7,8,9,0].map(n=>`<button onclick="parentDigit('${n}')">${n}</button>`).join('');
+  document.getElementById('parentBody').innerHTML=`<div style="text-align:center"><div style="font-size:34px">🔒</div>
+    <h2 style="font-family:var(--head);color:var(--purple);margin:6px 0">Parents' Corner</h2>
+    <p style="color:var(--muted);font-weight:700;font-size:14px">Grown-up check: what is <b>${a} × ${b}</b>?</p>
+    <div id="parentEntry" style="font-family:var(--head);font-weight:800;font-size:30px;margin:10px 0;min-height:38px">—</div>
+    <div class="pinpad">${pad}</div>
+    <div style="display:flex;gap:10px;margin-top:14px"><button class="kbtn btn-ghost" style="flex:1;border-radius:14px;padding:12px" onclick="closeParent()">Cancel</button>
+    <button class="kbtn btn-primary" style="flex:1;border-radius:14px;padding:12px" onclick="parentCheck()">Enter</button></div></div>`; }
+function parentDigit(n){ parentEntry=(parentEntry+n).slice(0,3); const el=document.getElementById('parentEntry'); if(el) el.textContent=parentEntry; }
+function parentCheck(){ if(parseInt(parentEntry,10)===parentAns) renderParentDash(); else { parentEntry=''; const el=document.getElementById('parentEntry'); if(el) el.textContent='Try again'; } }
+function renderParentDash(){ const p=getProg(); const st=getStreak();
+  let sec=''; for(const k in CONTENT){ const s=CONTENT[k]; let sum=0,n=0; s.topics.forEach(t=>{ const pr=p[t.id]; if(pr&&pr.plays){sum+=pr.best;n++;} });
+    const avg=n?Math.round(sum/n*100):0; sec+=`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-weight:800;font-size:13px"><span>${s.emoji} ${s.title}</span><span>${avg}% · ${n}/${s.topics.length}</span></div><div class="rmini" style="width:100%"><div style="width:${avg}%;background:${s.color}"></div></div></div>`; }
+  const weak=allTopics().map(x=>({t:x.topic,pr:p[x.topic.id]})).filter(o=>o.pr&&o.pr.plays).sort((a,b)=>a.pr.best-b.pr.best).slice(0,5);
+  const weakHtml=weak.length?weak.map(o=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px;font-weight:700"><span>${o.t.emoji} ${o.t.title}</span><span style="color:${conf(o.pr.best,o.pr.plays).color}">${Math.round(o.pr.best*100)}%</span></div>`).join(''):'<p style="color:var(--muted);font-weight:700;font-size:13px">No games played yet.</p>';
+  let td=0; try{const m=JSON.parse(lsGet('ak_timeday')||'{}'); td=m[todayStr()]||0;}catch(e){}
+  document.getElementById('parentBody').innerHTML=`<div>
+    <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="font-family:var(--head);color:var(--purple)">👨‍👩‍👧 Parents' Corner</h2><button class="kbtn" onclick="closeParent()" style="background:#EDE7F7;border-radius:12px;padding:8px 12px;font-weight:800">✕</button></div>
+    <div style="display:flex;gap:8px;margin:12px 0">
+      <div class="statcard" style="flex:1"><div class="sv">${fmtTime(getTotalTime())}</div><div class="sl">Total time</div></div>
+      <div class="statcard" style="flex:1"><div class="sv">${fmtTime(td)}</div><div class="sl">Today</div></div>
+      <div class="statcard" style="flex:1"><div class="sv">${st.count}</div><div class="sl">Streak</div></div></div>
+    <div style="font-family:var(--head);font-weight:800;margin:10px 0 4px">Mastery by area</div>${sec}
+    <div style="font-family:var(--head);font-weight:800;margin:14px 0 4px">Needs more practice</div>${weakHtml}
+    <p style="font-size:12px;color:var(--muted);font-weight:700;margin-top:14px">Tip: short daily sessions (10–15 min) work best. Nudge the orange/red topics and celebrate streaks. Progress saves automatically on this device.</p>
+    </div>`; }
+
+/* ================= TRUE / FALSE ENGINE ================= */
+function startTF(key,topic){ G={key,topic,accent:topic.color,idx:0,stars:0,solved:false,wrongThis:false,firstTry:0}; renderTF(); }
+function renderTF(){ const {topic,accent,idx,stars}=G; const q=topic.questions[idx];
+  view.innerHTML=`<div class="screen">${gameHead(topic,accent,idx,topic.questions.length,stars)}
+    <div class="qcard"><div class="qrow"><p class="qtext">${q.q}</p>
+      <button class="kbtn readbtn" style="background:${accent}" onclick="speak(${JSON.stringify(q.q).replace(/"/g,'&quot;')})">🔊</button></div>
+      <div class="qbig">${q.big||''}</div></div>
+    <div class="bwrap" id="bw"></div>
+    <div style="display:flex;gap:12px">
+      <button class="kbtn opt" style="justify-content:center;background:#DCFCE7" onclick="answerTF(true)"><span class="oe">✅</span><span class="ot">True</span></button>
+      <button class="kbtn opt" style="justify-content:center;background:#FEE2E2" onclick="answerTF(false)"><span class="oe">❌</span><span class="ot">False</span></button></div></div>`;
+  G.wrongThis=false; setTimeout(()=>speak(q.q),300); }
+function answerTF(v){ if(G.solved) return; const q=G.topic.questions[G.idx]; pop(); const bw=document.getElementById('bw');
+  if(v===q.tf){ G.solved=true; G.stars++; if(!G.wrongThis)G.firstTry++; const pr=PRAISES[Math.floor(Math.random()*PRAISES.length)];
+    bw.innerHTML=`<div class="banner" style="background:#DCFCE7">${pr}</div>`; confetti(); happy(); speak((v?'True. ':'False. ')+pr,{pitch:1.3});
+    setTimeout(()=>{ if(G.idx+1<G.topic.questions.length){G.idx++;G.solved=false;renderTF();} else finish(G.topic.questions.length,G.firstTry); },1600);
+  } else { G.wrongThis=true; recordMiss(G.topic.id,G.idx); const ch=CHEERS[Math.floor(Math.random()*CHEERS.length)];
+    bw.innerHTML=`<div class="banner" style="background:#FEF3C7">${ch}</div>`; oops(); speak(ch); setTimeout(()=>{ if(bw) bw.innerHTML=''; },1200); } }
+
+/* ================= SMART PRACTICE & TIMED CHALLENGE ================= */
+let gTimer=null;
+function clearGTimer(){ if(gTimer){ clearInterval(gTimer); gTimer=null; } }
+function startGTimer(){ clearGTimer(); gTimer=setInterval(()=>{ if(!G||!G.timed){ clearGTimer(); return; } G.timeLeft--;
+  const el=document.getElementById('timer'); if(el) el.textContent='⏱️ '+G.timeLeft+'s';
+  if(G.timeLeft<=0){ clearGTimer(); finishCustom(G.topic.questions.length, G.firstTry, "Time's up! Great effort!"); } },1000); }
+function mcqTopicsFor(key){ const arr=[]; const secs=key?[key]:Object.keys(CONTENT); secs.forEach(k=>{ if(!CONTENT[k]) return; CONTENT[k].topics.forEach(t=>{ if(t.questions && (!t.type||t.type==='mcq'||t.type==='truefalse')) arr.push({k,t}); }); }); return arr; }
+function runSynthQuiz(topicObj, replayCall, timed){ showNav(false); window.scrollTo(0,0);
+  G={key:'__synth__', topic:topicObj, accent:topicObj.color, idx:0, stars:0, solved:false, wrongThis:false, firstTry:0, replay:replayCall};
+  if(timed){ G.timed=true; G.timeLeft=timed; startGTimer(); } renderQuiz(); }
+function startSmartPractice(key){ const p=getProg(); const miss=getMiss(); let pool=[];
+  mcqTopicsFor(key).forEach(({t})=>{ if(t.type==='truefalse') return; const m=miss[t.id]; if(m){ Object.keys(m).forEach(qi=>{ const q=t.questions[qi]; if(q) pool.push(q); }); } });
+  if(pool.length<6) mcqTopicsFor(key).forEach(({t})=>{ if(t.type==='truefalse')return; const pr=p[t.id]; if(pr&&pr.plays) t.questions.forEach(q=>pool.push(q)); });
+  if(pool.length<6) mcqTopicsFor(key).forEach(({t})=>{ if(t.type!=='truefalse') t.questions.forEach(q=>pool.push(q)); });
+  const qs=shuffle(pool).slice(0,8);
+  if(!qs.length){ speak("Play a few games first, then I can make a practice set!"); renderHome(); return; }
+  runSynthQuiz({id:'smart',title:'Smart Practice',emoji:'🎯',color:'#F5872A',questions:qs}, key?`startSmartPractice('${key}')`:'startSmartPractice()', 0); }
+function startChallenge(key){ let pool=[]; mcqTopicsFor(key).forEach(({t})=>{ if(t.type!=='truefalse') t.questions.forEach(q=>pool.push(q)); });
+  const qs=shuffle(pool).slice(0,12); if(!qs.length){ renderHome(); return; }
+  runSynthQuiz({id:'chal',title:'Timed Challenge',emoji:'⏱️',color:'#EC4899',questions:qs}, key?`startChallenge('${key}')`:'startChallengePick()', 60); }
+function startChallengePick(){ showNav(false); window.scrollTo(0,0);
+  const opts=Object.keys(CONTENT).map(k=>`<button class="kbtn world" onclick="startChallenge('${k}')"><span class="ic" style="background:${CONTENT[k].color}22">${CONTENT[k].emoji}</span><span><span class="t" style="color:${CONTENT[k].color}">${CONTENT[k].title}</span><span class="s">Beat the clock!</span></span><span class="go">›</span></button>`).join('');
+  view.innerHTML=`<div class="screen"><div class="hero" style="background:linear-gradient(135deg,#EC4899,#F0708F)"><h2>⏱️ Timed Challenge</h2><p>Answer as many as you can in 60 seconds!</p></div>
+    <div class="sec-title">Pick a world</div>${opts}
+    <button class="kbtn backbtn" onclick="renderHome()">‹ Back home</button></div>`; }
+
+/* ================= SETTINGS BUTTON HOOKS ================= */
+(function(){ const mb=document.getElementById('musicBtn'); if(mb) mb.addEventListener('click',function(){ musicOn=!musicOn; lsSet('ak_music',musicOn?'on':'off'); this.textContent=musicOn?'🎵 Music: On':'🔇 Music: Off'; if(musicOn) startMusic(); else stopMusic(); });
+  const pb=document.getElementById('parentBtn'); if(pb) pb.addEventListener('click',openParent);
+})();
+</script>
+
+<script>
+window.__CONTENT__ = {
+  /* ================= ALGORITHMS ================= */
+  algorithms:{ title:"Algorithms", subtitle:"Think like a computer!", emoji:"🧩", color:"#7C5CFC", topics:[
+    { id:"sequence", title:"Step by Step", emoji:"👣", color:"#7C5CFC", questions:[
+      {q:"To make a sandwich, what do you do FIRST?",big:"🥪",options:[{t:"Get the bread",d:"🍞"},{t:"Take a big bite",d:"😋"},{t:"Wash the plate",d:"🧽"}],correct:0},
+      {q:"Which happens FIRST in the day?",big:"🌞",options:[{t:"Wake up",d:"😃"},{t:"Go to sleep",d:"😴"}],correct:0},
+      {q:"Wearing shoes: what comes first?",big:"👟",options:[{t:"Put on socks",d:"🧦"},{t:"Tie the laces",d:"🎀"}],correct:0},
+      {q:"Planting a seed: what comes first?",big:"🌱",options:[{t:"Dig a hole",d:"🕳️"},{t:"Pick the flower",d:"🌸"}],correct:0},
+      {q:"Brushing teeth: what comes first?",big:"🪥",options:[{t:"Put on toothpaste",d:"🧴"},{t:"Rinse your mouth",d:"💧"}],correct:0},
+      {q:"Which comes LAST when baking a cake?",big:"🎂",options:[{t:"Eat the cake",d:"😋"},{t:"Mix the batter",d:"🥣"}],correct:0},
+      {q:"Getting ready for school, what is FIRST?",big:"🎒",options:[{t:"Wake up",d:"⏰"},{t:"Walk to class",d:"🏫"}],correct:0},
+      {q:"To drink juice, what comes first?",big:"🧃",options:[{t:"Open the box",d:"📦"},{t:"Throw it away",d:"🗑️"}],correct:0},
+      {q:"Washing hands: what is the LAST step?",big:"🧼",options:[{t:"Dry your hands",d:"🤲"},{t:"Turn on the tap",d:"🚰"}],correct:0},
+      {q:"To fly a kite, what comes first?",big:"🪁",options:[{t:"Hold the string",d:"🧵"},{t:"Wind it up to stop",d:"🛑"}],correct:0}
+    ]},
+    { id:"pattern", title:"Patterns", emoji:"🔁", color:"#6D6BFC", questions:[
+      {q:"What comes next?",big:"🔴 🔵 🔴 🔵 ❓",options:[{t:"Red",d:"🔴"},{t:"Blue",d:"🔵"},{t:"Green",d:"🟢"}],correct:0},
+      {q:"What comes next?",big:"⭐ 🌙 ⭐ 🌙 ❓",options:[{t:"Star",d:"⭐"},{t:"Moon",d:"🌙"}],correct:0},
+      {q:"What comes next?",big:"🐶 🐱 🐶 🐱 ❓",options:[{t:"Dog",d:"🐶"},{t:"Cat",d:"🐱"}],correct:0},
+      {q:"What comes next?",big:"🔺 🔺 🟦 🔺 🔺 ❓",options:[{t:"Blue square",d:"🟦"},{t:"Triangle",d:"🔺"}],correct:1},
+      {q:"What comes next?",big:"🍎 🍎 🍌 🍎 🍎 ❓",options:[{t:"Banana",d:"🍌"},{t:"Apple",d:"🍎"}],correct:0},
+      {q:"Small, big, small — what's next?",big:"🐜 🐘 🐜 ❓",options:[{t:"Big elephant",d:"🐘"},{t:"Small ant",d:"🐜"}],correct:0},
+      {q:"What comes next?",big:"1️⃣ 2️⃣ 3️⃣ 1️⃣ 2️⃣ ❓",options:[{t:"Three",d:"3️⃣"},{t:"One",d:"1️⃣"}],correct:0},
+      {q:"What comes next?",big:"👏 🦶 👏 🦶 ❓",options:[{t:"Clap",d:"👏"},{t:"Stomp",d:"🦶"}],correct:0},
+      {q:"ABB pattern — what's next?",big:"🟥 🟨 🟨 🟥 🟨 ❓",options:[{t:"Yellow",d:"🟨"},{t:"Red",d:"🟥"}],correct:0},
+      {q:"What comes next?",big:"🌸🌸🌸 🍃 🌸🌸🌸 ❓",options:[{t:"Leaf",d:"🍃"},{t:"Flower",d:"🌸"}],correct:0},
+      {q:"Which shape is MISSING?",big:"⬛ ❓ ⬛ 🔺 ⬛ 🔺",options:[{t:"Triangle",d:"🔺"},{t:"Square",d:"⬛"}],correct:0},
+      {q:"What comes next?",big:"🚗 🚕 🚗 🚕 ❓",options:[{t:"Blue car",d:"🚗"},{t:"Taxi",d:"🚕"}],correct:0}
+    ]},
+    { id:"sort", title:"Sorting Sizes", emoji:"📏", color:"#4CC0B0", questions:[
+      {q:"Which is the BIGGEST?",big:"🐘 🐭 🐜",options:[{t:"Elephant",d:"🐘"},{t:"Mouse",d:"🐭"},{t:"Ant",d:"🐜"}],correct:0},
+      {q:"Which is the SMALLEST?",big:"🌳 🌷 🍄",options:[{t:"Tree",d:"🌳"},{t:"Mushroom",d:"🍄"},{t:"Flower",d:"🌷"}],correct:2},
+      {q:"Which is the TALLEST?",big:"🦒 🐕 🐈",options:[{t:"Giraffe",d:"🦒"},{t:"Dog",d:"🐕"},{t:"Cat",d:"🐈"}],correct:0},
+      {q:"Small to big — which is first?",big:"🏀 ⚽ 🎾",options:[{t:"Tennis ball",d:"🎾"},{t:"Basketball",d:"🏀"}],correct:0},
+      {q:"Which is the SHORTEST?",big:"📏 ✏️ 🖍️",options:[{t:"Crayon",d:"🖍️"},{t:"Ruler",d:"📏"}],correct:0},
+      {q:"Which is the HEAVIEST?",big:"🪨 🪶",options:[{t:"Rock",d:"🪨"},{t:"Feather",d:"🪶"}],correct:0},
+      {q:"Which is the LONGEST?",big:"🐍 🐛 🐌",options:[{t:"Snake",d:"🐍"},{t:"Worm",d:"🐛"},{t:"Snail",d:"🐌"}],correct:0},
+      {q:"Which holds the MOST?",big:"🛁 🥛",options:[{t:"Bathtub",d:"🛁"},{t:"Glass",d:"🥛"}],correct:0},
+      {q:"Big to small — which is LAST?",big:"🍉 🍎 🍒",options:[{t:"Cherry",d:"🍒"},{t:"Watermelon",d:"🍉"}],correct:0},
+      {q:"Which is the WIDEST?",big:"🚌 🚲",options:[{t:"Bus",d:"🚌"},{t:"Bicycle",d:"🚲"}],correct:0}
+    ]},
+    { id:"loop", title:"Loops (Repeat)", emoji:"♾️", color:"#F0A03C", questions:[
+      {q:"A loop means doing something...?",big:"🔁",options:[{t:"Again and again",d:"🔁"},{t:"Only once",d:"1️⃣"},{t:"Never",d:"🚫"}],correct:0},
+      {q:"Clap, clap, clap. How many claps?",big:"👏 👏 👏",options:[{t:"Three",d:"3️⃣"},{t:"Two",d:"2️⃣"}],correct:0},
+      {q:"The wheel goes round and round. That is a...?",big:"🎡",options:[{t:"Loop",d:"🔁"},{t:"Line",d:"➖"}],correct:0},
+      {q:"Which shows 4 jumps?",big:"🦘",options:[{t:"Jump jump jump jump",d:"4️⃣"},{t:"Jump jump",d:"2️⃣"}],correct:0},
+      {q:"Every day the sun rises. That happens...?",big:"🌅",options:[{t:"Again and again",d:"🔁"},{t:"Once ever",d:"1️⃣"}],correct:0},
+      {q:"Repeat 'hop' 3 times. How many hops?",big:"🐰",options:[{t:"Three hops",d:"3️⃣"},{t:"Five hops",d:"5️⃣"}],correct:0},
+      {q:"A song's chorus repeats. That is like a...?",big:"🎵",options:[{t:"Loop",d:"🔁"},{t:"Stop",d:"🛑"}],correct:0},
+      {q:"Brush teeth every morning AND night — how many times a day?",big:"🪥",options:[{t:"Two times",d:"2️⃣"},{t:"One time",d:"1️⃣"}],correct:0}
+    ]},
+    { id:"ifthen", title:"If — Then Logic", emoji:"🤔", color:"#EC4899", questions:[
+      {q:"IF it rains, THEN take an...?",big:"🌧️",options:[{t:"Umbrella",d:"☂️"},{t:"Sunglasses",d:"🕶️"}],correct:0},
+      {q:"IF the light is red, THEN you...?",big:"🚦",options:[{t:"Stop",d:"🛑"},{t:"Run fast",d:"🏃"}],correct:0},
+      {q:"IF you are sleepy, THEN go to...?",big:"😴",options:[{t:"Bed",d:"🛏️"},{t:"The park",d:"🛝"}],correct:0},
+      {q:"IF it is cold, THEN wear a...?",big:"❄️",options:[{t:"Warm jacket",d:"🧥"},{t:"Swimsuit",d:"🩱"}],correct:0},
+      {q:"IF you are hungry, THEN you...?",big:"🍽️",options:[{t:"Eat food",d:"🍎"},{t:"Sleep",d:"😴"}],correct:0},
+      {q:"IF light is green, THEN cars can...?",big:"🟢",options:[{t:"Go",d:"➡️"},{t:"Stop",d:"🛑"}],correct:0},
+      {q:"IF your hands are dirty, THEN you...?",big:"🖐️",options:[{t:"Wash them",d:"🧼"},{t:"Eat",d:"🍕"}],correct:0},
+      {q:"IF the ball comes to you, THEN you...?",big:"⚽",options:[{t:"Catch or kick it",d:"🥅"},{t:"Close your eyes",d:"🙈"}],correct:0},
+      {q:"IF it is dark, THEN turn on the...?",big:"🌚",options:[{t:"Light",d:"💡"},{t:"Fan",d:"🌀"}],correct:0},
+      {q:"IF you break a toy, THEN you should...?",big:"🧸",options:[{t:"Tell a grown-up",d:"🧑"},{t:"Hide it",d:"🙈"}],correct:0}
+    ]},
+    { id:"direction", title:"Which Way?", emoji:"🧭", color:"#3B9BE0", questions:[
+      {q:"The arrow points which way?",big:"➡️",options:[{t:"Right",d:"👉"},{t:"Left",d:"👈"}],correct:0},
+      {q:"The arrow points which way?",big:"⬆️",options:[{t:"Up",d:"☝️"},{t:"Down",d:"👇"}],correct:0},
+      {q:"To go UP the stairs you go...?",big:"🪜",options:[{t:"Up",d:"⬆️"},{t:"Down",d:"⬇️"}],correct:0},
+      {q:"The bird flies which way?",big:"🐦⬆️",options:[{t:"Up in the sky",d:"⬆️"},{t:"Down a hole",d:"⬇️"}],correct:0},
+      {q:"Which way does 👉 point?",big:"👉",options:[{t:"Right",d:"➡️"},{t:"Left",d:"⬅️"}],correct:0},
+      {q:"The fish swims which way?",big:"🐟⬇️",options:[{t:"Down into water",d:"⬇️"},{t:"Up to the moon",d:"🌙"}],correct:0},
+      {q:"To reach the top of a hill you go...?",big:"⛰️",options:[{t:"Up",d:"⬆️"},{t:"Down",d:"⬇️"}],correct:0},
+      {q:"Turn the page to the RIGHT means...?",big:"📖",options:[{t:"Go forward",d:"➡️"},{t:"Go back",d:"⬅️"}],correct:0}
+    ]},
+    { id:"order-count", title:"Order Game", emoji:"🎮", color:"#7C5CFC", type:"order", rounds:[
+      {q:"Tap the numbers 1 to 5 in order!",items:[{d:"1",v:1},{d:"2",v:2},{d:"3",v:3},{d:"4",v:4},{d:"5",v:5}]},
+      {q:"Tap from smallest to biggest animal!",items:[{d:"🐜",v:1,say:"tiny ant"},{d:"🐭",v:2,say:"mouse"},{d:"🐶",v:3,say:"dog"},{d:"🐘",v:4,say:"big elephant"}]},
+      {q:"Tap 6, 7, 8, 9 in order!",items:[{d:"6",v:6},{d:"7",v:7},{d:"8",v:8},{d:"9",v:9}]},
+      {q:"Tap from shortest to tallest!",items:[{d:"🐈",v:1,say:"short cat"},{d:"🐕",v:2,say:"dog"},{d:"🦒",v:3,say:"tall giraffe"}]},
+      {q:"Tap the day steps in order!",items:[{d:"🌅",v:1,say:"morning"},{d:"☀️",v:2,say:"noon"},{d:"🌆",v:3,say:"evening"},{d:"🌙",v:4,say:"night"}]}
+    ]}
+  ]},
+
+  /* ================= DATA STRUCTURES ================= */
+  data:{ title:"Data Boxes", subtitle:"How we store things!", emoji:"📦", color:"#14B8A6", topics:[
+    { id:"stack", title:"Stacks", emoji:"🥞", color:"#14B8A6", questions:[
+      {q:"Plates are stacked. Which do you take first?",big:"🍽️\n🍽️\n🍽️",options:[{t:"The top one",d:"⬆️🍽️"},{t:"The bottom one",d:"⬇️🍽️"}],correct:0},
+      {q:"You pile books. The LAST book goes...?",big:"📚",options:[{t:"On top",d:"⬆️"},{t:"At the bottom",d:"⬇️"}],correct:0},
+      {q:"Pancakes are stacked. Which is eaten first?",big:"🥞",options:[{t:"The top pancake",d:"⬆️"},{t:"The bottom pancake",d:"⬇️"}],correct:0},
+      {q:"In a stack we take from the...?",big:"📦",options:[{t:"Top",d:"⬆️"},{t:"Middle",d:"↔️"}],correct:0},
+      {q:"Stack 3 blocks. Which went on LAST?",big:"🧱",options:[{t:"Top block",d:"⬆️"},{t:"Bottom block",d:"⬇️"}],correct:0},
+      {q:"A stack of cups: to reach the bottom cup you must move...?",big:"🥤",options:[{t:"The top cups first",d:"⬆️"},{t:"Nothing",d:"🚫"}],correct:0},
+      {q:"The word for adding to the top of a stack is...?",big:"⬆️📦",options:[{t:"Push (put on top)",d:"⬆️"},{t:"Throw away",d:"🗑️"}],correct:0},
+      {q:"Taking the top item off a stack is called...?",big:"⬆️📦",options:[{t:"Pop (take the top)",d:"👆"},{t:"Bury it",d:"⬇️"}],correct:0}
+    ]},
+    { id:"queue", title:"Queues (Lines)", emoji:"🚶", color:"#3B82F6", questions:[
+      {q:"Kids line up for the slide. Who goes first?",big:"🧒 🧒 🧒",options:[{t:"First in line",d:"1️⃣"},{t:"Last in line",d:"🔚"}],correct:0},
+      {q:"At the ice cream stall, who is served first?",big:"🍦",options:[{t:"Person in front",d:"🥇"},{t:"Person at back",d:"🔚"}],correct:0},
+      {q:"A new kid joins the line. Where do they stand?",big:"🚶",options:[{t:"At the back",d:"🔚"},{t:"In front",d:"1️⃣"}],correct:0},
+      {q:"In a line, the FIRST person leaves...?",big:"🚌",options:[{t:"First",d:"1️⃣"},{t:"Last",d:"🔚"}],correct:0},
+      {q:"Who waits the LONGEST in a line?",big:"⏳",options:[{t:"The last person",d:"🔚"},{t:"The first person",d:"1️⃣"}],correct:0},
+      {q:"A queue works like: first in, first...?",big:"➡️",options:[{t:"Out",d:"🚪"},{t:"Back",d:"🔙"}],correct:0},
+      {q:"3 cars wait at a toll. Which passes first?",big:"🚗🚗🚗",options:[{t:"The front car",d:"1️⃣"},{t:"The back car",d:"🔚"}],correct:0},
+      {q:"Fair lines help us take...?",big:"🤝",options:[{t:"Turns",d:"🔄"},{t:"Everything at once",d:"❌"}],correct:0}
+    ]},
+    { id:"group", title:"Grouping (Sets)", emoji:"🧺", color:"#EC4899", questions:[
+      {q:"Which does NOT belong with fruits?",big:"🍎 🍌 🍇 🚗",options:[{t:"The car",d:"🚗"},{t:"The banana",d:"🍌"},{t:"The apple",d:"🍎"}],correct:0},
+      {q:"Which is a fruit?",big:"🍓 ⚽ 🚕",options:[{t:"Strawberry",d:"🍓"},{t:"Football",d:"⚽"},{t:"Taxi",d:"🚕"}],correct:0},
+      {q:"Which belongs with animals?",big:"🐄 🌈 ☂️",options:[{t:"Cow",d:"🐄"},{t:"Rainbow",d:"🌈"},{t:"Umbrella",d:"☂️"}],correct:0},
+      {q:"Which is a vehicle?",big:"🚌 🍎 🐟",options:[{t:"Bus",d:"🚌"},{t:"Apple",d:"🍎"},{t:"Fish",d:"🐟"}],correct:0},
+      {q:"Which does NOT belong with clothes?",big:"👕 👖 🍕",options:[{t:"Pizza",d:"🍕"},{t:"Shirt",d:"👕"}],correct:0},
+      {q:"Which one is a toy?",big:"🧸 🥦 🔑",options:[{t:"Teddy",d:"🧸"},{t:"Broccoli",d:"🥦"},{t:"Key",d:"🔑"}],correct:0},
+      {q:"Which belongs with things in the sky?",big:"☁️ 🪑 🍞",options:[{t:"Cloud",d:"☁️"},{t:"Chair",d:"🪑"},{t:"Bread",d:"🍞"}],correct:0},
+      {q:"Which does NOT belong with the sea?",big:"🐠 🐙 🐘",options:[{t:"Elephant",d:"🐘"},{t:"Octopus",d:"🐙"}],correct:0},
+      {q:"Which belongs in the kitchen?",big:"🍳 🛏️ 🎸",options:[{t:"Frying pan",d:"🍳"},{t:"Bed",d:"🛏️"},{t:"Guitar",d:"🎸"}],correct:0}
+    ]},
+    { id:"position", title:"Positions", emoji:"🔢", color:"#F0A03C", questions:[
+      {q:"Which animal is SECOND?",big:"🐶 🐱 🐭 🐰",options:[{t:"Cat",d:"🐱"},{t:"Dog",d:"🐶"},{t:"Rabbit",d:"🐰"}],correct:0},
+      {q:"Which fruit is FIRST?",big:"🍎 🍊 🍇",options:[{t:"Apple",d:"🍎"},{t:"Grapes",d:"🍇"}],correct:0},
+      {q:"Which star is LAST?",big:"⭐ ⭐ 🌟",options:[{t:"Gold star",d:"🌟"},{t:"First star",d:"⭐"}],correct:0},
+      {q:"Which is THIRD?",big:"🔵 🟢 🔴 🟡",options:[{t:"Red",d:"🔴"},{t:"Green",d:"🟢"},{t:"Blue",d:"🔵"}],correct:0},
+      {q:"Who is in the MIDDLE?",big:"🧒 👦 🧒",options:[{t:"The middle child",d:"👦"},{t:"The first",d:"1️⃣"}],correct:0},
+      {q:"Which car is FIRST in the race?",big:"🏎️ 🚗 🚙",options:[{t:"Race car in front",d:"🏎️"},{t:"Last car",d:"🚙"}],correct:0},
+      {q:"Which is FOURTH?",big:"🍎 🍌 🍇 🍓 🍊",options:[{t:"Strawberry",d:"🍓"},{t:"Grapes",d:"🍇"}],correct:0},
+      {q:"On the podium, who is the WINNER (first)?",big:"🥇🥈🥉",options:[{t:"Gold medal",d:"🥇"},{t:"Bronze medal",d:"🥉"}],correct:0}
+    ]},
+    { id:"count-boxes", title:"Counting Boxes", emoji:"🧮", color:"#4CC0B0", questions:[
+      {q:"How many balls?",big:"⚽ ⚽ ⚽ ⚽",options:[{t:"Four",d:"4"},{t:"Three",d:"3"},{t:"Five",d:"5"}],correct:0},
+      {q:"How many apples?",big:"🍎 🍎",options:[{t:"Two",d:"2"},{t:"One",d:"1"}],correct:0},
+      {q:"How many stars?",big:"⭐ ⭐ ⭐ ⭐ ⭐",options:[{t:"Five",d:"5"},{t:"Four",d:"4"},{t:"Six",d:"6"}],correct:0},
+      {q:"Which box has MORE?",big:"🍬🍬 · 🍬🍬🍬🍬",options:[{t:"The box with four",d:"4️⃣"},{t:"The box with two",d:"2️⃣"}],correct:0},
+      {q:"Which box has FEWER?",big:"🐟🐟🐟 · 🐟",options:[{t:"The box with one",d:"1️⃣"},{t:"The box with three",d:"3️⃣"}],correct:0},
+      {q:"How many fingers? ✋",big:"✋",options:[{t:"Five",d:"5"},{t:"Four",d:"4"}],correct:0},
+      {q:"How many wheels?",big:"🚲",options:[{t:"Two",d:"2"},{t:"Four",d:"4"}],correct:0},
+      {q:"How many eyes do you have?",big:"👀",options:[{t:"Two",d:"2"},{t:"One",d:"1"}],correct:0}
+    ]},
+    { id:"mem-numq", title:"Memory: Number Match", emoji:"🧠", color:"#8B5CF6", type:"memory", intro:"Match the number to how many!", pairs:[
+      {0:"1",1:"🍎",say:"one",say2:"one apple"},
+      {0:"2",1:"🍌🍌",say:"two",say2:"two bananas"},
+      {0:"3",1:"⭐⭐⭐",say:"three",say2:"three stars"},
+      {0:"4",1:"🐟🐟🐟🐟",say:"four",say2:"four fish"}
+    ]},
+    { id:"tap-count", title:"Tap the Right Number", emoji:"👆", color:"#F0A03C", type:"tapcount", rounds:[
+      {q:"Tap 3 apples!",emoji:"🍎",n:3,total:6},
+      {q:"Tap 2 stars!",emoji:"⭐",n:2,total:6},
+      {q:"Tap 5 balls!",emoji:"⚽",n:5,total:8},
+      {q:"Tap 4 flowers!",emoji:"🌸",n:4,total:7}
+    ]}
+  ]},
+
+  /* ================= OLYMPIAD ================= */
+  olympiad:{ title:"Olympiad", subtitle:"Math · Science · English · Reasoning", emoji:"🏆", color:"#F5A623", topics:[
+    /* -------- MATH -------- */
+    { group:"🔢 Math", id:"counting", title:"Counting", emoji:"🔢", color:"#3B82F6", questions:[
+      {q:"Count the apples. How many?",big:"🍎 🍎 🍎",options:[{t:"Three",d:"3"},{t:"Two",d:"2"},{t:"Four",d:"4"}],correct:0},
+      {q:"How many ducks?",big:"🦆 🦆 🦆 🦆",options:[{t:"Four",d:"4"},{t:"Five",d:"5"},{t:"Three",d:"3"}],correct:0},
+      {q:"How many candles?",big:"🕯️🕯️🕯️🕯️🕯️",options:[{t:"Five",d:"5"},{t:"Six",d:"6"}],correct:0},
+      {q:"Count by twos: 2, 4, ...?",big:"2 · 4 · ❓",options:[{t:"Six",d:"6"},{t:"Five",d:"5"}],correct:0},
+      {q:"How many wheels on a car?",big:"🚗",options:[{t:"Four",d:"4"},{t:"Two",d:"2"}],correct:0},
+      {q:"How many is one dozen?",big:"🥚×12",options:[{t:"Twelve",d:"12"},{t:"Ten",d:"10"}],correct:0},
+      {q:"How many fingers on TWO hands?",big:"🙌",options:[{t:"Ten",d:"10"},{t:"Five",d:"5"}],correct:0},
+      {q:"Count backwards: 3, 2, ...?",big:"3 · 2 · ❓",options:[{t:"One",d:"1"},{t:"Four",d:"4"}],correct:0},
+      {q:"How many legs does a dog have?",big:"🐕",options:[{t:"Four",d:"4"},{t:"Two",d:"2"}],correct:0},
+      {q:"Count by tens: 10, 20, ...?",big:"10 · 20 · ❓",options:[{t:"Thirty",d:"30"},{t:"Twenty-one",d:"21"}],correct:0}
+    ]},
+    { group:"🔢 Math", id:"addsub", title:"Add & Take Away", emoji:"➕", color:"#3B82F6", questions:[
+      {q:"Two plus one?",big:"2 ➕ 1 = ❓",options:[{t:"Three",d:"3"},{t:"Five",d:"5"},{t:"One",d:"1"}],correct:0},
+      {q:"Three plus two?",big:"3 ➕ 2 = ❓",options:[{t:"Five",d:"5"},{t:"Four",d:"4"},{t:"Six",d:"6"}],correct:0},
+      {q:"4 balloons, 1 pops. How many left?",big:"🎈🎈🎈🎈 ➖1",options:[{t:"Three",d:"3"},{t:"Five",d:"5"}],correct:0},
+      {q:"One plus one?",big:"1 ➕ 1 = ❓",options:[{t:"Two",d:"2"},{t:"Three",d:"3"}],correct:0},
+      {q:"5 cookies, eat 2. How many left?",big:"🍪×5 ➖2",options:[{t:"Three",d:"3"},{t:"Two",d:"2"}],correct:0},
+      {q:"Zero plus four?",big:"0 ➕ 4 = ❓",options:[{t:"Four",d:"4"},{t:"Zero",d:"0"}],correct:0},
+      {q:"Four plus three?",big:"4 ➕ 3 = ❓",options:[{t:"Seven",d:"7"},{t:"Six",d:"6"}],correct:0},
+      {q:"6 take away 3?",big:"6 ➖ 3 = ❓",options:[{t:"Three",d:"3"},{t:"Two",d:"2"}],correct:0},
+      {q:"Five plus five?",big:"5 ➕ 5 = ❓",options:[{t:"Ten",d:"10"},{t:"Nine",d:"9"}],correct:0},
+      {q:"10 take away 1?",big:"10 ➖ 1 = ❓",options:[{t:"Nine",d:"9"},{t:"Eleven",d:"11"}],correct:0},
+      {q:"Double 3 (3 + 3)?",big:"3 ➕ 3 = ❓",options:[{t:"Six",d:"6"},{t:"Five",d:"5"}],correct:0},
+      {q:"7 take away 4?",big:"7 ➖ 4 = ❓",options:[{t:"Three",d:"3"},{t:"Four",d:"4"}],correct:0}
+    ]},
+    { group:"🔢 Math", id:"shapes", title:"Shapes", emoji:"🔷", color:"#3B82F6", questions:[
+      {q:"Which shape is a circle?",big:"⭕ 🔺 ⬛",options:[{t:"Circle",d:"⭕"},{t:"Triangle",d:"🔺"},{t:"Square",d:"⬛"}],correct:0},
+      {q:"How many sides has a triangle?",big:"🔺",options:[{t:"Three",d:"3"},{t:"Four",d:"4"}],correct:0},
+      {q:"How many sides has a square?",big:"⬛",options:[{t:"Four",d:"4"},{t:"Three",d:"3"}],correct:0},
+      {q:"Which is round like a ball?",big:"⚽",options:[{t:"Circle",d:"⭕"},{t:"Square",d:"⬛"}],correct:0},
+      {q:"A window is often a...?",big:"🪟",options:[{t:"Square",d:"⬛"},{t:"Circle",d:"⭕"}],correct:0},
+      {q:"Which shape has NO corners?",big:"⭕ vs ⬛",options:[{t:"Circle",d:"⭕"},{t:"Square",d:"⬛"}],correct:0},
+      {q:"A slice of pizza looks like a...?",big:"🍕",options:[{t:"Triangle",d:"🔺"},{t:"Circle",d:"⭕"}],correct:0},
+      {q:"How many corners has a square?",big:"⬛",options:[{t:"Four",d:"4"},{t:"Three",d:"3"}],correct:0},
+      {q:"Which shape is a star?",big:"⭐ ⬛ ⭕",options:[{t:"Star",d:"⭐"},{t:"Square",d:"⬛"}],correct:0},
+      {q:"A ball is shaped like a...?",big:"🏀",options:[{t:"Sphere (round ball)",d:"⚫"},{t:"Box",d:"📦"}],correct:0}
+    ]},
+    { group:"🔢 Math", id:"numorder", title:"Number Order", emoji:"🔢", color:"#3B82F6", questions:[
+      {q:"What comes AFTER 4?",big:"4 ➡️ ❓",options:[{t:"Five",d:"5"},{t:"Three",d:"3"}],correct:0},
+      {q:"What comes BEFORE 7?",big:"❓ ⬅️ 7",options:[{t:"Six",d:"6"},{t:"Eight",d:"8"}],correct:0},
+      {q:"Bigger: 5 or 3?",big:"5 ❓ 3",options:[{t:"Five",d:"5"},{t:"Three",d:"3"}],correct:0},
+      {q:"Smaller: 8 or 2?",big:"8 ❓ 2",options:[{t:"Two",d:"2"},{t:"Eight",d:"8"}],correct:0},
+      {q:"What comes BETWEEN 5 and 7?",big:"5 · ❓ · 7",options:[{t:"Six",d:"6"},{t:"Eight",d:"8"}],correct:0},
+      {q:"Which is BIGGEST?",big:"3 · 9 · 5",options:[{t:"Nine",d:"9"},{t:"Five",d:"5"},{t:"Three",d:"3"}],correct:0},
+      {q:"What comes AFTER 9?",big:"9 ➡️ ❓",options:[{t:"Ten",d:"10"},{t:"Eight",d:"8"}],correct:0},
+      {q:"Which is SMALLEST?",big:"6 · 2 · 8",options:[{t:"Two",d:"2"},{t:"Six",d:"6"}],correct:0},
+      {q:"Put in order: which is FIRST (smallest)?",big:"7 · 1 · 4",options:[{t:"One",d:"1"},{t:"Seven",d:"7"}],correct:0},
+      {q:"What comes BETWEEN 8 and 10?",big:"8 · ❓ · 10",options:[{t:"Nine",d:"9"},{t:"Seven",d:"7"}],correct:0}
+    ]},
+    { group:"🔢 Math", id:"placevalue", title:"Tens & Ones", emoji:"🔟", color:"#3B82F6", questions:[
+      {q:"How many tens in 10?",big:"🔟",options:[{t:"One ten",d:"1"},{t:"Two tens",d:"2"}],correct:0},
+      {q:"1 ten and 2 ones make...?",big:"🔟 + 1 1",options:[{t:"Twelve",d:"12"},{t:"Twenty-one",d:"21"}],correct:0},
+      {q:"The number 15 has how many tens?",big:"15",options:[{t:"One ten",d:"1"},{t:"Five tens",d:"5"}],correct:0},
+      {q:"2 tens make...?",big:"🔟🔟",options:[{t:"Twenty",d:"20"},{t:"Twelve",d:"12"}],correct:0},
+      {q:"In 13, the ones digit is...?",big:"1 3",options:[{t:"Three",d:"3"},{t:"One",d:"1"}],correct:0},
+      {q:"Which number is a 'teen'?",big:"❓",options:[{t:"Fourteen",d:"14"},{t:"Forty",d:"40"}],correct:0}
+    ]},
+    { group:"🔢 Math", id:"measuremoney", title:"Measure & Money", emoji:"📏", color:"#3B82F6", questions:[
+      {q:"Which is LONGER?",big:"🚂 vs 🚗",options:[{t:"Train",d:"🚂"},{t:"Car",d:"🚗"}],correct:0},
+      {q:"Which is HEAVIER?",big:"🐘 vs 🐁",options:[{t:"Elephant",d:"🐘"},{t:"Mouse",d:"🐁"}],correct:0},
+      {q:"Which holds MORE water?",big:"🪣 vs 🥤",options:[{t:"Bucket",d:"🪣"},{t:"Cup",d:"🥤"}],correct:0},
+      {q:"We buy things using...?",big:"🛒",options:[{t:"Money",d:"💰"},{t:"Toys",d:"🧸"}],correct:0},
+      {q:"Which is LIGHTER?",big:"🎈 vs 📚",options:[{t:"Balloon",d:"🎈"},{t:"Books",d:"📚"}],correct:0},
+      {q:"Which is SHORTER?",big:"🖍️ vs 📏",options:[{t:"Crayon",d:"🖍️"},{t:"Ruler",d:"📏"}],correct:0},
+      {q:"Which is the coldest?",big:"🧊 vs ☕",options:[{t:"Ice",d:"🧊"},{t:"Hot tea",d:"☕"}],correct:0},
+      {q:"Which coin is worth more, if one is bigger value?",big:"🪙",options:[{t:"We use money to pay",d:"💵"},{t:"We use leaves",d:"🍃"}],correct:0},
+      {q:"Which is FASTER?",big:"🐆 vs 🐢",options:[{t:"Cheetah",d:"🐆"},{t:"Turtle",d:"🐢"}],correct:0}
+    ]},
+    { group:"🔢 Math", id:"timedays", title:"Time & Days", emoji:"🕐", color:"#3B82F6", questions:[
+      {q:"How many days in a week?",big:"📅",options:[{t:"Seven",d:"7"},{t:"Five",d:"5"}],correct:0},
+      {q:"We sleep at...?",big:"🌙",options:[{t:"Night",d:"🌙"},{t:"Noon",d:"☀️"}],correct:0},
+      {q:"The sun is highest at...?",big:"☀️",options:[{t:"Noon",d:"🕛"},{t:"Midnight",d:"🌌"}],correct:0},
+      {q:"Which comes first, morning or evening?",big:"🌅 · 🌆",options:[{t:"Morning",d:"🌅"},{t:"Evening",d:"🌆"}],correct:0},
+      {q:"The clock's SHORT hand shows the...?",big:"🕐",options:[{t:"Hour",d:"⏰"},{t:"Second",d:"⏱️"}],correct:0},
+      {q:"How many months in a year?",big:"📆",options:[{t:"Twelve",d:"12"},{t:"Seven",d:"7"}],correct:0},
+      {q:"What day comes after Sunday?",big:"📅",options:[{t:"Monday",d:"1️⃣"},{t:"Friday",d:"5️⃣"}],correct:0}
+    ]},
+    { group:"🔢 Math", id:"numtrain", title:"Number Train 🎮", emoji:"🚂", color:"#3B82F6", type:"order", rounds:[
+      {q:"Build the train! Tap 1 to 4 in order.",items:[{d:"1",v:1},{d:"2",v:2},{d:"3",v:3},{d:"4",v:4}]},
+      {q:"Tap 5, 6, 7, 8 in order!",items:[{d:"5",v:5},{d:"6",v:6},{d:"7",v:7},{d:"8",v:8}]},
+      {q:"Count by twos! Tap 2, 4, 6, 8.",items:[{d:"2",v:2,say:"two"},{d:"4",v:4,say:"four"},{d:"6",v:6,say:"six"},{d:"8",v:8,say:"eight"}]},
+      {q:"Tap 7, 8, 9, 10 in order!",items:[{d:"7",v:7},{d:"8",v:8},{d:"9",v:9},{d:"10",v:10}]},
+      {q:"Count by tens! Tap 10, 20, 30, 40.",items:[{d:"10",v:10,say:"ten"},{d:"20",v:20,say:"twenty"},{d:"30",v:30,say:"thirty"},{d:"40",v:40,say:"forty"}]}
+    ]},
+
+    /* -------- SCIENCE -------- */
+    { group:"🔬 Science", id:"animals", title:"Animals", emoji:"🐾", color:"#22C55E", questions:[
+      {q:"Which animal says moo?",big:"🐄 🐱 🐶",options:[{t:"Cow",d:"🐄"},{t:"Cat",d:"🐱"},{t:"Dog",d:"🐶"}],correct:0},
+      {q:"Which one can fly?",big:"🐦 🐟 🐘",options:[{t:"Bird",d:"🐦"},{t:"Fish",d:"🐟"},{t:"Elephant",d:"🐘"}],correct:0},
+      {q:"Which lives in water?",big:"🐟 🐈 🐎",options:[{t:"Fish",d:"🐟"},{t:"Cat",d:"🐈"},{t:"Horse",d:"🐎"}],correct:0},
+      {q:"Which animal hops?",big:"🐰 🐢 🐍",options:[{t:"Rabbit",d:"🐰"},{t:"Turtle",d:"🐢"}],correct:0},
+      {q:"Which gives us honey?",big:"🐝 🐜 🕷️",options:[{t:"Bee",d:"🐝"},{t:"Ant",d:"🐜"}],correct:0},
+      {q:"Who is the king of the jungle?",big:"🦁 🐭 🐇",options:[{t:"Lion",d:"🦁"},{t:"Mouse",d:"🐭"}],correct:0},
+      {q:"Which animal has a long trunk?",big:"🐘 🐴 🐐",options:[{t:"Elephant",d:"🐘"},{t:"Horse",d:"🐴"}],correct:0},
+      {q:"A baby dog is called a...?",big:"🐕",options:[{t:"Puppy",d:"🐶"},{t:"Kitten",d:"🐱"}],correct:0},
+      {q:"Which animal gives us wool?",big:"🐑 🐔 🐖",options:[{t:"Sheep",d:"🐑"},{t:"Hen",d:"🐔"}],correct:0},
+      {q:"Which is a bird?",big:"🦜 🐍 🐸",options:[{t:"Parrot",d:"🦜"},{t:"Snake",d:"🐍"},{t:"Frog",d:"🐸"}],correct:0}
+    ]},
+    { group:"🔬 Science", id:"body", title:"My Body", emoji:"🧍", color:"#22C55E", questions:[
+      {q:"We smell with our...?",big:"👃",options:[{t:"Nose",d:"👃"},{t:"Ear",d:"👂"},{t:"Eye",d:"👁️"}],correct:0},
+      {q:"We hear with our...?",big:"👂",options:[{t:"Ears",d:"👂"},{t:"Hands",d:"✋"}],correct:0},
+      {q:"We see with our...?",big:"👁️",options:[{t:"Eyes",d:"👀"},{t:"Feet",d:"🦶"}],correct:0},
+      {q:"We taste with our...?",big:"👅",options:[{t:"Tongue",d:"👅"},{t:"Nose",d:"👃"}],correct:0},
+      {q:"How many hands do you have?",big:"🙌",options:[{t:"Two",d:"2"},{t:"One",d:"1"}],correct:0},
+      {q:"We walk with our...?",big:"🦵",options:[{t:"Legs and feet",d:"🦶"},{t:"Ears",d:"👂"}],correct:0},
+      {q:"Which keeps our body moving — beats inside us?",big:"❤️",options:[{t:"Heart",d:"❤️"},{t:"Hair",d:"💇"}],correct:0}
+    ]},
+    { group:"🔬 Science", id:"plants", title:"Plants & Nature", emoji:"🌿", color:"#22C55E", questions:[
+      {q:"A plant grows from a tiny...?",big:"🌱",options:[{t:"Seed",d:"🌰"},{t:"Stone",d:"🪨"}],correct:0},
+      {q:"Plants need this to grow.",big:"🌻",options:[{t:"Water and sunlight",d:"💧☀️"},{t:"Candy",d:"🍬"}],correct:0},
+      {q:"Where do apples grow?",big:"🍎",options:[{t:"On a tree",d:"🌳"},{t:"Under the sea",d:"🌊"}],correct:0},
+      {q:"Which part is UNDER the ground?",big:"🌱",options:[{t:"Roots",d:"🪴"},{t:"Flower",d:"🌸"}],correct:0},
+      {q:"Bees help flowers and make...?",big:"🐝🌸",options:[{t:"Honey",d:"🍯"},{t:"Rain",d:"🌧️"}],correct:0},
+      {q:"Which do we eat that grows underground?",big:"🥕",options:[{t:"Carrot",d:"🥕"},{t:"Apple",d:"🍎"}],correct:0},
+      {q:"Leaves are usually which colour?",big:"🍃",options:[{t:"Green",d:"🟢"},{t:"Purple",d:"🟣"}],correct:0}
+    ]},
+    { group:"🔬 Science", id:"living", title:"Living or Not", emoji:"🌱", color:"#22C55E", questions:[
+      {q:"Which is a LIVING thing?",big:"🌱 🪨 🚗",options:[{t:"Plant",d:"🌱"},{t:"Rock",d:"🪨"},{t:"Car",d:"🚗"}],correct:0},
+      {q:"Which is NOT living?",big:"🐶 🌷 🪑",options:[{t:"Chair",d:"🪑"},{t:"Dog",d:"🐶"},{t:"Flower",d:"🌷"}],correct:0},
+      {q:"Living things can...?",big:"🐣",options:[{t:"Grow and eat",d:"🍽️"},{t:"Never change",d:"🚫"}],correct:0},
+      {q:"Which can breathe?",big:"🐠 🧱",options:[{t:"Fish",d:"🐠"},{t:"Brick",d:"🧱"}],correct:0},
+      {q:"Which needs food?",big:"🐕 ⚽",options:[{t:"Dog",d:"🐕"},{t:"Ball",d:"⚽"}],correct:0},
+      {q:"Which is living?",big:"🌳 🚲",options:[{t:"Tree",d:"🌳"},{t:"Bicycle",d:"🚲"}],correct:0},
+      {q:"Do living things drink water?",big:"💧",options:[{t:"Yes",d:"✅"},{t:"No",d:"❌"}],correct:0}
+    ]},
+    { group:"🔬 Science", id:"weather", title:"Weather & Sky", emoji:"☀️", color:"#22C55E", questions:[
+      {q:"What does the sun give us?",big:"☀️",options:[{t:"Light and warmth",d:"🔆"},{t:"Snow",d:"❄️"},{t:"Rain",d:"🌧️"}],correct:0},
+      {q:"What falls when it rains?",big:"🌧️",options:[{t:"Water drops",d:"💧"},{t:"Sand",d:"🏖️"}],correct:0},
+      {q:"The colourful arch after rain is a...?",big:"🌈",options:[{t:"Rainbow",d:"🌈"},{t:"Cloud",d:"☁️"}],correct:0},
+      {q:"What do you wear on a snowy day?",big:"❄️",options:[{t:"Warm coat",d:"🧥"},{t:"Swimsuit",d:"🩱"}],correct:0},
+      {q:"The moon comes out at...?",big:"🌙",options:[{t:"Night",d:"🌌"},{t:"Noon",d:"☀️"}],correct:0},
+      {q:"Which season is coldest?",big:"❄️",options:[{t:"Winter",d:"⛄"},{t:"Summer",d:"🏖️"}],correct:0},
+      {q:"Thunder comes with...?",big:"⛈️",options:[{t:"Lightning",d:"⚡"},{t:"Rainbows only",d:"🌈"}],correct:0}
+    ]},
+    { group:"🔬 Science", id:"foodhealth", title:"Food & Health", emoji:"🍎", color:"#22C55E", questions:[
+      {q:"Which do we drink to stay healthy?",big:"💧 🔥",options:[{t:"Water",d:"💧"},{t:"Fire",d:"🔥"}],correct:0},
+      {q:"Which is a healthy snack?",big:"🍎 🍭",options:[{t:"Apple",d:"🍎"},{t:"Lollipop",d:"🍭"}],correct:0},
+      {q:"We should brush our teeth...?",big:"🪥",options:[{t:"Every day",d:"🔁"},{t:"Never",d:"🚫"}],correct:0},
+      {q:"Which gives energy to play?",big:"🥗",options:[{t:"Good food",d:"🍎"},{t:"Toys",d:"🧸"}],correct:0},
+      {q:"Before eating we wash our...?",big:"🧼",options:[{t:"Hands",d:"✋"},{t:"Shoes",d:"👟"}],correct:0},
+      {q:"Which helps us grow strong?",big:"🥛",options:[{t:"Milk",d:"🥛"},{t:"Soda",d:"🥤"}],correct:0},
+      {q:"Exercise keeps our body...?",big:"🏃",options:[{t:"Healthy and strong",d:"💪"},{t:"Sleepy all day",d:"😴"}],correct:0}
+    ]},
+    { group:"🔬 Science", id:"earthspace", title:"Earth & Space", emoji:"🌍", color:"#22C55E", questions:[
+      {q:"We live on planet...?",big:"🌍",options:[{t:"Earth",d:"🌍"},{t:"Sun",d:"☀️"}],correct:0},
+      {q:"Which shines at night?",big:"🌙 ⭐",options:[{t:"Moon and stars",d:"🌙"},{t:"The sun",d:"☀️"}],correct:0},
+      {q:"The sun is a giant ball of...?",big:"☀️",options:[{t:"Hot fire and light",d:"🔥"},{t:"Ice",d:"🧊"}],correct:0},
+      {q:"Most of Earth is covered by...?",big:"🌊",options:[{t:"Water",d:"💧"},{t:"Sand",d:"🏜️"}],correct:0},
+      {q:"Astronauts travel in a...?",big:"🚀",options:[{t:"Rocket",d:"🚀"},{t:"Car",d:"🚗"}],correct:0},
+      {q:"Day and night happen because Earth...?",big:"🔄",options:[{t:"Spins around",d:"🌍"},{t:"Stops",d:"🛑"}],correct:0}
+    ]},
+
+    /* -------- ENGLISH -------- */
+    { group:"🔤 English", id:"alphabet", title:"Alphabet", emoji:"🔤", color:"#EF4444", questions:[
+      {q:"Which letter comes after A?",big:"A ➡️ ❓",options:[{t:"B",d:"B"},{t:"C",d:"C"},{t:"D",d:"D"}],correct:0},
+      {q:"Which comes after D?",big:"D ➡️ ❓",options:[{t:"E",d:"E"},{t:"F",d:"F"}],correct:0},
+      {q:"Which comes BEFORE B?",big:"❓ ⬅️ B",options:[{t:"A",d:"A"},{t:"C",d:"C"}],correct:0},
+      {q:"Which is a CAPITAL letter?",big:"A · b · c",options:[{t:"A",d:"A"},{t:"b",d:"b"}],correct:0},
+      {q:"Which is a small letter?",big:"m · Q · R",options:[{t:"m",d:"m"},{t:"Q",d:"Q"}],correct:0},
+      {q:"First letter of the alphabet?",big:"🔤",options:[{t:"A",d:"A"},{t:"Z",d:"Z"}],correct:0},
+      {q:"Last letter of the alphabet?",big:"🔤",options:[{t:"Z",d:"Z"},{t:"A",d:"A"}],correct:0},
+      {q:"Which comes after M?",big:"M ➡️ ❓",options:[{t:"N",d:"N"},{t:"L",d:"L"}],correct:0},
+      {q:"Match capital B to small...?",big:"B ➡️ ❓",options:[{t:"b",d:"b"},{t:"d",d:"d"}],correct:0},
+      {q:"Which comes BEFORE Z?",big:"❓ ⬅️ Z",options:[{t:"Y",d:"Y"},{t:"X",d:"X"}],correct:0}
+    ]},
+    { group:"🔤 English", id:"sounds", title:"First-Letter Sounds", emoji:"🔊", color:"#EF4444", questions:[
+      {q:"Cat starts with?",big:"🐱 = _AT",options:[{t:"C",d:"C"},{t:"B",d:"B"},{t:"S",d:"S"}],correct:0},
+      {q:"Apple starts with?",big:"🍎",options:[{t:"A",d:"A"},{t:"E",d:"E"}],correct:0},
+      {q:"Dog starts with?",big:"🐶",options:[{t:"D",d:"D"},{t:"B",d:"B"}],correct:0},
+      {q:"Sun starts with?",big:"☀️",options:[{t:"S",d:"S"},{t:"M",d:"M"}],correct:0},
+      {q:"Ball starts with?",big:"⚽",options:[{t:"B",d:"B"},{t:"P",d:"P"}],correct:0},
+      {q:"Fish starts with?",big:"🐟",options:[{t:"F",d:"F"},{t:"V",d:"V"}],correct:0},
+      {q:"Moon starts with?",big:"🌙",options:[{t:"M",d:"M"},{t:"N",d:"N"}],correct:0},
+      {q:"Tree starts with?",big:"🌳",options:[{t:"T",d:"T"},{t:"D",d:"D"}],correct:0},
+      {q:"Egg starts with?",big:"🥚",options:[{t:"E",d:"E"},{t:"A",d:"A"}],correct:0},
+      {q:"Kite starts with?",big:"🪁",options:[{t:"K",d:"K"},{t:"C",d:"C"}],correct:0}
+    ]},
+    { group:"🔤 English", id:"rhymes", title:"Rhyming Words", emoji:"🎵", color:"#EF4444", questions:[
+      {q:"Rhymes with CAT?",big:"🐱",options:[{t:"Hat",d:"🎩"},{t:"Dog",d:"🐶"},{t:"Sun",d:"☀️"}],correct:0},
+      {q:"Rhymes with STAR?",big:"⭐",options:[{t:"Car",d:"🚗"},{t:"Bed",d:"🛏️"}],correct:0},
+      {q:"Rhymes with BEE?",big:"🐝",options:[{t:"Tree",d:"🌳"},{t:"Cup",d:"☕"}],correct:0},
+      {q:"Rhymes with DOG?",big:"🐶",options:[{t:"Frog",d:"🐸"},{t:"Fish",d:"🐟"}],correct:0},
+      {q:"Rhymes with SUN?",big:"☀️",options:[{t:"Bun",d:"🍞"},{t:"Cat",d:"🐱"}],correct:0},
+      {q:"Rhymes with BALL?",big:"⚽",options:[{t:"Wall",d:"🧱"},{t:"Book",d:"📖"}],correct:0},
+      {q:"Rhymes with MOUSE?",big:"🐭",options:[{t:"House",d:"🏠"},{t:"Car",d:"🚗"}],correct:0}
+    ]},
+    { group:"🔤 English", id:"opposites", title:"Opposites", emoji:"↔️", color:"#EF4444", questions:[
+      {q:"Opposite of BIG?",big:"🐘 ↔️ ❓",options:[{t:"Small",d:"🐜"},{t:"Tall",d:"📏"}],correct:0},
+      {q:"Opposite of HOT?",big:"🔥 ↔️ ❓",options:[{t:"Cold",d:"❄️"},{t:"Fast",d:"💨"}],correct:0},
+      {q:"Opposite of UP?",big:"⬆️ ↔️ ❓",options:[{t:"Down",d:"⬇️"},{t:"Left",d:"⬅️"}],correct:0},
+      {q:"Opposite of DAY?",big:"☀️ ↔️ ❓",options:[{t:"Night",d:"🌙"},{t:"Sun",d:"☀️"}],correct:0},
+      {q:"Opposite of HAPPY?",big:"😀 ↔️ ❓",options:[{t:"Sad",d:"😢"},{t:"Fast",d:"🏃"}],correct:0},
+      {q:"Opposite of OPEN?",big:"📖 ↔️ ❓",options:[{t:"Closed",d:"📕"},{t:"Big",d:"🐘"}],correct:0},
+      {q:"Opposite of FAST?",big:"🐆 ↔️ ❓",options:[{t:"Slow",d:"🐢"},{t:"Hot",d:"🔥"}],correct:0},
+      {q:"Opposite of FULL?",big:"🍶 ↔️ ❓",options:[{t:"Empty",d:"🫙"},{t:"Tall",d:"📏"}],correct:0},
+      {q:"Opposite of WET?",big:"💧 ↔️ ❓",options:[{t:"Dry",d:"🏜️"},{t:"Cold",d:"❄️"}],correct:0}
+    ]},
+    { group:"🔤 English", id:"words", title:"Naming Words", emoji:"📝", color:"#EF4444", questions:[
+      {q:"Which is an animal name?",big:"🐘 🍎 🚗",options:[{t:"Elephant",d:"🐘"},{t:"Apple",d:"🍎"},{t:"Car",d:"🚗"}],correct:0},
+      {q:"Which is a colour?",big:"🔴",options:[{t:"Red",d:"🔴"},{t:"Run",d:"🏃"}],correct:0},
+      {q:"Which is a fruit name?",big:"🍌",options:[{t:"Banana",d:"🍌"},{t:"Table",d:"🪑"}],correct:0},
+      {q:"Which names a place?",big:"🏫",options:[{t:"School",d:"🏫"},{t:"Jump",d:"🦘"}],correct:0},
+      {q:"Which is a thing to sit on?",big:"🪑",options:[{t:"Chair",d:"🪑"},{t:"Milk",d:"🥛"}],correct:0},
+      {q:"Which is a body part?",big:"👂",options:[{t:"Ear",d:"👂"},{t:"Bus",d:"🚌"}],correct:0},
+      {q:"Which is a doing word (action)?",big:"🏃",options:[{t:"Run",d:"🏃"},{t:"Apple",d:"🍎"}],correct:0}
+    ]},
+    { group:"🔤 English", id:"vowels", title:"Vowels", emoji:"🅰️", color:"#EF4444", questions:[
+      {q:"Which is a vowel?",big:"A · B · C",options:[{t:"A",d:"A"},{t:"B",d:"B"},{t:"C",d:"C"}],correct:0},
+      {q:"Which is a vowel?",big:"D · E · F",options:[{t:"E",d:"E"},{t:"D",d:"D"}],correct:0},
+      {q:"Which is a vowel?",big:"I · J · K",options:[{t:"I",d:"I"},{t:"K",d:"K"}],correct:0},
+      {q:"How many vowels: A E I O U?",big:"A E I O U",options:[{t:"Five",d:"5"},{t:"Three",d:"3"}],correct:0},
+      {q:"Which is a vowel?",big:"O · P · Q",options:[{t:"O",d:"O"},{t:"P",d:"P"}],correct:0},
+      {q:"Which is a vowel?",big:"U · T · S",options:[{t:"U",d:"U"},{t:"T",d:"T"}],correct:0},
+      {q:"Is B a vowel or consonant?",big:"B",options:[{t:"Consonant (not a vowel)",d:"🔤"},{t:"Vowel",d:"🅰️"}],correct:0}
+    ]},
+    { group:"🔤 English", id:"plurals", title:"One & Many", emoji:"➕", color:"#EF4444", questions:[
+      {q:"One cat, many...?",big:"🐱 ➡️ 🐱🐱",options:[{t:"Cats",d:"🐱🐱"},{t:"Cat",d:"🐱"}],correct:0},
+      {q:"One dog, two...?",big:"🐶 ➡️ 🐶🐶",options:[{t:"Dogs",d:"🐶🐶"},{t:"Doges",d:"❌"}],correct:0},
+      {q:"Many apples is spelled apple...?",big:"🍎🍎",options:[{t:"Apples (add s)",d:"s"},{t:"Applez",d:"z"}],correct:0},
+      {q:"One box, many...?",big:"📦 ➡️ 📦📦",options:[{t:"Boxes",d:"📦📦"},{t:"Boxs",d:"❌"}],correct:0},
+      {q:"Which shows MANY?",big:"⭐ vs ⭐⭐⭐",options:[{t:"Three stars",d:"⭐⭐⭐"},{t:"One star",d:"⭐"}],correct:0},
+      {q:"One bus, two...?",big:"🚌 ➡️ 🚌🚌",options:[{t:"Buses",d:"🚌🚌"},{t:"Bus",d:"🚌"}],correct:0}
+    ]},
+    { group:"🔤 English", id:"mem-letters", title:"Memory: Big & Small Letters", emoji:"🧠", color:"#EF4444", type:"memory", intro:"Match big letters to small letters!", pairs:[
+      {0:"A",1:"a",say:"big A",say2:"small a"},
+      {0:"B",1:"b",say:"big B",say2:"small b"},
+      {0:"C",1:"c",say:"big C",say2:"small c"},
+      {0:"D",1:"d",say:"big D",say2:"small d"}
+    ]},
+
+    /* -------- REASONING -------- */
+    { group:"🧠 Reasoning", id:"oddoneout", title:"Odd One Out", emoji:"❓", color:"#8B5CF6", questions:[
+      {q:"Find the odd one out.",big:"🍎 🍌 🍊 ⚽",options:[{t:"Football",d:"⚽"},{t:"Banana",d:"🍌"},{t:"Orange",d:"🍊"}],correct:0},
+      {q:"Find the odd one out.",big:"🐶 🐱 🐰 🚙",options:[{t:"Car",d:"🚙"},{t:"Cat",d:"🐱"}],correct:0},
+      {q:"Find the odd one out.",big:"🔴 🔵 🟢 🍕",options:[{t:"Pizza",d:"🍕"},{t:"Red dot",d:"🔴"}],correct:0},
+      {q:"Find the odd one out.",big:"👕 👖 🧦 🍎",options:[{t:"Apple",d:"🍎"},{t:"Shirt",d:"👕"}],correct:0},
+      {q:"Find the odd one out.",big:"🚗 🚌 🚲 🐟",options:[{t:"Fish",d:"🐟"},{t:"Bus",d:"🚌"}],correct:0},
+      {q:"Find the odd one out.",big:"1️⃣ 2️⃣ 3️⃣ 🅰️",options:[{t:"Letter A",d:"🅰️"},{t:"Two",d:"2️⃣"}],correct:0},
+      {q:"Find the odd one out.",big:"🌞 🌙 ⭐ 🍔",options:[{t:"Burger",d:"🍔"},{t:"Moon",d:"🌙"}],correct:0},
+      {q:"Find the odd one out.",big:"🐝 🦋 🐞 🐘",options:[{t:"Elephant (not an insect)",d:"🐘"},{t:"Bee",d:"🐝"}],correct:0}
+    ]},
+    { group:"🧠 Reasoning", id:"series", title:"What Comes Next", emoji:"🔢", color:"#8B5CF6", questions:[
+      {q:"What comes next?",big:"🔵 🔵 🔴 🔵 🔵 ❓",options:[{t:"Red",d:"🔴"},{t:"Blue",d:"🔵"}],correct:0},
+      {q:"What number is next?",big:"1 · 2 · 3 · ❓",options:[{t:"Four",d:"4"},{t:"Six",d:"6"}],correct:0},
+      {q:"What comes next?",big:"🌑 🌓 🌕 ❓",options:[{t:"Moon shape",d:"🌗"},{t:"Star",d:"⭐"}],correct:0},
+      {q:"What comes next?",big:"👏👏 👏👏👏 ❓",options:[{t:"Four claps",d:"👏👏👏👏"},{t:"One clap",d:"👏"}],correct:0},
+      {q:"What number is next?",big:"2 · 4 · 6 · ❓",options:[{t:"Eight",d:"8"},{t:"Seven",d:"7"}],correct:0},
+      {q:"What comes next?",big:"🔺 🔺🔺 🔺🔺🔺 ❓",options:[{t:"Four triangles",d:"🔺🔺🔺🔺"},{t:"One triangle",d:"🔺"}],correct:0},
+      {q:"What number is next?",big:"5 · 4 · 3 · ❓",options:[{t:"Two",d:"2"},{t:"Six",d:"6"}],correct:0}
+    ]},
+    { group:"🧠 Reasoning", id:"analogy", title:"Goes Together", emoji:"➡️", color:"#8B5CF6", questions:[
+      {q:"Bird is to sky as fish is to...?",big:"🐦→☁️ , 🐟→❓",options:[{t:"Water",d:"🌊"},{t:"Tree",d:"🌳"}],correct:0},
+      {q:"Hand is to glove as foot is to...?",big:"✋→🧤 , 🦶→❓",options:[{t:"Sock",d:"🧦"},{t:"Hat",d:"🎩"}],correct:0},
+      {q:"Cow is to milk as bee is to...?",big:"🐄→🥛 , 🐝→❓",options:[{t:"Honey",d:"🍯"},{t:"Water",d:"💧"}],correct:0},
+      {q:"Day is to sun as night is to...?",big:"☀️ , ❓",options:[{t:"Moon",d:"🌙"},{t:"Rain",d:"🌧️"}],correct:0},
+      {q:"Dog is to puppy as cat is to...?",big:"🐕→🐶 , 🐈→❓",options:[{t:"Kitten",d:"🐱"},{t:"Chick",d:"🐤"}],correct:0},
+      {q:"Rain is to umbrella as sun is to...?",big:"🌧️→☂️ , ☀️→❓",options:[{t:"Sunglasses",d:"🕶️"},{t:"Boots",d:"🥾"}],correct:0},
+      {q:"Fire is to hot as ice is to...?",big:"🔥→🥵 , 🧊→❓",options:[{t:"Cold",d:"🥶"},{t:"Fast",d:"💨"}],correct:0}
+    ]},
+    { group:"🧠 Reasoning", id:"samediff", title:"Same & Different", emoji:"🔍", color:"#8B5CF6", questions:[
+      {q:"Which two are the SAME?",big:"🍎 🍎 🍌",options:[{t:"The two apples",d:"🍎🍎"},{t:"Apple & banana",d:"🍎🍌"}],correct:0},
+      {q:"Which one is DIFFERENT?",big:"⭐ ⭐ 🌙",options:[{t:"The moon",d:"🌙"},{t:"A star",d:"⭐"}],correct:0},
+      {q:"Which matches ⬛?",big:"⬛ ➡️ ❓",options:[{t:"Square",d:"⬛"},{t:"Circle",d:"⭕"}],correct:0},
+      {q:"Which is the same colour as 🔴?",big:"🔴 ➡️ ❓",options:[{t:"Red heart",d:"❤️"},{t:"Blue heart",d:"💙"}],correct:0},
+      {q:"Which is NOT like the others?",big:"🐶 🐶 🐱",options:[{t:"The cat",d:"🐱"},{t:"A dog",d:"🐶"}],correct:0},
+      {q:"Which two shapes match?",big:"🔺 🔺 ⭕",options:[{t:"The two triangles",d:"🔺🔺"},{t:"Triangle & circle",d:"🔺⭕"}],correct:0}
+    ]},
+    { group:"🧠 Reasoning", id:"ranking", title:"Ranking", emoji:"🏅", color:"#8B5CF6", questions:[
+      {q:"Who is the TALLEST?",big:"🦒 🐕 🐈",options:[{t:"Giraffe",d:"🦒"},{t:"Cat",d:"🐈"}],correct:0},
+      {q:"Which is the FASTEST?",big:"🚀 🚗 🚲",options:[{t:"Rocket",d:"🚀"},{t:"Bicycle",d:"🚲"}],correct:0},
+      {q:"Who came FIRST (gold medal)?",big:"🥇🥈🥉",options:[{t:"Gold",d:"🥇"},{t:"Bronze",d:"🥉"}],correct:0},
+      {q:"Which is the HEAVIEST?",big:"🐘 🐕 🐜",options:[{t:"Elephant",d:"🐘"},{t:"Ant",d:"🐜"}],correct:0},
+      {q:"Which tower is TALLEST?",big:"🧱 🏢 🗼",options:[{t:"The tall tower",d:"🗼"},{t:"One brick",d:"🧱"}],correct:0},
+      {q:"Which is the OLDEST usually?",big:"👶 🧒 👵",options:[{t:"Grandma",d:"👵"},{t:"Baby",d:"👶"}],correct:0}
+    ]}
+  ]}
+};
+</script>
+<script>
+(function(){
+  var C = window.__CONTENT__; if(!C) return;
+  var AL="#7C5CFC", DA="#14B8A6", MA="#3B82F6", SC="#22C55E", EN="#EF4444", RE="#8B5CF6";
+
+  /* ============ ALGORITHMS · LEVEL 2 ============ */
+  C.algorithms.topics.push(
+    { level:2, id:"l2-multistep", title:"Multi-Step Plans", emoji:"🗺️", color:AL, questions:[
+      {q:"Making tea: 1) Boil water 2) Add tea 3) Pour in cup. What is the SECOND step?",big:"🍵",options:[{t:"Add tea",d:"🌿"},{t:"Boil water",d:"💧"},{t:"Pour in cup",d:"☕"}],correct:0},
+      {q:"Getting dressed: socks, then shoes, then tie laces. What is LAST?",big:"👟",options:[{t:"Tie laces",d:"🎀"},{t:"Put on socks",d:"🧦"}],correct:0},
+      {q:"Planting: 1) dig hole 2) drop seed 3) cover soil 4) water it. What is THIRD?",big:"🌱",options:[{t:"Cover with soil",d:"🟤"},{t:"Water it",d:"💦"},{t:"Dig hole",d:"🕳️"}],correct:0},
+      {q:"To post a letter you FIRST need to...?",big:"✉️",options:[{t:"Write the letter",d:"✍️"},{t:"Drop it in the box",d:"📮"}],correct:0},
+      {q:"Brush teeth: wet brush → add paste → brush → rinse. What comes right AFTER adding paste?",big:"🪥",options:[{t:"Brush your teeth",d:"😁"},{t:"Rinse",d:"💧"}],correct:0},
+      {q:"Baking: mix → pour in tin → bake → eat. What is just BEFORE baking?",big:"🎂",options:[{t:"Pour into tin",d:"🥧"},{t:"Eat it",d:"😋"}],correct:0},
+      {q:"Crossing the road: stop → look → listen → walk. What is FIRST?",big:"🚸",options:[{t:"Stop",d:"🛑"},{t:"Walk",d:"🚶"}],correct:0},
+      {q:"Which plan is in the RIGHT order?",big:"🥪",options:[{t:"Get bread → add filling → eat",d:"✅"},{t:"Eat → get bread → add filling",d:"❌"}],correct:0}
+    ]},
+    { level:2, id:"l2-growpattern", title:"Growing Patterns", emoji:"📈", color:AL, questions:[
+      {q:"What comes next?",big:"🔴 · 🔴🔴 · 🔴🔴🔴 · ❓",options:[{t:"Four dots",d:"🔴🔴🔴🔴"},{t:"One dot",d:"🔴"}],correct:0},
+      {q:"ABC pattern — what's next?",big:"🔺 🟦 🟢 🔺 🟦 ❓",options:[{t:"Green",d:"🟢"},{t:"Triangle",d:"🔺"}],correct:0},
+      {q:"What comes next?",big:"⭐ · ⭐⭐ · ⭐⭐⭐ · ❓",options:[{t:"Four stars",d:"⭐⭐⭐⭐"},{t:"Two stars",d:"⭐⭐"}],correct:0},
+      {q:"Numbers grow: 2, 4, 6, 8, ❓",big:"2·4·6·8·❓",options:[{t:"Ten",d:"10"},{t:"Nine",d:"9"}],correct:0},
+      {q:"What comes next?",big:"🟥 🟨 🟦 🟥 🟨 🟦 ❓",options:[{t:"Red",d:"🟥"},{t:"Blue",d:"🟦"}],correct:0},
+      {q:"Shrinking pattern — what's next?",big:"🔵🔵🔵 · 🔵🔵 · ❓",options:[{t:"One circle",d:"🔵"},{t:"Four circles",d:"🔵🔵🔵🔵"}],correct:0},
+      {q:"Count by 5: 5, 10, 15, ❓",big:"5·10·15·❓",options:[{t:"Twenty",d:"20"},{t:"Sixteen",d:"16"}],correct:0},
+      {q:"What's the pattern rule here?",big:"🐤 🐤🐤 🐤🐤🐤",options:[{t:"Add one more each time",d:"➕1"},{t:"Take one away",d:"➖1"}],correct:0}
+    ]},
+    { level:2, id:"l2-robotcode", title:"Follow the Robot", emoji:"🤖", color:AL, questions:[
+      {q:"Robot moves ➡️➡️. It started at 0. Where is it now?",big:"0 ➡️➡️",options:[{t:"At 2",d:"2️⃣"},{t:"At 5",d:"5️⃣"}],correct:0},
+      {q:"Robot goes ⬆️⬆️⬆️ up the stairs. How many steps up?",big:"⬆️⬆️⬆️",options:[{t:"Three",d:"3"},{t:"Two",d:"2"}],correct:0},
+      {q:"Code: ➡️ then ⬇️. Which way LAST?",big:"➡️⬇️",options:[{t:"Down",d:"⬇️"},{t:"Right",d:"➡️"}],correct:0},
+      {q:"Robot repeats 🔁 'hop' 4 times. How many hops?",big:"🔁🐰",options:[{t:"Four",d:"4"},{t:"One",d:"1"}],correct:0},
+      {q:"To reach the ⭐, robot at start should go...?",big:"🤖 ➡️➡️ ⭐",options:[{t:"Right",d:"➡️"},{t:"Left",d:"⬅️"}],correct:0},
+      {q:"Robot goes ⬆️⬆️ then ⬇️. How many steps up is it now?",big:"⬆️⬆️⬇️",options:[{t:"One up",d:"1️⃣"},{t:"Three up",d:"3️⃣"}],correct:0},
+      {q:"Which code makes the robot go up then right?",big:"❓",options:[{t:"⬆️ ➡️",d:"⬆️➡️"},{t:"⬇️ ⬅️",d:"⬇️⬅️"}],correct:0}
+    ]},
+    { level:2, id:"l2-sort4", title:"Sort 4 in Order 🎮", emoji:"📊", color:AL, type:"order", rounds:[
+      {q:"Tap 1 to 6 in order!",items:[{d:"1",v:1},{d:"2",v:2},{d:"3",v:3},{d:"4",v:4},{d:"5",v:5},{d:"6",v:6}]},
+      {q:"Smallest to biggest — tap in order!",items:[{d:"🐜",v:1,say:"ant"},{d:"🐭",v:2,say:"mouse"},{d:"🐰",v:3,say:"rabbit"},{d:"🐕",v:4,say:"dog"},{d:"🐘",v:5,say:"elephant"}]},
+      {q:"Count by 2 — tap 2,4,6,8,10!",items:[{d:"2",v:2,say:"two"},{d:"4",v:4,say:"four"},{d:"6",v:6,say:"six"},{d:"8",v:8,say:"eight"},{d:"10",v:10,say:"ten"}]},
+      {q:"Tap the teen numbers 11 to 14!",items:[{d:"11",v:11},{d:"12",v:12},{d:"13",v:13},{d:"14",v:14}]}
+    ]}
+  );
+
+  /* ============ DATA · LEVEL 2 ============ */
+  C.data.topics.push(
+    { level:2, id:"l2-stackpuzzle", title:"Stack & Queue Puzzles", emoji:"🧩", color:DA, questions:[
+      {q:"3 plates are stacked. You add 2 more. How many now?",big:"🍽️×3 ➕2",options:[{t:"Five",d:"5"},{t:"Three",d:"3"}],correct:0},
+      {q:"5 books stacked. You take 2 off the top. How many left?",big:"📚×5 ➖2",options:[{t:"Three",d:"3"},{t:"Seven",d:"7"}],correct:0},
+      {q:"6 kids in line. 2 more join the back. How many in line?",big:"🧒×6 ➕2",options:[{t:"Eight",d:"8"},{t:"Four",d:"4"}],correct:0},
+      {q:"4 cars in a queue. Front car drives off. How many left?",big:"🚗×4 ➖1",options:[{t:"Three",d:"3"},{t:"Five",d:"5"}],correct:0},
+      {q:"You push 🔴 then 🔵 then 🟢 on a stack. Which comes off FIRST?",big:"🟢⬆️",options:[{t:"Green (top)",d:"🟢"},{t:"Red (bottom)",d:"🔴"}],correct:0},
+      {q:"In a queue you push 🐶 🐱 🐰. Which leaves FIRST?",big:"➡️",options:[{t:"Dog (was first)",d:"🐶"},{t:"Rabbit (was last)",d:"🐰"}],correct:0},
+      {q:"Stack has 2 blocks. Add 3, then take 1 off top. How many now?",big:"🧱 2➕3➖1",options:[{t:"Four",d:"4"},{t:"Six",d:"6"}],correct:0}
+    ]},
+    { level:2, id:"l2-sortgroup", title:"Sort into Groups", emoji:"🗂️", color:DA, questions:[
+      {q:"Which group does 🍎 belong to?",big:"🍎",options:[{t:"Fruits",d:"🍇"},{t:"Vehicles",d:"🚗"}],correct:0},
+      {q:"Which group does 🚌 belong to?",big:"🚌",options:[{t:"Things that go",d:"🚗"},{t:"Animals",d:"🐄"}],correct:0},
+      {q:"Sort 🐟: land animal or water animal?",big:"🐟",options:[{t:"Water animal",d:"🌊"},{t:"Land animal",d:"🌳"}],correct:0},
+      {q:"Sort 🍌 🍊 🍎 — they are all...?",big:"🍌🍊🍎",options:[{t:"Fruits",d:"🧺"},{t:"Toys",d:"🧸"}],correct:0},
+      {q:"Which does NOT go in the 'things that fly' group?",big:"🐦 ✈️ 🚗",options:[{t:"Car",d:"🚗"},{t:"Plane",d:"✈️"}],correct:0},
+      {q:"Sort 🥕 🥦 🌽 — they are all...?",big:"🥕🥦🌽",options:[{t:"Vegetables",d:"🥗"},{t:"Animals",d:"🐾"}],correct:0},
+      {q:"👕 👖 🧦 belong to the group...?",big:"👕👖🧦",options:[{t:"Clothes",d:"🧺"},{t:"Food",d:"🍎"}],correct:0}
+    ]},
+    { level:2, id:"l2-tablegrid", title:"Rows & Columns", emoji:"🔲", color:DA, questions:[
+      {q:"In a row: 🍎 🍌 🍇. Which is in the MIDDLE?",big:"🍎 🍌 🍇",options:[{t:"Banana",d:"🍌"},{t:"Apple",d:"🍎"}],correct:0},
+      {q:"A grid has 2 rows of 2. How many boxes in all?",big:"🔲🔲\n🔲🔲",options:[{t:"Four",d:"4"},{t:"Two",d:"2"}],correct:0},
+      {q:"Top row: ⭐⭐⭐. Bottom row: ⭐⭐. Which row has MORE?",big:"⭐⭐⭐\n⭐⭐",options:[{t:"Top row",d:"⬆️"},{t:"Bottom row",d:"⬇️"}],correct:0},
+      {q:"Row of 5 seats. You sit in the LAST one. Which seat?",big:"💺💺💺💺💺",options:[{t:"Fifth",d:"5️⃣"},{t:"First",d:"1️⃣"}],correct:0},
+      {q:"A grid with 3 rows of 3 has how many boxes?",big:"3 × 3",options:[{t:"Nine",d:"9"},{t:"Six",d:"6"}],correct:0},
+      {q:"In column order 🔴 on top, 🔵 below. What is at the BOTTOM?",big:"🔴\n🔵",options:[{t:"Blue",d:"🔵"},{t:"Red",d:"🔴"}],correct:0}
+    ]},
+    { level:2, id:"l2-mem-homes", title:"Memory: Animal Homes", emoji:"🏠", color:DA, type:"memory", intro:"Match each animal to its home!", pairs:[
+      {0:"🐝",1:"🍯",say:"bee",say2:"beehive"},
+      {0:"🐦",1:"🪹",say:"bird",say2:"nest"},
+      {0:"🐕",1:"🏠",say:"dog",say2:"kennel"},
+      {0:"🐴",1:"🏚️",say:"horse",say2:"stable"}
+    ]}
+  );
+
+  /* ============ OLYMPIAD · LEVEL 2 ============ */
+  C.olympiad.topics.push(
+    /* ---- MATH L2 ---- */
+    { level:2, group:"🔢 Math", id:"l2-teens", title:"Numbers to 20", emoji:"🔢", color:MA, questions:[
+      {q:"What comes after 12?",big:"12 ➡️ ❓",options:[{t:"Thirteen",d:"13"},{t:"Eleven",d:"11"}],correct:0},
+      {q:"What comes before 15?",big:"❓ ⬅️ 15",options:[{t:"Fourteen",d:"14"},{t:"Sixteen",d:"16"}],correct:0},
+      {q:"Which is 'seventeen'?",big:"🔢",options:[{t:"17",d:"17"},{t:"70",d:"70"}],correct:0},
+      {q:"What comes between 18 and 20?",big:"18 · ❓ · 20",options:[{t:"Nineteen",d:"19"},{t:"Seventeen",d:"17"}],correct:0},
+      {q:"Which is BIGGER, 14 or 19?",big:"14 · 19",options:[{t:"Nineteen",d:"19"},{t:"Fourteen",d:"14"}],correct:0},
+      {q:"Count on: 16, 17, 18, ❓",big:"16·17·18·❓",options:[{t:"Nineteen",d:"19"},{t:"Twenty",d:"20"}],correct:0},
+      {q:"Which is SMALLER, 11 or 13?",big:"11 · 13",options:[{t:"Eleven",d:"11"},{t:"Thirteen",d:"13"}],correct:0},
+      {q:"What number is 1 more than 19?",big:"19 ➕1",options:[{t:"Twenty",d:"20"},{t:"Eighteen",d:"18"}],correct:0}
+    ]},
+    { level:2, group:"🔢 Math", id:"l2-add20", title:"Add to 20", emoji:"➕", color:MA, questions:[
+      {q:"7 + 5 = ?",big:"7 ➕ 5",options:[{t:"Twelve",d:"12"},{t:"Eleven",d:"11"},{t:"Thirteen",d:"13"}],correct:0},
+      {q:"8 + 6 = ?",big:"8 ➕ 6",options:[{t:"Fourteen",d:"14"},{t:"Thirteen",d:"13"}],correct:0},
+      {q:"9 + 9 = ?",big:"9 ➕ 9",options:[{t:"Eighteen",d:"18"},{t:"Nineteen",d:"19"}],correct:0},
+      {q:"6 + 6 = ?",big:"6 ➕ 6",options:[{t:"Twelve",d:"12"},{t:"Ten",d:"10"}],correct:0},
+      {q:"10 + 5 = ?",big:"10 ➕ 5",options:[{t:"Fifteen",d:"15"},{t:"Fifty",d:"50"}],correct:0},
+      {q:"7 + 7 = ?",big:"7 ➕ 7",options:[{t:"Fourteen",d:"14"},{t:"Twelve",d:"12"}],correct:0},
+      {q:"8 + 4 = ?",big:"8 ➕ 4",options:[{t:"Twelve",d:"12"},{t:"Eleven",d:"11"}],correct:0},
+      {q:"10 + 10 = ?",big:"10 ➕ 10",options:[{t:"Twenty",d:"20"},{t:"Ten",d:"10"}],correct:0},
+      {q:"9 + 4 = ?",big:"9 ➕ 4",options:[{t:"Thirteen",d:"13"},{t:"Fourteen",d:"14"}],correct:0}
+    ]},
+    { level:2, group:"🔢 Math", id:"l2-sub20", title:"Take Away to 20", emoji:"➖", color:MA, questions:[
+      {q:"15 − 5 = ?",big:"15 ➖ 5",options:[{t:"Ten",d:"10"},{t:"Twenty",d:"20"}],correct:0},
+      {q:"12 − 4 = ?",big:"12 ➖ 4",options:[{t:"Eight",d:"8"},{t:"Six",d:"6"}],correct:0},
+      {q:"18 − 8 = ?",big:"18 ➖ 8",options:[{t:"Ten",d:"10"},{t:"Nine",d:"9"}],correct:0},
+      {q:"14 − 7 = ?",big:"14 ➖ 7",options:[{t:"Seven",d:"7"},{t:"Eight",d:"8"}],correct:0},
+      {q:"20 − 10 = ?",big:"20 ➖ 10",options:[{t:"Ten",d:"10"},{t:"Zero",d:"0"}],correct:0},
+      {q:"11 − 3 = ?",big:"11 ➖ 3",options:[{t:"Eight",d:"8"},{t:"Nine",d:"9"}],correct:0},
+      {q:"16 − 6 = ?",big:"16 ➖ 6",options:[{t:"Ten",d:"10"},{t:"Twelve",d:"12"}],correct:0},
+      {q:"13 − 10 = ?",big:"13 ➖ 10",options:[{t:"Three",d:"3"},{t:"Two",d:"2"}],correct:0}
+    ]},
+    { level:2, group:"🔢 Math", id:"l2-word", title:"Word Problems", emoji:"📖", color:MA, questions:[
+      {q:"Ravi has 4 sweets. He buys 3 more. How many now?",big:"🍬4 ➕3",options:[{t:"Seven",d:"7"},{t:"One",d:"1"}],correct:0},
+      {q:"Meena had 8 balloons. 2 flew away. How many left?",big:"🎈8 ➖2",options:[{t:"Six",d:"6"},{t:"Ten",d:"10"}],correct:0},
+      {q:"5 birds sit on a tree. 4 more come. How many birds?",big:"🐦5 ➕4",options:[{t:"Nine",d:"9"},{t:"One",d:"1"}],correct:0},
+      {q:"There are 10 cookies. You eat 3. How many are left?",big:"🍪10 ➖3",options:[{t:"Seven",d:"7"},{t:"Thirteen",d:"13"}],correct:0},
+      {q:"Sam has 6 red and 2 blue pens. How many pens in all?",big:"🖊️6 ➕2",options:[{t:"Eight",d:"8"},{t:"Four",d:"4"}],correct:0},
+      {q:"A basket has 9 apples. 5 are taken out. How many stay?",big:"🍎9 ➖5",options:[{t:"Four",d:"4"},{t:"Fourteen",d:"14"}],correct:0},
+      {q:"7 kids are playing. 3 go home. How many still play?",big:"🧒7 ➖3",options:[{t:"Four",d:"4"},{t:"Ten",d:"10"}],correct:0},
+      {q:"You have 2 boxes with 5 pencils each. How many pencils?",big:"✏️5 ➕5",options:[{t:"Ten",d:"10"},{t:"Seven",d:"7"}],correct:0}
+    ]},
+    { level:2, group:"🔢 Math", id:"l2-missing", title:"Missing Number", emoji:"❔", color:MA, questions:[
+      {q:"3 + ❓ = 5",big:"3 ➕ ❓ = 5",options:[{t:"Two",d:"2"},{t:"Three",d:"3"}],correct:0},
+      {q:"❓ + 2 = 6",big:"❓ ➕ 2 = 6",options:[{t:"Four",d:"4"},{t:"Two",d:"2"}],correct:0},
+      {q:"4 + ❓ = 7",big:"4 ➕ ❓ = 7",options:[{t:"Three",d:"3"},{t:"Two",d:"2"}],correct:0},
+      {q:"❓ − 1 = 4",big:"❓ ➖ 1 = 4",options:[{t:"Five",d:"5"},{t:"Three",d:"3"}],correct:0},
+      {q:"5 + ❓ = 10",big:"5 ➕ ❓ = 10",options:[{t:"Five",d:"5"},{t:"Four",d:"4"}],correct:0},
+      {q:"❓ + 3 = 8",big:"❓ ➕ 3 = 8",options:[{t:"Five",d:"5"},{t:"Six",d:"6"}],correct:0},
+      {q:"10 − ❓ = 7",big:"10 ➖ ❓ = 7",options:[{t:"Three",d:"3"},{t:"Four",d:"4"}],correct:0}
+    ]},
+    { level:2, group:"🔢 Math", id:"l2-ordinal", title:"1st, 2nd, 3rd", emoji:"🥇", color:MA, questions:[
+      {q:"Who finished FIRST?",big:"🥇🥈🥉",options:[{t:"Gold — 1st",d:"🥇"},{t:"Bronze — 3rd",d:"🥉"}],correct:0},
+      {q:"In line 🐶 🐱 🐰 🐹, who is THIRD?",big:"🐶🐱🐰🐹",options:[{t:"Rabbit",d:"🐰"},{t:"Cat",d:"🐱"}],correct:0},
+      {q:"Which floor is the SECOND from the bottom?",big:"🏢",options:[{t:"2nd floor",d:"2️⃣"},{t:"5th floor",d:"5️⃣"}],correct:0},
+      {q:"The 1st letter of the alphabet is...?",big:"🔤",options:[{t:"A",d:"A"},{t:"C",d:"C"}],correct:0},
+      {q:"In 🍎🍌🍇🍓🍊, which fruit is FOURTH?",big:"🍎🍌🍇🍓🍊",options:[{t:"Strawberry",d:"🍓"},{t:"Grapes",d:"🍇"}],correct:0},
+      {q:"If you are LAST in a line of 3, which place are you?",big:"🧍🧍🧍",options:[{t:"Third",d:"3️⃣"},{t:"First",d:"1️⃣"}],correct:0}
+    ]},
+    { level:2, group:"🔢 Math", id:"l2-compare", title:"More, Less & Equal", emoji:"⚖️", color:MA, questions:[
+      {q:"Which is MORE?",big:"13 · 8",options:[{t:"Thirteen",d:"13"},{t:"Eight",d:"8"}],correct:0},
+      {q:"Which is LESS?",big:"6 · 11",options:[{t:"Six",d:"6"},{t:"Eleven",d:"11"}],correct:0},
+      {q:"5 apples and 5 apples — are they...?",big:"🍎5 · 🍎5",options:[{t:"Equal (same)",d:"🟰"},{t:"Not equal",d:"≠"}],correct:0},
+      {q:"Which sign means 'more than'? 7 __ 4",big:"7 ❓ 4",options:[{t:"Greater than (>)",d:">"},{t:"Less than (<)",d:"<"}],correct:0},
+      {q:"Which group has FEWER?",big:"🐟🐟 · 🐟🐟🐟🐟",options:[{t:"The group of 2",d:"2️⃣"},{t:"The group of 4",d:"4️⃣"}],correct:0},
+      {q:"12 is ___ than 9.",big:"12 ❓ 9",options:[{t:"More",d:"⬆️"},{t:"Less",d:"⬇️"}],correct:0},
+      {q:"Which two are EQUAL?",big:"3+1 · 4 · 5",options:[{t:"3+1 and 4",d:"🟰"},{t:"4 and 5",d:"≠"}],correct:0}
+    ]},
+    { level:2, group:"🔢 Math", id:"l2-skiptrain", title:"Skip-Count Train 🎮", emoji:"🚂", color:MA, type:"order", rounds:[
+      {q:"Count by 5! Tap 5, 10, 15, 20.",items:[{d:"5",v:5,say:"five"},{d:"10",v:10,say:"ten"},{d:"15",v:15,say:"fifteen"},{d:"20",v:20,say:"twenty"}]},
+      {q:"Count by 10! Tap 10, 20, 30, 40, 50.",items:[{d:"10",v:10,say:"ten"},{d:"20",v:20,say:"twenty"},{d:"30",v:30,say:"thirty"},{d:"40",v:40,say:"forty"},{d:"50",v:50,say:"fifty"}]},
+      {q:"Tap the teens in order: 11 to 15!",items:[{d:"11",v:11},{d:"12",v:12},{d:"13",v:13},{d:"14",v:14},{d:"15",v:15}]},
+      {q:"Count by 2! Tap 2,4,6,8,10,12.",items:[{d:"2",v:2,say:"two"},{d:"4",v:4,say:"four"},{d:"6",v:6,say:"six"},{d:"8",v:8,say:"eight"},{d:"10",v:10,say:"ten"},{d:"12",v:12,say:"twelve"}]}
+    ]},
+
+    /* ---- SCIENCE L2 ---- */
+    { level:2, group:"🔬 Science", id:"l2-matter", title:"Solid, Liquid & Melt", emoji:"🧊", color:SC, questions:[
+      {q:"Ice is a solid. When it gets warm it turns into...?",big:"🧊 ➡️ ❓",options:[{t:"Water (liquid)",d:"💧"},{t:"Stone",d:"🪨"}],correct:0},
+      {q:"Which one is a LIQUID?",big:"🥛 🧱 🍎",options:[{t:"Milk",d:"🥛"},{t:"Brick",d:"🧱"}],correct:0},
+      {q:"Which one is a SOLID?",big:"💧 🪨 🌫️",options:[{t:"Rock",d:"🪨"},{t:"Water",d:"💧"}],correct:0},
+      {q:"Water in the freezer turns into...?",big:"💧 ➡️ ❄️",options:[{t:"Ice",d:"🧊"},{t:"Steam",d:"💨"}],correct:0},
+      {q:"Which can you pour?",big:"🧃 vs 🧱",options:[{t:"Juice",d:"🧃"},{t:"Brick",d:"🧱"}],correct:0},
+      {q:"Hot water makes...?",big:"♨️",options:[{t:"Steam",d:"💨"},{t:"Ice",d:"🧊"}],correct:0},
+      {q:"A rock keeps its shape, so it is a...?",big:"🪨",options:[{t:"Solid",d:"⬛"},{t:"Liquid",d:"💧"}],correct:0}
+    ]},
+    { level:2, group:"🔬 Science", id:"l2-babies", title:"Animal Babies", emoji:"🐣", color:SC, questions:[
+      {q:"A baby dog is called a...?",big:"🐕",options:[{t:"Puppy",d:"🐶"},{t:"Kitten",d:"🐱"}],correct:0},
+      {q:"A baby cat is called a...?",big:"🐈",options:[{t:"Kitten",d:"🐱"},{t:"Calf",d:"🐄"}],correct:0},
+      {q:"A baby cow is called a...?",big:"🐄",options:[{t:"Calf",d:"🐮"},{t:"Puppy",d:"🐶"}],correct:0},
+      {q:"A baby hen is called a...?",big:"🐔",options:[{t:"Chick",d:"🐤"},{t:"Cub",d:"🦁"}],correct:0},
+      {q:"A baby frog is called a...?",big:"🐸",options:[{t:"Tadpole",d:"🐛"},{t:"Kitten",d:"🐱"}],correct:0},
+      {q:"A baby sheep is called a...?",big:"🐑",options:[{t:"Lamb",d:"🐏"},{t:"Chick",d:"🐤"}],correct:0},
+      {q:"A butterfly starts life as a...?",big:"🦋",options:[{t:"Caterpillar",d:"🐛"},{t:"Fish",d:"🐟"}],correct:0}
+    ]},
+    { level:2, group:"🔬 Science", id:"l2-pushpull", title:"Push & Pull", emoji:"🛒", color:SC, questions:[
+      {q:"Opening a drawer is a...?",big:"🗄️",options:[{t:"Pull",d:"⬅️"},{t:"Throw",d:"🤾"}],correct:0},
+      {q:"Kicking a ball is a...?",big:"⚽",options:[{t:"Push",d:"➡️"},{t:"Pull",d:"⬅️"}],correct:0},
+      {q:"A magnet can PULL things made of...?",big:"🧲",options:[{t:"Metal",d:"🔩"},{t:"Paper",d:"📄"}],correct:0},
+      {q:"Pushing a swing makes it...?",big:"🛝",options:[{t:"Move",d:"➡️"},{t:"Stop",d:"🛑"}],correct:0},
+      {q:"A ball rolls DOWN a hill because of...?",big:"⛰️⚽",options:[{t:"Gravity pulling it",d:"⬇️"},{t:"Nothing",d:"🚫"}],correct:0},
+      {q:"To make a wagon come to you, you...?",big:"🛒",options:[{t:"Pull it",d:"⬅️"},{t:"Push it away",d:"➡️"}],correct:0}
+    ]},
+    { level:2, group:"🔬 Science", id:"l2-senses", title:"Which Sense?", emoji:"👀", color:SC, questions:[
+      {q:"Which sense do you use to enjoy music?",big:"🎵",options:[{t:"Hearing",d:"👂"},{t:"Sight",d:"👁️"}],correct:0},
+      {q:"Which sense tells you a flower smells nice?",big:"🌸",options:[{t:"Smell",d:"👃"},{t:"Taste",d:"👅"}],correct:0},
+      {q:"Which sense do you use to see a rainbow?",big:"🌈",options:[{t:"Sight",d:"👁️"},{t:"Touch",d:"✋"}],correct:0},
+      {q:"Ice feels cold. Which sense is that?",big:"🧊",options:[{t:"Touch",d:"✋"},{t:"Hearing",d:"👂"}],correct:0},
+      {q:"Which sense tells you a lemon is sour?",big:"🍋",options:[{t:"Taste",d:"👅"},{t:"Smell",d:"👃"}],correct:0},
+      {q:"You use your ___ to feel if something is soft.",big:"🧸",options:[{t:"Hands (touch)",d:"✋"},{t:"Eyes",d:"👁️"}],correct:0}
+    ]},
+
+    /* ---- ENGLISH L2 ---- */
+    { level:2, group:"🔤 English", id:"l2-sight", title:"Sight Words", emoji:"👁️", color:EN, questions:[
+      {q:"Fill in: 'I ___ a cat.' (looking with eyes)",big:"👁️🐱",options:[{t:"see",d:"see"},{t:"sea",d:"sea"}],correct:0},
+      {q:"Which word means more than one, joining words?",big:"➕",options:[{t:"and",d:"&"},{t:"the",d:"the"}],correct:0},
+      {q:"'The dog ___ big.' Which word fits?",big:"🐶",options:[{t:"is",d:"is"},{t:"are",d:"are"}],correct:0},
+      {q:"Which is a naming word for a person?",big:"🧑",options:[{t:"boy",d:"👦"},{t:"jump",d:"🦘"}],correct:0},
+      {q:"'Let's ___ to the park.' Which word fits?",big:"🏞️",options:[{t:"go",d:"go"},{t:"got",d:"got"}],correct:0},
+      {q:"Which small word points to a thing? '___ book is mine.'",big:"📖",options:[{t:"This",d:"👉"},{t:"Run",d:"🏃"}],correct:0},
+      {q:"'You ___ my friend.' Which word fits?",big:"🤝",options:[{t:"are",d:"are"},{t:"is",d:"is"}],correct:0}
+    ]},
+    { level:2, group:"🔤 English", id:"l2-aan", title:"A or An", emoji:"🅰️", color:EN, questions:[
+      {q:"Which is correct?",big:"🍎",options:[{t:"an apple",d:"🍎"},{t:"a apple",d:"❌"}],correct:0},
+      {q:"Which is correct?",big:"🐶",options:[{t:"a dog",d:"🐶"},{t:"an dog",d:"❌"}],correct:0},
+      {q:"Which is correct?",big:"🥚",options:[{t:"an egg",d:"🥚"},{t:"a egg",d:"❌"}],correct:0},
+      {q:"Which is correct?",big:"🐱",options:[{t:"a cat",d:"🐱"},{t:"an cat",d:"❌"}],correct:0},
+      {q:"Which is correct?",big:"☂️",options:[{t:"an umbrella",d:"☂️"},{t:"a umbrella",d:"❌"}],correct:0},
+      {q:"We use 'an' before words that start with...?",big:"🅰️🅴🅸🅾️🆄",options:[{t:"a, e, i, o, u sounds",d:"🔤"},{t:"any letter",d:"❓"}],correct:0},
+      {q:"Which is correct?",big:"🏠",options:[{t:"a house",d:"🏠"},{t:"an house",d:"❌"}],correct:0}
+    ]},
+    { level:2, group:"🔤 English", id:"l2-lastsound", title:"Last-Letter Sounds", emoji:"🔚", color:EN, questions:[
+      {q:"What sound does 'cat' END with?",big:"🐱 = ca_",options:[{t:"T",d:"T"},{t:"C",d:"C"}],correct:0},
+      {q:"What letter does 'sun' END with?",big:"☀️ = su_",options:[{t:"N",d:"N"},{t:"M",d:"M"}],correct:0},
+      {q:"What letter does 'dog' END with?",big:"🐶 = do_",options:[{t:"G",d:"G"},{t:"D",d:"D"}],correct:0},
+      {q:"What letter does 'bed' END with?",big:"🛏️ = be_",options:[{t:"D",d:"D"},{t:"B",d:"B"}],correct:0},
+      {q:"What letter does 'bus' END with?",big:"🚌 = bu_",options:[{t:"S",d:"S"},{t:"B",d:"B"}],correct:0},
+      {q:"What letter does 'pen' END with?",big:"🖊️ = pe_",options:[{t:"N",d:"N"},{t:"P",d:"P"}],correct:0},
+      {q:"What letter does 'cup' END with?",big:"☕ = cu_",options:[{t:"P",d:"P"},{t:"C",d:"C"}],correct:0}
+    ]},
+    { level:2, group:"🔤 English", id:"l2-opp2", title:"Opposites Challenge", emoji:"↔️", color:EN, questions:[
+      {q:"Opposite of HEAVY?",big:"🐘 ↔️ ❓",options:[{t:"Light",d:"🪶"},{t:"Big",d:"🐘"}],correct:0},
+      {q:"Opposite of FIRST?",big:"🥇 ↔️ ❓",options:[{t:"Last",d:"🔚"},{t:"Fast",d:"💨"}],correct:0},
+      {q:"Opposite of PUSH?",big:"➡️ ↔️ ❓",options:[{t:"Pull",d:"⬅️"},{t:"Jump",d:"🦘"}],correct:0},
+      {q:"Opposite of LOUD?",big:"📢 ↔️ ❓",options:[{t:"Quiet",d:"🤫"},{t:"Tall",d:"📏"}],correct:0},
+      {q:"Opposite of HARD?",big:"🪨 ↔️ ❓",options:[{t:"Soft",d:"🧸"},{t:"Cold",d:"❄️"}],correct:0},
+      {q:"Opposite of OLD?",big:"👵 ↔️ ❓",options:[{t:"Young",d:"👶"},{t:"Slow",d:"🐢"}],correct:0},
+      {q:"Opposite of NIGHT?",big:"🌙 ↔️ ❓",options:[{t:"Day",d:"☀️"},{t:"Dark",d:"⬛"}],correct:0},
+      {q:"Opposite of UNDER?",big:"⬇️ ↔️ ❓",options:[{t:"Over / above",d:"⬆️"},{t:"Near",d:"↔️"}],correct:0}
+    ]},
+
+    /* ---- REASONING L2 ---- */
+    { level:2, group:"🧠 Reasoning", id:"l2-logic", title:"Logic Puzzles", emoji:"🧠", color:RE, questions:[
+      {q:"Tom is taller than Sam. Who is TALLER?",big:"🧍‍♂️ vs 🧍",options:[{t:"Tom",d:"⬆️"},{t:"Sam",d:"⬇️"}],correct:0},
+      {q:"A cat is smaller than a dog. Which is BIGGER?",big:"🐱 vs 🐶",options:[{t:"Dog",d:"🐶"},{t:"Cat",d:"🐱"}],correct:0},
+      {q:"Meena is FIRST in line. Raj is behind her. Who is first?",big:"🧍‍♀️🧍‍♂️",options:[{t:"Meena",d:"1️⃣"},{t:"Raj",d:"2️⃣"}],correct:0},
+      {q:"Box A is heavier than Box B. Which is LIGHTER?",big:"📦A vs 📦B",options:[{t:"Box B",d:"🅱️"},{t:"Box A",d:"🅰️"}],correct:0},
+      {q:"If today is Monday, tomorrow is...?",big:"📅",options:[{t:"Tuesday",d:"2️⃣"},{t:"Sunday",d:"7️⃣"}],correct:0},
+      {q:"The red ball is ON TOP of the blue ball. Which is at the BOTTOM?",big:"🔴\n🔵",options:[{t:"Blue ball",d:"🔵"},{t:"Red ball",d:"🔴"}],correct:0},
+      {q:"Anu runs faster than Bina. Who is SLOWER?",big:"🏃‍♀️💨",options:[{t:"Bina",d:"🐢"},{t:"Anu",d:"🐆"}],correct:0}
+    ]},
+    { level:2, group:"🧠 Reasoning", id:"l2-analogy2", title:"Analogies Challenge", emoji:"➡️", color:RE, questions:[
+      {q:"Bird is to wings as fish is to...?",big:"🐦→🪽 , 🐟→❓",options:[{t:"Fins",d:"🐠"},{t:"Legs",d:"🦵"}],correct:0},
+      {q:"Sun is to day as moon is to...?",big:"☀️→🌞 , 🌙→❓",options:[{t:"Night",d:"🌌"},{t:"Rain",d:"🌧️"}],correct:0},
+      {q:"Cow is to calf as dog is to...?",big:"🐄→🐮 , 🐕→❓",options:[{t:"Puppy",d:"🐶"},{t:"Chick",d:"🐤"}],correct:0},
+      {q:"Hot is to summer as cold is to...?",big:"🔥→☀️ , ❄️→❓",options:[{t:"Winter",d:"⛄"},{t:"Spring",d:"🌷"}],correct:0},
+      {q:"Wheel is to car as wing is to...?",big:"🛞→🚗 , 🪽→❓",options:[{t:"Aeroplane",d:"✈️"},{t:"Boat",d:"⛵"}],correct:0},
+      {q:"Pencil is to write as scissors is to...?",big:"✏️→✍️ , ✂️→❓",options:[{t:"Cut",d:"✂️"},{t:"Eat",d:"🍽️"}],correct:0},
+      {q:"Foot is to shoe as head is to...?",big:"🦶→👟 , 🧑→❓",options:[{t:"Hat",d:"🎩"},{t:"Glove",d:"🧤"}],correct:0}
+    ]},
+    { level:2, group:"🧠 Reasoning", id:"l2-series2", title:"Tricky Sequences", emoji:"🔢", color:RE, questions:[
+      {q:"What comes next?",big:"🔺 🔵 🔺 🔵 🔺 ❓",options:[{t:"Blue circle",d:"🔵"},{t:"Triangle",d:"🔺"}],correct:0},
+      {q:"What number is next?",big:"1 · 3 · 5 · 7 · ❓",options:[{t:"Nine",d:"9"},{t:"Eight",d:"8"}],correct:0},
+      {q:"What comes next?",big:"🌑 🌓 🌕 🌗 ❓",options:[{t:"New moon",d:"🌑"},{t:"Star",d:"⭐"}],correct:0},
+      {q:"What number is next?",big:"10 · 8 · 6 · ❓",options:[{t:"Four",d:"4"},{t:"Five",d:"5"}],correct:0},
+      {q:"What comes next?",big:"🅰️ 🅱️ 🅰️ 🅱️ 🅰️ ❓",options:[{t:"B",d:"🅱️"},{t:"A",d:"🅰️"}],correct:0},
+      {q:"What number is next?",big:"2 · 5 · 8 · ❓",options:[{t:"Eleven",d:"11"},{t:"Ten",d:"10"}],correct:0},
+      {q:"Which continues the size pattern?",big:"🔵 🔷 🔹 ❓",options:[{t:"Even smaller",d:"▪️"},{t:"Biggest",d:"🔵"}],correct:0}
+    ]},
+    { level:2, group:"🧠 Reasoning", id:"l2-partwhole", title:"Part & Whole", emoji:"🧩", color:RE, questions:[
+      {q:"A wheel is a part of a...?",big:"🛞",options:[{t:"Car",d:"🚗"},{t:"Apple",d:"🍎"}],correct:0},
+      {q:"A petal is a part of a...?",big:"🌸",options:[{t:"Flower",d:"🌷"},{t:"House",d:"🏠"}],correct:0},
+      {q:"A page is a part of a...?",big:"📄",options:[{t:"Book",d:"📖"},{t:"Shoe",d:"👟"}],correct:0},
+      {q:"A branch is a part of a...?",big:"🌿",options:[{t:"Tree",d:"🌳"},{t:"Car",d:"🚗"}],correct:0},
+      {q:"A finger is a part of a...?",big:"☝️",options:[{t:"Hand",d:"✋"},{t:"Foot",d:"🦶"}],correct:0},
+      {q:"A tail is a part of a...?",big:"🐕",options:[{t:"Dog",d:"🐶"},{t:"Cup",d:"☕"}],correct:0},
+      {q:"A roof is a part of a...?",big:"🏠",options:[{t:"House",d:"🏡"},{t:"Fish",d:"🐟"}],correct:0}
+    ]}
+  );
+})();
+</script>
+<script>
+(function(){
+  var C=window.__CONTENT__; if(!C) return;
+  var AL="#7C5CFC", DA="#14B8A6", MA="#3B82F6", SC="#22C55E", EN="#EF4444", RE="#8B5CF6", GK="#F59E0B";
+
+  /* ============ ALGORITHMS · LEVEL 3 (Master) + mini-games ============ */
+  C.algorithms.topics.push(
+    { level:3, id:"l3-guess", title:"Higher or Lower", emoji:"🔍", color:AL, questions:[
+      {q:"I picked a number 1–10. You guess 5, I say 'higher'. Which could it be?",big:"5 ⬆️",options:[{t:"Eight",d:"8"},{t:"Two",d:"2"}],correct:0},
+      {q:"Guess 6, I say 'lower'. Which could it be?",big:"6 ⬇️",options:[{t:"Three",d:"3"},{t:"Nine",d:"9"}],correct:0},
+      {q:"To find a number fast, a good first guess is the...?",big:"1…10",options:[{t:"Middle",d:"5️⃣"},{t:"The very end",d:"🔚"}],correct:0},
+      {q:"Number is 1–10. 'Higher than 5' and 'lower than 7'. It is...?",big:"5 ⬅️❓➡️ 7",options:[{t:"Six",d:"6"},{t:"Ten",d:"10"}],correct:0},
+      {q:"You guess 7, I say 'higher'. Next smart guess?",big:"7 ⬆️",options:[{t:"Nine",d:"9"},{t:"One",d:"1"}],correct:0},
+      {q:"Splitting the list in half each time helps you find it...?",big:"⚡",options:[{t:"Faster",d:"🏃"},{t:"Slower",d:"🐢"}],correct:0}
+    ]},
+    { level:3, id:"l3-smallest", title:"Find the Smallest 🎮", emoji:"📉", color:AL, type:"order", rounds:[
+      {q:"Sorting! Tap smallest to biggest.",items:[{d:"7",v:7},{d:"3",v:3},{d:"9",v:9},{d:"1",v:1}]},
+      {q:"Tap smallest to biggest.",items:[{d:"12",v:12},{d:"5",v:5},{d:"20",v:20},{d:"8",v:8}]},
+      {q:"Tap from least to most dots.",items:[{d:"⚫⚫⚫",v:3,say:"three"},{d:"⚫",v:1,say:"one"},{d:"⚫⚫⚫⚫",v:4,say:"four"},{d:"⚫⚫",v:2,say:"two"}]},
+      {q:"Tap smallest to biggest.",items:[{d:"15",v:15},{d:"11",v:11},{d:"18",v:18},{d:"13",v:13}]}
+    ]},
+    { level:3, id:"l3-nested", title:"Repeat Rows", emoji:"🔁", color:AL, questions:[
+      {q:"Do 'clap clap' 3 times. How many claps in all?",big:"👏👏 ×3",options:[{t:"Six",d:"6"},{t:"Three",d:"3"}],correct:0},
+      {q:"3 rows of 2 stars. How many stars?",big:"⭐⭐\n⭐⭐\n⭐⭐",options:[{t:"Six",d:"6"},{t:"Five",d:"5"}],correct:0},
+      {q:"Stamp 2 rows of 4. How many stamps?",big:"🟦🟦🟦🟦\n🟦🟦🟦🟦",options:[{t:"Eight",d:"8"},{t:"Six",d:"6"}],correct:0},
+      {q:"Jump 5 times, then do it again. Total jumps?",big:"🦘×5 ×2",options:[{t:"Ten",d:"10"},{t:"Five",d:"5"}],correct:0},
+      {q:"4 boxes, each with 3 balls. How many balls?",big:"📦×4 (3 each)",options:[{t:"Twelve",d:"12"},{t:"Seven",d:"7"}],correct:0},
+      {q:"A loop inside a loop repeats things...?",big:"🔁🔁",options:[{t:"Many more times",d:"⬆️"},{t:"Once",d:"1️⃣"}],correct:0}
+    ]},
+    { level:3, id:"l3-conditions", title:"Two Conditions", emoji:"🔀", color:AL, questions:[
+      {q:"Wear boots IF it rains AND it is cold. It rains and is cold. Boots?",big:"🌧️❄️",options:[{t:"Yes, wear boots",d:"🥾"},{t:"No",d:"🚫"}],correct:0},
+      {q:"Go out IF sunny AND homework done. Sunny but homework NOT done. Go out?",big:"☀️📚",options:[{t:"No, finish homework",d:"📚"},{t:"Yes",d:"✅"}],correct:0},
+      {q:"Eat ice cream IF it's hot OR it's a party. It's a party. Ice cream?",big:"🎉",options:[{t:"Yes!",d:"🍦"},{t:"No",d:"🚫"}],correct:0},
+      {q:"A robot moves IF light is green AND road is clear. Light red. Move?",big:"🔴",options:[{t:"No, stop",d:"🛑"},{t:"Yes",d:"➡️"}],correct:0},
+      {q:"Take umbrella IF rain OR snow. It's sunny. Umbrella?",big:"☀️",options:[{t:"No",d:"🚫"},{t:"Yes",d:"☂️"}],correct:0},
+      {q:"Win IF you score AND time is left. You scored, time left. Win?",big:"⚽⏰",options:[{t:"Yes!",d:"🏆"},{t:"No",d:"🚫"}],correct:0}
+    ]}
+  );
+
+  /* ============ DATA · LEVEL 3 (Master) + mini-game ============ */
+  C.data.topics.push(
+    { level:3, id:"l3-both", title:"Belongs to Both", emoji:"⭕", color:DA, questions:[
+      {q:"Which is BOTH a fruit AND red?",big:"🍎 🍌 🍇",options:[{t:"Apple",d:"🍎"},{t:"Banana",d:"🍌"}],correct:0},
+      {q:"Which is BOTH an animal AND can fly?",big:"🐦 🐕 🐟",options:[{t:"Bird",d:"🐦"},{t:"Dog",d:"🐕"}],correct:0},
+      {q:"Which is BOTH round AND a fruit?",big:"🍊 🥕 📏",options:[{t:"Orange",d:"🍊"},{t:"Carrot",d:"🥕"}],correct:0},
+      {q:"Which is BOTH yellow AND a fruit?",big:"🍋 🍏 🫐",options:[{t:"Lemon",d:"🍋"},{t:"Green apple",d:"🍏"}],correct:0},
+      {q:"Which lives in water AND is an animal?",big:"🐟 🌊 🚤",options:[{t:"Fish",d:"🐟"},{t:"Boat",d:"🚤"}],correct:0},
+      {q:"Which is BOTH a vehicle AND flies?",big:"✈️ 🚗 🚢",options:[{t:"Plane",d:"✈️"},{t:"Car",d:"🚗"}],correct:0}
+    ]},
+    { level:3, id:"l3-family", title:"Family Tree", emoji:"👨‍👩‍👧", color:DA, questions:[
+      {q:"Your mother's mother is your...?",big:"👵",options:[{t:"Grandmother",d:"👵"},{t:"Sister",d:"👧"}],correct:0},
+      {q:"Your father's brother is your...?",big:"👨",options:[{t:"Uncle",d:"🧔"},{t:"Cousin",d:"🧒"}],correct:0},
+      {q:"Your parents' children (not you) are your...?",big:"👦👧",options:[{t:"Brother or sister",d:"🧒"},{t:"Grandpa",d:"👴"}],correct:0},
+      {q:"Who is OLDEST in the family tree usually?",big:"👴👨👦",options:[{t:"Grandfather",d:"👴"},{t:"Child",d:"👦"}],correct:0},
+      {q:"Your uncle's child is your...?",big:"🧒",options:[{t:"Cousin",d:"🧒"},{t:"Brother",d:"👦"}],correct:0},
+      {q:"Your mother and father together are your...?",big:"👩👨",options:[{t:"Parents",d:"👪"},{t:"Friends",d:"🤝"}],correct:0}
+    ]},
+    { level:3, id:"l3-lookup", title:"Find in the List", emoji:"📋", color:DA, questions:[
+      {q:"List: 🍎🍌🍇🍊. What is 2nd?",big:"🍎🍌🍇🍊",options:[{t:"Banana",d:"🍌"},{t:"Grapes",d:"🍇"}],correct:0},
+      {q:"Which is NOT in the list? 🐶🐱🐭",big:"🐶🐱🐭",options:[{t:"Rabbit",d:"🐰"},{t:"Cat",d:"🐱"}],correct:0},
+      {q:"List has 🔴🟢🔵🟡. How many colours?",big:"🔴🟢🔵🟡",options:[{t:"Four",d:"4"},{t:"Three",d:"3"}],correct:0},
+      {q:"In list A🍎 B🍌 C🍇, what is at C?",big:"A🍎 B🍌 C🍇",options:[{t:"Grapes",d:"🍇"},{t:"Apple",d:"🍎"}],correct:0},
+      {q:"Which comes right AFTER 🌙 in ☀️🌙⭐?",big:"☀️🌙⭐",options:[{t:"Star",d:"⭐"},{t:"Sun",d:"☀️"}],correct:0},
+      {q:"Is 🐟 in the list 🐶🐱🐭?",big:"🐶🐱🐭",options:[{t:"No",d:"❌"},{t:"Yes",d:"✅"}],correct:0}
+    ]},
+    { level:3, id:"l3-tally", title:"Most & Least", emoji:"📊", color:DA, questions:[
+      {q:"🍎🍎🍎 · 🍌🍌 · 🍇. Which has MOST?",big:"🍎×3 🍌×2 🍇×1",options:[{t:"Apples",d:"🍎"},{t:"Grapes",d:"🍇"}],correct:0},
+      {q:"Same fruits — which has LEAST?",big:"🍎×3 🍌×2 🍇×1",options:[{t:"Grapes",d:"🍇"},{t:"Apples",d:"🍎"}],correct:0},
+      {q:"⭐⭐⭐⭐ vs 🌙🌙. Which group is bigger?",big:"⭐×4 🌙×2",options:[{t:"Stars",d:"⭐"},{t:"Moons",d:"🌙"}],correct:0},
+      {q:"3 red, 5 blue, 1 green. Which is most?",big:"🔴×3 🔵×5 🟢×1",options:[{t:"Blue",d:"🔵"},{t:"Green",d:"🟢"}],correct:0},
+      {q:"How many MORE apples than grapes? 🍎×3, 🍇×1",big:"🍎×3 🍇×1",options:[{t:"Two more",d:"2"},{t:"Four more",d:"4"}],correct:0},
+      {q:"Which chart bar is tallest = most votes?",big:"📊",options:[{t:"The tallest bar",d:"⬆️"},{t:"The shortest bar",d:"⬇️"}],correct:0}
+    ]},
+    { level:3, id:"l3-mem-shadow", title:"Memory: Shape Match", emoji:"🧠", color:DA, type:"memory", intro:"Match each shape to its friend!", pairs:[
+      {0:"⭕",1:"🔵",say:"circle",say2:"round circle"},
+      {0:"⬛",1:"🟦",say:"square",say2:"square"},
+      {0:"🔺",1:"⚠️",say:"triangle",say2:"triangle"},
+      {0:"⭐",1:"🌟",say:"star",say2:"star"}
+    ]}
+  );
+
+  /* ============ OLYMPIAD · UKG (Level 1) — GK & EVS + mini-games ============ */
+  C.olympiad.topics.push(
+    { level:1, group:"🌍 GK & EVS", id:"ukg-colours", title:"Colours", emoji:"🎨", color:GK, questions:[
+      {q:"What colour is the sky on a clear day?",big:"🌤️",options:[{t:"Blue",d:"🔵"},{t:"Red",d:"🔴"}],correct:0},
+      {q:"What colour is grass?",big:"🌱",options:[{t:"Green",d:"🟢"},{t:"Purple",d:"🟣"}],correct:0},
+      {q:"What colour is a banana?",big:"🍌",options:[{t:"Yellow",d:"🟡"},{t:"Blue",d:"🔵"}],correct:0},
+      {q:"What colour is this heart?",big:"❤️",options:[{t:"Red",d:"🔴"},{t:"Green",d:"🟢"}],correct:0},
+      {q:"What colour do you get mixing blue and yellow?",big:"🔵➕🟡",options:[{t:"Green",d:"🟢"},{t:"Pink",d:"🩷"}],correct:0},
+      {q:"What colour is snow?",big:"❄️",options:[{t:"White",d:"⚪"},{t:"Black",d:"⚫"}],correct:0},
+      {q:"What colour is an orange?",big:"🍊",options:[{t:"Orange",d:"🟠"},{t:"Blue",d:"🔵"}],correct:0}
+    ]},
+    { level:1, group:"🌍 GK & EVS", id:"ukg-helpers", title:"Community Helpers", emoji:"👮", color:GK, questions:[
+      {q:"Who helps us when we are sick?",big:"🩺",options:[{t:"Doctor",d:"👨‍⚕️"},{t:"Pilot",d:"👨‍✈️"}],correct:0},
+      {q:"Who puts out fires?",big:"🔥",options:[{t:"Firefighter",d:"🧑‍🚒"},{t:"Farmer",d:"👨‍🌾"}],correct:0},
+      {q:"Who teaches you at school?",big:"🏫",options:[{t:"Teacher",d:"👩‍🏫"},{t:"Chef",d:"👨‍🍳"}],correct:0},
+      {q:"Who delivers letters?",big:"✉️",options:[{t:"Postman",d:"📮"},{t:"Doctor",d:"🩺"}],correct:0},
+      {q:"Who grows our food?",big:"🌾",options:[{t:"Farmer",d:"👨‍🌾"},{t:"Pilot",d:"👨‍✈️"}],correct:0},
+      {q:"Who flies an aeroplane?",big:"✈️",options:[{t:"Pilot",d:"👨‍✈️"},{t:"Teacher",d:"👩‍🏫"}],correct:0},
+      {q:"Who keeps us safe and catches thieves?",big:"🚓",options:[{t:"Police officer",d:"👮"},{t:"Chef",d:"👨‍🍳"}],correct:0}
+    ]},
+    { level:1, group:"🌍 GK & EVS", id:"ukg-transport", title:"Transport", emoji:"🚗", color:GK, questions:[
+      {q:"Which travels on water?",big:"🚢 🚗 ✈️",options:[{t:"Ship",d:"🚢"},{t:"Car",d:"🚗"}],correct:0},
+      {q:"Which flies in the sky?",big:"✈️ 🚌 🚲",options:[{t:"Aeroplane",d:"✈️"},{t:"Bus",d:"🚌"}],correct:0},
+      {q:"Which runs on rails?",big:"🚂",options:[{t:"Train",d:"🚂"},{t:"Boat",d:"⛵"}],correct:0},
+      {q:"Which has just two wheels?",big:"🚲",options:[{t:"Bicycle",d:"🚲"},{t:"Bus",d:"🚌"}],correct:0},
+      {q:"Which takes you to space?",big:"🚀",options:[{t:"Rocket",d:"🚀"},{t:"Car",d:"🚗"}],correct:0},
+      {q:"Which carries many people on roads?",big:"🚌",options:[{t:"Bus",d:"🚌"},{t:"Bicycle",d:"🚲"}],correct:0}
+    ]},
+    { level:1, group:"🌍 GK & EVS", id:"ukg-manners", title:"Good Manners", emoji:"🙏", color:GK, questions:[
+      {q:"What do you say when someone helps you?",big:"🤝",options:[{t:"Thank you",d:"🙏"},{t:"Go away",d:"🚫"}],correct:0},
+      {q:"What do you say to ask nicely?",big:"🙂",options:[{t:"Please",d:"🥺"},{t:"Now!",d:"❗"}],correct:0},
+      {q:"Before eating we should...?",big:"🍽️",options:[{t:"Wash hands",d:"🧼"},{t:"Play in mud",d:"🟤"}],correct:0},
+      {q:"When someone is talking, you should...?",big:"👂",options:[{t:"Listen",d:"🤫"},{t:"Shout",d:"📢"}],correct:0},
+      {q:"If you bump someone, you say...?",big:"😯",options:[{t:"Sorry",d:"🙇"},{t:"Nothing",d:"🤐"}],correct:0},
+      {q:"We throw rubbish in the...?",big:"🗑️",options:[{t:"Bin",d:"🗑️"},{t:"Floor",d:"⬇️"}],correct:0}
+    ]},
+    { level:1, group:"🌍 GK & EVS", id:"ukg-position", title:"Where Is It?", emoji:"📍", color:GK, questions:[
+      {q:"The cat is ON the box.",big:"🐱\n📦",options:[{t:"On top",d:"⬆️"},{t:"Under",d:"⬇️"}],correct:0},
+      {q:"The ball is UNDER the table. Where is it?",big:"🪑\n⚽",options:[{t:"Under",d:"⬇️"},{t:"Above",d:"⬆️"}],correct:0},
+      {q:"The bird is ABOVE the tree. Where?",big:"🐦\n🌳",options:[{t:"Above",d:"⬆️"},{t:"Below",d:"⬇️"}],correct:0},
+      {q:"Which is INSIDE the box?",big:"📦🎁",options:[{t:"The gift inside",d:"🎁"},{t:"Outside",d:"🌳"}],correct:0},
+      {q:"The dog is BESIDE the house (next to it).",big:"🏠🐕",options:[{t:"Next to",d:"↔️"},{t:"On top",d:"⬆️"}],correct:0},
+      {q:"The apple is IN FRONT of the cup. Which is behind?",big:"🍎 ☕",options:[{t:"The cup",d:"☕"},{t:"The apple",d:"🍎"}],correct:0}
+    ]},
+    { level:1, group:"🌍 GK & EVS", id:"ukg-fruitveg", title:"Fruit or Vegetable?", emoji:"🥕", color:GK, type:"truefalse", questions:[
+      {q:"An apple is a fruit.",big:"🍎",tf:true},
+      {q:"A carrot is a fruit.",big:"🥕",tf:false},
+      {q:"A banana is a fruit.",big:"🍌",tf:true},
+      {q:"A tomato grows on a plant.",big:"🍅",tf:true},
+      {q:"Broccoli is a vegetable.",big:"🥦",tf:true},
+      {q:"A mango is a vegetable.",big:"🥭",tf:false},
+      {q:"Potatoes grow under the ground.",big:"🥔",tf:true}
+    ]},
+    { level:1, group:"🌍 GK & EVS", id:"ukg-mem-colour", title:"Memory: Colour Match", emoji:"🧠", color:GK, type:"memory", intro:"Match things of the same colour!", pairs:[
+      {0:"🍎",1:"❤️",say:"red apple",say2:"red heart"},
+      {0:"🍌",1:"🌟",say:"yellow banana",say2:"yellow star"},
+      {0:"🍃",1:"🐸",say:"green leaf",say2:"green frog"},
+      {0:"🫐",1:"💙",say:"blue berry",say2:"blue heart"}
+    ]},
+
+    /* ---- MATH · LEVEL 3 ---- */
+    { level:3, group:"🔢 Math", id:"l3-to100", title:"Numbers to 100", emoji:"💯", color:MA, questions:[
+      {q:"Count by tens: 30, 40, 50, ❓",big:"30·40·50·❓",options:[{t:"Sixty",d:"60"},{t:"Fifty-one",d:"51"}],correct:0},
+      {q:"What comes after 49?",big:"49 ➡️ ❓",options:[{t:"Fifty",d:"50"},{t:"Forty",d:"40"}],correct:0},
+      {q:"Which is bigger, 68 or 86?",big:"68 · 86",options:[{t:"Eighty-six",d:"86"},{t:"Sixty-eight",d:"68"}],correct:0},
+      {q:"What comes just before 100?",big:"❓ ⬅️ 100",options:[{t:"Ninety-nine",d:"99"},{t:"One hundred one",d:"101"}],correct:0},
+      {q:"Count by fives: 20, 25, 30, ❓",big:"20·25·30·❓",options:[{t:"Thirty-five",d:"35"},{t:"Forty",d:"40"}],correct:0},
+      {q:"How many tens are in 70?",big:"70",options:[{t:"Seven",d:"7"},{t:"Seventy",d:"70"}],correct:0},
+      {q:"Which is smallest?",big:"45 · 54 · 40",options:[{t:"Forty",d:"40"},{t:"Fifty-four",d:"54"}],correct:0}
+    ]},
+    { level:3, group:"🔢 Math", id:"l3-2digit", title:"2-Digit Adding", emoji:"➕", color:MA, questions:[
+      {q:"20 + 10 = ?",big:"20 ➕ 10",options:[{t:"Thirty",d:"30"},{t:"Twenty-one",d:"21"}],correct:0},
+      {q:"14 + 5 = ?",big:"14 ➕ 5",options:[{t:"Nineteen",d:"19"},{t:"Twenty",d:"20"}],correct:0},
+      {q:"30 + 20 = ?",big:"30 ➕ 20",options:[{t:"Fifty",d:"50"},{t:"Forty",d:"40"}],correct:0},
+      {q:"22 + 6 = ?",big:"22 ➕ 6",options:[{t:"Twenty-eight",d:"28"},{t:"Twenty-six",d:"26"}],correct:0},
+      {q:"40 + 40 = ?",big:"40 ➕ 40",options:[{t:"Eighty",d:"80"},{t:"Sixty",d:"60"}],correct:0},
+      {q:"25 + 4 = ?",big:"25 ➕ 4",options:[{t:"Twenty-nine",d:"29"},{t:"Thirty",d:"30"}],correct:0},
+      {q:"50 + 25 = ?",big:"50 ➕ 25",options:[{t:"Seventy-five",d:"75"},{t:"Fifty-five",d:"55"}],correct:0}
+    ]},
+    { level:3, group:"🔢 Math", id:"l3-groups", title:"Groups (×)", emoji:"✖️", color:MA, questions:[
+      {q:"2 groups of 3 apples. How many apples?",big:"🍎🍎🍎 · 🍎🍎🍎",options:[{t:"Six",d:"6"},{t:"Five",d:"5"}],correct:0},
+      {q:"3 groups of 2 stars = ?",big:"⭐⭐ ⭐⭐ ⭐⭐",options:[{t:"Six",d:"6"},{t:"Four",d:"4"}],correct:0},
+      {q:"2 × 5 (two groups of five) = ?",big:"5 + 5",options:[{t:"Ten",d:"10"},{t:"Seven",d:"7"}],correct:0},
+      {q:"4 groups of 2 = ?",big:"2·2·2·2",options:[{t:"Eight",d:"8"},{t:"Six",d:"6"}],correct:0},
+      {q:"3 × 3 (three groups of three) = ?",big:"3·3·3",options:[{t:"Nine",d:"9"},{t:"Six",d:"6"}],correct:0},
+      {q:"5 groups of 2 socks = ?",big:"🧦×2 ×5",options:[{t:"Ten",d:"10"},{t:"Twelve",d:"12"}],correct:0}
+    ]},
+    { level:3, group:"🔢 Math", id:"l3-half", title:"Halves & Sharing", emoji:"➗", color:MA, questions:[
+      {q:"Share 4 apples between 2 kids. Each gets?",big:"🍎🍎🍎🍎 ÷ 2",options:[{t:"Two",d:"2"},{t:"Four",d:"4"}],correct:0},
+      {q:"Half of 6 is?",big:"6 ÷ 2",options:[{t:"Three",d:"3"},{t:"Two",d:"2"}],correct:0},
+      {q:"Cut one pizza in half. How many pieces?",big:"🍕",options:[{t:"Two",d:"2"},{t:"Three",d:"3"}],correct:0},
+      {q:"Share 10 sweets between 2. Each gets?",big:"🍬×10 ÷2",options:[{t:"Five",d:"5"},{t:"Ten",d:"10"}],correct:0},
+      {q:"Half of 8 is?",big:"8 ÷ 2",options:[{t:"Four",d:"4"},{t:"Six",d:"6"}],correct:0},
+      {q:"Which shows one HALF shaded?",big:"◑ vs ◕",options:[{t:"Half circle",d:"◑"},{t:"Almost full",d:"◕"}],correct:0}
+    ]},
+    { level:3, group:"🔢 Math", id:"l3-money", title:"Money & Coins", emoji:"🪙", color:MA, questions:[
+      {q:"You have a 2-coin and a 1-coin. How much?",big:"🪙2 ➕ 🪙1",options:[{t:"Three",d:"3"},{t:"Two",d:"2"}],correct:0},
+      {q:"Two 5-coins make?",big:"🪙5 ➕ 🪙5",options:[{t:"Ten",d:"10"},{t:"Five",d:"5"}],correct:0},
+      {q:"A toy costs 10. You have 6. Do you have enough?",big:"🧸=10, 🪙6",options:[{t:"No, need more",d:"❌"},{t:"Yes",d:"✅"}],correct:0},
+      {q:"You pay 10 for a 7 pen. Change back?",big:"10 ➖ 7",options:[{t:"Three",d:"3"},{t:"Two",d:"2"}],correct:0},
+      {q:"Which is worth more?",big:"🪙10 · 🪙5",options:[{t:"Ten coin",d:"🪙10"},{t:"Five coin",d:"🪙5"}],correct:0},
+      {q:"Three 2-coins make?",big:"🪙2 ×3",options:[{t:"Six",d:"6"},{t:"Five",d:"5"}],correct:0}
+    ]},
+    { level:3, group:"🔢 Math", id:"l3-calendar", title:"Months 🎮", emoji:"📆", color:MA, type:"order", rounds:[
+      {q:"Tap the first 4 months in order!",items:[{d:"Jan",v:1,say:"January"},{d:"Feb",v:2,say:"February"},{d:"Mar",v:3,say:"March"},{d:"Apr",v:4,say:"April"}]},
+      {q:"Put the days in order!",items:[{d:"Mon",v:1,say:"Monday"},{d:"Tue",v:2,say:"Tuesday"},{d:"Wed",v:3,say:"Wednesday"},{d:"Thu",v:4,say:"Thursday"}]},
+      {q:"Order these seasons: cold to hot!",items:[{d:"❄️",v:1,say:"winter"},{d:"🌷",v:2,say:"spring"},{d:"☀️",v:3,say:"summer"}]}
+    ]},
+
+    /* ---- SCIENCE · LEVEL 3 ---- */
+    { level:3, group:"🔬 Science", id:"l3-materials", title:"What's It Made Of?", emoji:"🧱", color:SC, questions:[
+      {q:"A window is usually made of...?",big:"🪟",options:[{t:"Glass",d:"🔷"},{t:"Bread",d:"🍞"}],correct:0},
+      {q:"A chair is often made of...?",big:"🪑",options:[{t:"Wood",d:"🪵"},{t:"Water",d:"💧"}],correct:0},
+      {q:"A spoon is often made of...?",big:"🥄",options:[{t:"Metal",d:"🔩"},{t:"Paper",d:"📄"}],correct:0},
+      {q:"A book is made of...?",big:"📖",options:[{t:"Paper",d:"📄"},{t:"Glass",d:"🔷"}],correct:0},
+      {q:"A balloon is made of...?",big:"🎈",options:[{t:"Rubber",d:"🎈"},{t:"Metal",d:"🔩"}],correct:0},
+      {q:"Which material can break easily?",big:"🔷",options:[{t:"Glass",d:"🥃"},{t:"Rubber",d:"🎈"}],correct:0}
+    ]},
+    { level:3, group:"🔬 Science", id:"l3-floatsink", title:"Float or Sink", emoji:"🛁", color:SC, type:"truefalse", questions:[
+      {q:"A leaf floats on water.",big:"🍃",tf:true},
+      {q:"A big rock floats on water.",big:"🪨",tf:false},
+      {q:"A boat floats on water.",big:"⛵",tf:true},
+      {q:"A metal coin sinks in water.",big:"🪙",tf:true},
+      {q:"A rubber duck floats.",big:"🦆",tf:true},
+      {q:"An apple sinks straight to the bottom.",big:"🍎",tf:false}
+    ]},
+    { level:3, group:"🔬 Science", id:"l3-lifecycle", title:"Life Cycle 🎮", emoji:"🦋", color:SC, type:"order", rounds:[
+      {q:"Order the butterfly life cycle!",items:[{d:"🥚",v:1,say:"egg"},{d:"🐛",v:2,say:"caterpillar"},{d:"🛖",v:3,say:"cocoon"},{d:"🦋",v:4,say:"butterfly"}]},
+      {q:"Order a plant growing!",items:[{d:"🌰",v:1,say:"seed"},{d:"🌱",v:2,say:"sprout"},{d:"🌿",v:3,say:"plant"},{d:"🌻",v:4,say:"flower"}]},
+      {q:"Order a frog's life!",items:[{d:"🥚",v:1,say:"egg"},{d:"🐛",v:2,say:"tadpole"},{d:"🐸",v:3,say:"frog"}]}
+    ]},
+    { level:3, group:"🔬 Science", id:"l3-healthy", title:"Healthy or Not?", emoji:"🥗", color:SC, type:"truefalse", questions:[
+      {q:"Fruits and vegetables are healthy.",big:"🥗",tf:true},
+      {q:"Eating lots of candy every day is healthy.",big:"🍭",tf:false},
+      {q:"Drinking water is good for you.",big:"💧",tf:true},
+      {q:"Brushing teeth keeps them healthy.",big:"🪥",tf:true},
+      {q:"Exercise makes your body strong.",big:"🏃",tf:true},
+      {q:"Sleeping well helps you grow.",big:"😴",tf:true}
+    ]},
+
+    /* ---- ENGLISH · LEVEL 3 ---- */
+    { level:3, group:"🔤 English", id:"l3-synonyms", title:"Same Meaning", emoji:"🟰", color:EN, questions:[
+      {q:"Which means the same as BIG?",big:"🐘",options:[{t:"Large",d:"⬆️"},{t:"Tiny",d:"🐜"}],correct:0},
+      {q:"Which means the same as HAPPY?",big:"😀",options:[{t:"Glad",d:"😊"},{t:"Sad",d:"😢"}],correct:0},
+      {q:"Which means the same as FAST?",big:"💨",options:[{t:"Quick",d:"⚡"},{t:"Slow",d:"🐢"}],correct:0},
+      {q:"Which means the same as SMALL?",big:"🐜",options:[{t:"Little",d:"🔽"},{t:"Huge",d:"🐘"}],correct:0},
+      {q:"Which means the same as PRETTY?",big:"🌸",options:[{t:"Beautiful",d:"✨"},{t:"Ugly",d:"👹"}],correct:0},
+      {q:"Which means the same as SCARED?",big:"😨",options:[{t:"Afraid",d:"😱"},{t:"Brave",d:"🦁"}],correct:0}
+    ]},
+    { level:3, group:"🔤 English", id:"l3-compound", title:"Word + Word", emoji:"🧩", color:EN, questions:[
+      {q:"Sun + flower = ?",big:"☀️➕🌸",options:[{t:"Sunflower",d:"🌻"},{t:"Flowersun",d:"❌"}],correct:0},
+      {q:"Rain + bow = ?",big:"🌧️➕🎀",options:[{t:"Rainbow",d:"🌈"},{t:"Bowrain",d:"❌"}],correct:0},
+      {q:"Foot + ball = ?",big:"🦶➕⚽",options:[{t:"Football",d:"⚽"},{t:"Ballfoot",d:"❌"}],correct:0},
+      {q:"Butter + fly = ?",big:"🧈➕🪰",options:[{t:"Butterfly",d:"🦋"},{t:"Flybutter",d:"❌"}],correct:0},
+      {q:"Star + fish = ?",big:"⭐➕🐟",options:[{t:"Starfish",d:"⭐"},{t:"Fishstar",d:"❌"}],correct:0},
+      {q:"Cup + cake = ?",big:"☕➕🍰",options:[{t:"Cupcake",d:"🧁"},{t:"Cakecup",d:"❌"}],correct:0}
+    ]},
+    { level:3, group:"🔤 English", id:"l3-actions", title:"Action Words", emoji:"🏃", color:EN, questions:[
+      {q:"Which word is an action (doing) word?",big:"🏃",options:[{t:"Run",d:"🏃"},{t:"Apple",d:"🍎"}],correct:0},
+      {q:"A bird can...?",big:"🐦",options:[{t:"Fly",d:"🪽"},{t:"Table",d:"🪑"}],correct:0},
+      {q:"Which is an action word?",big:"❓",options:[{t:"Jump",d:"🦘"},{t:"Chair",d:"🪑"}],correct:0},
+      {q:"A fish can...?",big:"🐟",options:[{t:"Swim",d:"🏊"},{t:"Book",d:"📖"}],correct:0},
+      {q:"Which word shows doing something?",big:"❓",options:[{t:"Eat",d:"🍽️"},{t:"Blue",d:"🔵"}],correct:0},
+      {q:"We use our legs to...?",big:"🦵",options:[{t:"Walk",d:"🚶"},{t:"Sleep only",d:"😴"}],correct:0}
+    ]},
+    { level:3, group:"🔤 English", id:"l3-sentence", title:"Make a Sentence 🎮", emoji:"📝", color:EN, type:"order", rounds:[
+      {q:"Put the words in order to make a sentence!",items:[{d:"I",v:1,say:"I"},{d:"like",v:2,say:"like"},{d:"cats",v:3,say:"cats"}]},
+      {q:"Order the words!",items:[{d:"The",v:1,say:"The"},{d:"dog",v:2,say:"dog"},{d:"runs",v:3,say:"runs"}]},
+      {q:"Order the words!",items:[{d:"We",v:1,say:"We"},{d:"play",v:2,say:"play"},{d:"ball",v:3,say:"ball"}]},
+      {q:"Order the words!",items:[{d:"She",v:1,say:"She"},{d:"has",v:2,say:"has"},{d:"a",v:3,say:"a"},{d:"pen",v:4,say:"pen"}]}
+    ]},
+    { level:1, group:"🔤 English", id:"mem-rhyme", title:"Memory: Rhyme Match", emoji:"🧠", color:EN, type:"memory", intro:"Match the words that rhyme!", pairs:[
+      {0:"🐱 cat",1:"🎩 hat",say:"cat",say2:"hat"},
+      {0:"🐕 dog",1:"🐸 frog",say:"dog",say2:"frog"},
+      {0:"⭐ star",1:"🚗 car",say:"star",say2:"car"},
+      {0:"🐝 bee",1:"🌳 tree",say:"bee",say2:"tree"}
+    ]},
+
+    /* ---- REASONING · LEVEL 3 ---- */
+    { level:3, group:"🧠 Reasoning", id:"l3-relations", title:"Who Am I?", emoji:"👥", color:RE, questions:[
+      {q:"I am your parent's mother. Who am I?",big:"👵",options:[{t:"Grandmother",d:"👵"},{t:"Sister",d:"👧"}],correct:0},
+      {q:"I have a trunk and big ears and I am grey. Who am I?",big:"❓",options:[{t:"Elephant",d:"🐘"},{t:"Rabbit",d:"🐰"}],correct:0},
+      {q:"I give light in the day and I am very hot. Who am I?",big:"❓",options:[{t:"The Sun",d:"☀️"},{t:"The Moon",d:"🌙"}],correct:0},
+      {q:"I say 'meow' and drink milk. Who am I?",big:"❓",options:[{t:"Cat",d:"🐱"},{t:"Cow",d:"🐄"}],correct:0},
+      {q:"I have wings, I buzz, and I make honey. Who am I?",big:"❓",options:[{t:"Bee",d:"🐝"},{t:"Bird",d:"🐦"}],correct:0},
+      {q:"You use me to see. I blink. What am I?",big:"❓",options:[{t:"Eye",d:"👁️"},{t:"Ear",d:"👂"}],correct:0}
+    ]},
+    { level:3, group:"🧠 Reasoning", id:"l3-direction", title:"Which Direction?", emoji:"🧭", color:RE, questions:[
+      {q:"The sun rises in the...?",big:"🌅",options:[{t:"East",d:"➡️"},{t:"West",d:"⬅️"}],correct:0},
+      {q:"If you face up and turn around, you face...?",big:"🔄",options:[{t:"Down / back",d:"⬇️"},{t:"Up",d:"⬆️"}],correct:0},
+      {q:"North is up on a map. What is at the bottom?",big:"🗺️",options:[{t:"South",d:"⬇️"},{t:"North",d:"⬆️"}],correct:0},
+      {q:"Turn right from facing up (north). You face...?",big:"↪️",options:[{t:"East / right",d:"➡️"},{t:"Left",d:"⬅️"}],correct:0},
+      {q:"The sun sets in the...?",big:"🌇",options:[{t:"West",d:"⬅️"},{t:"East",d:"➡️"}],correct:0},
+      {q:"Left is this hand for most writing? (the other one)",big:"🖐️",options:[{t:"The non-writing hand often",d:"🤚"},{t:"Your nose",d:"👃"}],correct:0}
+    ]},
+    { level:3, group:"🧠 Reasoning", id:"l3-ranking2", title:"Ranking Puzzles", emoji:"🏆", color:RE, questions:[
+      {q:"Tom is taller than Sam. Sam is taller than Ravi. Who is TALLEST?",big:"📏",options:[{t:"Tom",d:"🥇"},{t:"Ravi",d:"🥉"}],correct:0},
+      {q:"A cat is faster than a turtle. A dog is faster than the cat. Who is fastest?",big:"💨",options:[{t:"Dog",d:"🐕"},{t:"Turtle",d:"🐢"}],correct:0},
+      {q:"Box A is heavier than B. C is heavier than A. Which is heaviest?",big:"📦",options:[{t:"Box C",d:"🅲"},{t:"Box B",d:"🅱️"}],correct:0},
+      {q:"Anu is older than Bina. Bina is older than Sia. Who is youngest?",big:"👶",options:[{t:"Sia",d:"🍼"},{t:"Anu",d:"🧒"}],correct:0},
+      {q:"Red tower is taller than blue. Green is shorter than blue. Tallest?",big:"🗼",options:[{t:"Red",d:"🔴"},{t:"Green",d:"🟢"}],correct:0},
+      {q:"5 is more than 3. 8 is more than 5. Which is the most?",big:"🔢",options:[{t:"Eight",d:"8"},{t:"Three",d:"3"}],correct:0}
+    ]}
+  );
+})();
+</script>
+
+<script>
+/* Register service worker for offline install (works only over http/https, not file://) */
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('service-worker.js').catch(function (e) { console.log('SW registration skipped:', e && e.message); });
+  });
+}
+</script>
+</body>
+</html>

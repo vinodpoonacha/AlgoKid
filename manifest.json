@@ -1,0 +1,18 @@
+{
+  "name": "Algo Kid — Olympiad Learning",
+  "short_name": "Algo Kid",
+  "description": "Fun Olympiad, algorithms and data-structure learning games for young children (UKG & Class 1).",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#EEF4FF",
+  "theme_color": "#7C5CFC",
+  "categories": ["education", "kids"],
+  "lang": "en",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
