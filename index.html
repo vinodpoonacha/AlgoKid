@@ -154,7 +154,11 @@
   .pbar>div{ height:100%; width:0; border-radius:8px; transition:width .4s ease; }
   .qcard{ background:#fff; border-radius:24px; padding:20px 16px; text-align:center; box-shadow:var(--shadow); }
   .qrow{ display:flex; gap:8px; align-items:center; justify-content:center; }
-  .qtext{ font-family:var(--head); font-size:21px; font-weight:700; line-height:1.25; }
+  .qtext{ font-family:var(--head); font-size:22px; font-weight:700; line-height:1.55; }
+  .qtext .word{ cursor:pointer; padding:1px 4px; border-radius:7px; transition:background .12s, color .12s; display:inline-block; }
+  .qtext .word:active{ background:#EDE7F7; }
+  .qtext .word.wreading{ background:var(--purple); color:#fff; }
+  .qtext .word.wtap{ background:#FFE08A; }
   .readbtn{ width:40px; height:40px; border-radius:50%; color:#fff; font-size:18px; flex-shrink:0; box-shadow:0 4px 10px rgba(0,0,0,.12); }
   .qbig{ font-size:46px; margin:16px 0 4px; white-space:pre-line; line-height:1.15; }
   .bwrap{ min-height:46px; display:flex; align-items:center; justify-content:center; margin:12px 0; }
@@ -280,6 +284,12 @@
       <option value="0.95">Normal</option>
       <option value="0.82">Slow</option>
       <option value="0.7">Slower (best for little ones)</option>
+    </select>
+    <label for="readModeSel">Reading help</label>
+    <select id="readModeSel">
+      <option value="together">Read with me (highlight each word)</option>
+      <option value="listen">Read to me (whole question)</option>
+      <option value="myself">I'll read myself (tap words for help)</option>
     </select>
     <div class="row">
       <button class="kbtn btn-ghost" id="testVoiceBtn">🔊 Test</button>
@@ -464,6 +474,17 @@ const cfStyle=document.createElement('style'); cfStyle.textContent="@keyframes c
 const view=document.getElementById('view');
 let currentTab='home';
 let curLevel=1;
+let curSubject=null;
+const SUBJECTS=[
+  {group:'🔢 Math',      name:'Maths',    emoji:'🔢', color:'#3B82F6'},
+  {group:'🔤 English',   name:'English',  emoji:'🔤', color:'#EF4444'},
+  {group:'🔬 Science',   name:'Science',  emoji:'🔬', color:'#22C55E'},
+  {group:'🧠 Reasoning', name:'Reasoning',emoji:'🧠', color:'#8B5CF6'},
+  {group:'🌍 GK & EVS',  name:'GK & EVS', emoji:'🌍', color:'#F59E0B'}
+];
+const SUBGRAD={'🔢 Math':'linear-gradient(135deg,#3B82F6,#6DA8FF)','🔤 English':'linear-gradient(135deg,#EF4444,#FB7185)','🔬 Science':'linear-gradient(135deg,#22C55E,#6EE7A0)','🧠 Reasoning':'linear-gradient(135deg,#8B5CF6,#B794F6)','🌍 GK & EVS':'linear-gradient(135deg,#F59E0B,#FCD34D)'};
+function openSubject(g){ curSubject=g; curLevel=1; renderSection('olympiad'); }
+function backToSubjects(){ curSubject=null; renderSection('olympiad'); }
 function setLevel(key,lv){ curLevel=lv; renderSection(key); }
 function setTab(tab){ currentTab=tab; document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab)); }
 function showNav(on){ if(on){ stopReading(); } document.getElementById('nav').style.display=on?'flex':'none'; }
@@ -477,7 +498,7 @@ document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',(
 
 /* ---------------- HOME ---------------- */
 const SECGRAD={ algorithms:'linear-gradient(135deg,#8B6BFF,#6D9CFF)', data:'linear-gradient(135deg,#2FD3A5,#22B07A)', olympiad:'linear-gradient(135deg,#FDB646,#F5872A)' };
-function renderHome(){ setTab('home'); showNav(true); curLevel=1; window.scrollTo(0,0);
+function renderHome(){ setTab('home'); showNav(true); curLevel=1; curSubject=null; window.scrollTo(0,0);
   const prog=getProg();
   let worlds='';
   for(const key in CONTENT){ const s=CONTENT[key];
@@ -517,16 +538,42 @@ function renderHome(){ setTab('home'); showNav(true); curLevel=1; window.scrollT
 }
 
 /* ---------------- SECTION ---------------- */
-function levelStats(s,prog,lv){ const ts=s.topics.filter(t=>(t.level||1)===lv); let played=0,sum=0;
+function levelStats(pool,prog,lv){ const ts=pool.filter(t=>(t.level||1)===lv); let played=0,sum=0;
   ts.forEach(t=>{ const pr=prog[t.id]; if(pr&&pr.plays){ played++; sum+=pr.best; } });
   return {count:ts.length, played, avg: played? sum/played : 0}; }
-function levelUnlocked(s,prog,lv){ if(lv<=1) return true; const p=levelStats(s,prog,lv-1); return p.played>=3 && p.avg>=0.5; }
+function levelUnlocked(pool,prog,lv){ if(lv<=1) return true; const p=levelStats(pool,prog,lv-1); return p.played>=3 && p.avg>=0.5; }
+function renderSubjectPicker(){ setTab('home'); showNav(true); window.scrollTo(0,0);
+  const s=CONTENT.olympiad; const prog=getProg(); let cards='';
+  SUBJECTS.forEach(sub=>{ const tps=s.topics.filter(t=>t.group===sub.group); if(!tps.length) return;
+    const done=tps.filter(t=>prog[t.id]&&prog[t.id].plays).length;
+    let sum=0,n=0; tps.forEach(t=>{ const pr=prog[t.id]; if(pr&&pr.plays){ sum+=pr.best; n++; } }); const avg=n?Math.round(sum/n*100):0;
+    cards+=`<button class="kbtn world" onclick="openSubject('${sub.group}')">
+      <span class="strip" style="background:${sub.color}"></span>
+      <span class="ic" style="background:${sub.color}22">${sub.emoji}</span>
+      <span><span class="t" style="color:${sub.color}">${sub.name}</span>
+        <span class="s">${tps.length} topics · ${done} played</span>
+        <span class="s" style="color:${sub.color};margin-top:2px">${avg}% mastered</span></span>
+      <span class="go">›</span></button>`; });
+  view.innerHTML=`<div class="screen">
+    <div class="hero" style="background:${SECGRAD.olympiad}"><h2>🏆 Olympiad</h2><p>Pick a subject to practise</p></div>
+    <div class="quick" style="grid-template-columns:1fr 1fr">
+      <button class="kbtn qtile" style="background:linear-gradient(135deg,#FDB646,#F5872A)" onclick="startSmartPractice('olympiad')"><span class="qe">🎯</span>Practice weak spots</button>
+      <button class="kbtn qtile" style="background:linear-gradient(135deg,#EC4899,#F0708F)" onclick="startChallenge('olympiad')"><span class="qe">⏱️</span>Timed challenge</button>
+    </div>
+    <div class="sec-title">Subjects</div>
+    <div class="worlds-grid">${cards}</div>
+    <button class="kbtn backbtn" onclick="renderHome()">‹ Back to worlds</button>
+  </div>`;
+}
 function renderSection(key){ setTab('home'); showNav(true); window.scrollTo(0,0);
   const s=CONTENT[key]; const prog=getProg();
-  const maxLevel = Math.max.apply(null, s.topics.map(t=>t.level||1));
+  if(key==='olympiad' && !curSubject){ return renderSubjectPicker(); }
+  const subjMeta = (key==='olympiad'&&curSubject)? SUBJECTS.find(x=>x.group===curSubject) : null;
+  const pool = subjMeta? s.topics.filter(t=>t.group===curSubject) : s.topics;
+  const maxLevel = Math.max.apply(null, pool.map(t=>t.level||1));
   if(curLevel>maxLevel) curLevel=1;
-  const unlocked = levelUnlocked(s,prog,curLevel);
-  const topics = s.topics.filter(t=>(t.level||1)===curLevel);
+  const unlocked = levelUnlocked(pool,prog,curLevel);
+  const topics = pool.filter(t=>(t.level||1)===curLevel);
   let lastGroup=null, html='';
   const LNAME={1:'Level 1 · Basics',2:'Level 2 · Challenge',3:'Level 3 · Master'};
   if(!unlocked){
@@ -537,7 +584,7 @@ function renderSection(key){ setTab('home'); showNav(true); window.scrollTo(0,0)
   } else {
     html+=`<div class="topics-grid">`;
     topics.forEach(t=>{
-      if(t.group&&t.group!==lastGroup){ html+=`<div class="grouphdr">${t.group}<span class="line"></span></div>`; lastGroup=t.group; }
+      if(!subjMeta && t.group&&t.group!==lastGroup){ html+=`<div class="grouphdr">${t.group}<span class="line"></span></div>`; lastGroup=t.group; }
       const pr=prog[t.id]||{plays:0,best:0}; const c=conf(pr.best,pr.plays);
       const gt = t.type==='order'?'🎮 Order game': t.type==='memory'?'🧠 Memory game': t.type==='tapcount'?'👆 Tap game': t.type==='truefalse'?'✅ True or False':'❓ '+topicCount(t)+' questions';
       html+=`<button class="kbtn topic" onclick="startTopic('${key}','${t.id}')">
@@ -550,12 +597,16 @@ function renderSection(key){ setTab('home'); showNav(true); window.scrollTo(0,0)
     if(!topics.length) html=`<div class="lockmsg"><div style="font-size:40px">✨</div><p style="color:var(--muted);font-weight:700;margin-top:8px">More games coming here soon!</p></div>`;
   }
   let segs='';
-  for(let lv=1; lv<=maxLevel; lv++){ const ul=levelUnlocked(s,prog,lv);
+  for(let lv=1; lv<=maxLevel; lv++){ const ul=levelUnlocked(pool,prog,lv);
     segs+=`<button class="seg ${curLevel===lv?'active':''}" onclick="setLevel('${key}',${lv})">L${lv}${ul?'':' <span class="lk">🔒</span>'}</button>`; }
   const toggle = maxLevel>1 ? `<div class="segwrap">${segs}</div>` : '';
+  const heroBg = subjMeta? (SUBGRAD[curSubject]||SECGRAD[key]) : (SECGRAD[key]||'linear-gradient(135deg,#7C5CFC,#6D9CFF)');
+  const heroTitle = subjMeta? (subjMeta.emoji+' '+subjMeta.name) : (s.emoji+' '+s.title);
+  const heroSub = subjMeta? 'Olympiad practice' : s.subtitle;
+  const backBtn = subjMeta? `<button class="kbtn backbtn" onclick="backToSubjects()">‹ Back to subjects</button>` : `<button class="kbtn backbtn" onclick="renderHome()">‹ Back to worlds</button>`;
   view.innerHTML=`<div class="screen">
-    <div class="hero" style="background:${SECGRAD[key]||'linear-gradient(135deg,#7C5CFC,#6D9CFF)'}">
-      <h2>${s.emoji} ${s.title}</h2><p>${s.subtitle}</p></div>
+    <div class="hero" style="background:${heroBg}">
+      <h2>${heroTitle}</h2><p>${heroSub}</p></div>
     ${toggle}
     <div class="quick" style="grid-template-columns:1fr 1fr">
       <button class="kbtn qtile" style="background:linear-gradient(135deg,#FDB646,#F5872A)" onclick="startSmartPractice('${key}')"><span class="qe">🎯</span>Practice weak spots</button>
@@ -563,7 +614,7 @@ function renderSection(key){ setTab('home'); showNav(true); window.scrollTo(0,0)
     </div>
     <div class="sec-title">${LNAME[curLevel]||'Games &amp; topics'}</div>
     ${html}
-    <button class="kbtn backbtn" onclick="renderHome()">‹ Back to worlds</button>
+    ${backBtn}
   </div>`;
 }
 
@@ -573,18 +624,24 @@ function readiness(){ const p=getProg(); const all=allTopics(); let sum=0,n=0;
   if(!n) return 0; const covered=n/all.length; return Math.round((sum/n)*covered*100); }
 function renderReport(){ setTab('report'); showNav(true); window.scrollTo(0,0);
   const p=getProg(); const rd=readiness();
-  let body='';
-  for(const key in CONTENT){ const s=CONTENT[key];
-    let rows=''; let sum=0,n=0;
-    s.topics.forEach(t=>{ const pr=p[t.id]||{plays:0,best:0}; const c=conf(pr.best,pr.plays);
-      if(pr.plays){ sum+=pr.best; n++; }
+  function rowsFor(list){ let rows='',sum=0,n=0;
+    list.forEach(t=>{ const pr=p[t.id]||{plays:0,best:0}; const c=conf(pr.best,pr.plays); if(pr.plays){ sum+=pr.best; n++; }
       rows+=`<div class="rrow"><span style="font-size:22px">${t.emoji}</span>
         <span class="rn">${t.title}</span>
         <span class="rmini"><div style="width:${c.pct}%;background:${c.color}"></div></span>
-        <span class="badge" style="background:${c.color};min-width:74px;text-align:center">${pr.plays?c.label:'—'}</span></div>`;
-    });
-    const avg=n?Math.round((sum/n)*100):0;
-    body+=`<div class="sec-title" style="display:flex;justify-content:space-between"><span>${s.emoji} ${s.title}</span><span style="color:${s.color}">${avg}%</span></div><div class="rcard">${rows}</div>`;
+        <span class="badge" style="background:${c.color};min-width:74px;text-align:center">${pr.plays?c.label:'—'}</span></div>`; });
+    return {rows, avg: n?Math.round((sum/n)*100):0}; }
+  let body='';
+  for(const key in CONTENT){ const s=CONTENT[key];
+    if(key==='olympiad'){
+      body+=`<div class="sec-title" style="display:flex;justify-content:space-between"><span>${s.emoji} ${s.title}</span></div>`;
+      SUBJECTS.forEach(sub=>{ const list=s.topics.filter(t=>t.group===sub.group); if(!list.length) return;
+        const r=rowsFor(list);
+        body+=`<div style="display:flex;justify-content:space-between;align-items:center;margin:6px 6px 6px;font-family:var(--head);font-weight:800;font-size:14px"><span>${sub.emoji} ${sub.name}</span><span style="color:${sub.color}">${r.avg}%</span></div><div class="rcard">${r.rows}</div>`; });
+    } else {
+      const r=rowsFor(s.topics);
+      body+=`<div class="sec-title" style="display:flex;justify-content:space-between"><span>${s.emoji} ${s.title}</span><span style="color:${s.color}">${r.avg}%</span></div><div class="rcard">${r.rows}</div>`;
+    }
   }
   let tip;
   if(rd>=85) tip="Outstanding! Your child is leading and olympiad-ready. 🏆";
@@ -607,7 +664,11 @@ function renderReport(){ setTab('report'); showNav(true); window.scrollTo(0,0);
 
 /* ---------------- GAME DISPATCH ---------------- */
 let G=null;
-function startTopic(key,topicId){ const s=CONTENT[key]; const t=s.topics.find(x=>x.id===topicId);
+function shuffledTopic(t){ const c=Object.assign({}, t);
+  if(Array.isArray(c.questions)) c.questions=shuffle(c.questions);
+  if(Array.isArray(c.rounds)) c.rounds=shuffle(c.rounds);
+  return c; }
+function startTopic(key,topicId){ const s=CONTENT[key]; const t0=s.topics.find(x=>x.id===topicId); const t=shuffledTopic(t0);
   showNav(false); window.scrollTo(0,0);
   if(t.type==='order') return startOrder(key,t);
   if(t.type==='memory') return startMemory(key,t);
@@ -630,13 +691,14 @@ function startQuiz(key,topic){ G={key,topic,accent:topic.color,idx:0,stars:0,sol
 function renderQuiz(){ const {topic,accent,idx,stars}=G; const q=topic.questions[idx];
   const order=shuffle(q.options.map((o,i)=>i));
   G.disp=order.map(i=>q.options[i]); G.correctDisp=order.indexOf(q.correct); G.scene=q.scene||null; G.sceneData=q.sceneData||null;
+  const qw=buildQWords(q.q); G.qwords=qw.words;
   const opts=G.disp.map((o,i)=>`<button class="kbtn opt" onclick="answer(${i})"><span class="oe">${o.ic&&typeof ICONS!=='undefined'&&ICONS[o.ic]?ICONS[o.ic]():o.d}</span><span class="ot">${o.t}</span></button>`).join("");
   const visual = q.scene&&typeof SCENES!=='undefined'&&SCENES[q.scene]
     ? `<div class="qscene" id="qscene">${SCENES[q.scene]('', q.sceneData)}</div>`
     : `<div class="qbig">${q.big||''}</div>`;
   view.innerHTML=`<div class="screen">${gameHead(topic,accent,idx,topic.questions.length,stars)}
-    <div class="qcard"><div class="qrow"><p class="qtext">${q.q}</p>
-      <button class="kbtn readbtn" style="background:${accent}" onclick="speak(${JSON.stringify(q.q).replace(/"/g,'&quot;')})">🔊</button></div>
+    <div class="qcard"><div class="qrow"><p class="qtext" id="qtext">${qw.html}</p>
+      <button class="kbtn readbtn" style="background:${accent}" onclick="replayRead()">🔊</button></div>
       ${visual}</div>
     <div class="bwrap" id="bw"></div><div id="opts">${opts}</div></div>`;
   G.wrongThis=false; readQuestionAndOptions(q, G.disp);
@@ -772,7 +834,7 @@ function finishCustom(count,firstTryScore,msg){ clearGTimer(); const {topic,acce
 
 /* ---------------- SPLASH / DIAGNOSTIC ---------------- */
 document.getElementById('splashRobot').innerHTML=robot(150,'happy');
-function enterApp(){ CONTENT = window.__CONTENT__ || CONTENT; curOutfit=lsGet('ak_outfit')||'none'; musicOn=lsGet('ak_music')!=='off'; applyTheme(lsGet('ak_theme')||'default');
+function enterApp(){ CONTENT = window.__CONTENT__ || CONTENT; curOutfit=lsGet('ak_outfit')||'none'; musicOn=lsGet('ak_music')!=='off'; readMode=lsGet('ak_readmode')||'together'; applyTheme(lsGet('ak_theme')||'default');
   document.getElementById('splash').style.display='none'; document.getElementById('app').style.display='flex';
   document.getElementById('totalStars').textContent=totalStars; bumpStreak(); startTimeTracking(); if(musicOn) startMusic(); renderHome(); }
 document.getElementById('startBtn').addEventListener('click',()=>{
@@ -798,12 +860,13 @@ function runDiagnostic(){ if(!('speechSynthesis' in window)){ setDiag("not suppo
 document.getElementById('voiceLink').addEventListener('click',openSettings);
 
 /* ---------------- SETTINGS ---------------- */
-function openSettings(){ buildVoiceSelect(); var mb=document.getElementById('musicBtn'); if(mb) mb.textContent=musicOn?'🎵 Music: On':'🔇 Music: Off'; buildThemeGrid(); updateInstall(); document.getElementById('settings').style.display='flex'; }
+function openSettings(){ buildVoiceSelect(); var mb=document.getElementById('musicBtn'); if(mb) mb.textContent=musicOn?'🎵 Music: On':'🔇 Music: Off'; var rm=document.getElementById('readModeSel'); if(rm) rm.value=readMode; buildThemeGrid(); updateInstall(); document.getElementById('settings').style.display='flex'; }
 function closeSettings(){ document.getElementById('settings').style.display='none'; if(document.getElementById('app').style.display!=='none' && currentTab==='report') renderReport(); }
 document.getElementById('doneSettingsBtn').addEventListener('click',closeSettings);
 document.getElementById('testVoiceBtn').addEventListener('click',()=>speak("Hello! I am Algo. Let's play and learn!"));
 document.getElementById('voiceSel').addEventListener('change',function(){ const v=allVoices.find(x=>x.name===this.value); if(v){ voice=v; lsSet('ak_voice',v.name); speak("This is my new voice!"); } });
 document.getElementById('speedSel').addEventListener('change',function(){ rate=parseFloat(this.value)||0.95; lsSet('ak_rate',String(rate)); speak("This is how fast I will talk."); });
+(function(){ var rm=document.getElementById('readModeSel'); if(rm) rm.addEventListener('change',function(){ readMode=this.value; lsSet('ak_readmode',readMode); var msg=readMode==='together'?"I will read with you and light up each word.":readMode==='listen'?"I will read the whole question to you.":"Try reading yourself! Tap any word to hear it."; speak(msg); }); })();
 document.getElementById('resetBtn').addEventListener('click',function(){ if(confirm("Reset all stars and progress?")){ try{ localStorage.removeItem('ak_prog'); localStorage.removeItem('ak_stars'); }catch(e){} totalStars=0; document.getElementById('totalStars').textContent=0; closeSettings(); renderHome(); } });
 const sr=parseFloat(lsGet('ak_rate')); if(!isNaN(sr)) rate=sr;
 document.getElementById('muteBtn').addEventListener('click',function(){ muted=!muted;
@@ -921,9 +984,10 @@ function renderParentDash(){ const p=getProg(); const st=getStreak();
 /* ================= TRUE / FALSE ENGINE ================= */
 function startTF(key,topic){ G={key,topic,accent:topic.color,idx:0,stars:0,solved:false,wrongThis:false,firstTry:0}; renderTF(); }
 function renderTF(){ const {topic,accent,idx,stars}=G; const q=topic.questions[idx];
+  const qw=buildQWords(q.q); G.qwords=qw.words; G.disp=null;
   view.innerHTML=`<div class="screen">${gameHead(topic,accent,idx,topic.questions.length,stars)}
-    <div class="qcard"><div class="qrow"><p class="qtext">${q.q}</p>
-      <button class="kbtn readbtn" style="background:${accent}" onclick="speak(${JSON.stringify(q.q).replace(/"/g,'&quot;')})">🔊</button></div>
+    <div class="qcard"><div class="qrow"><p class="qtext" id="qtext">${qw.html}</p>
+      <button class="kbtn readbtn" style="background:${accent}" onclick="replayRead()">🔊</button></div>
       <div class="qbig">${q.big||''}</div></div>
     <div class="bwrap" id="bw"></div>
     <div style="display:flex;gap:12px" id="tfopts">
@@ -995,33 +1059,62 @@ function setTheme(k){ applyTheme(k); buildThemeGrid(); ding(); partyCharacters(4
 function hideThink(){ const tb=document.getElementById('thinkBuddy'); if(tb) tb.style.display='none'; }
 
 /* ================= AUTO-READ OPTIONS + IDLE BUDDY ================= */
-let readSeqId=0, idleTimer=null;
+let readSeqId=0, idleTimer=null, readMode='together';
+const _WSYM={'+':'plus','-':'minus','=':'equals','×':'times','÷':'divided by','&':'and','?':'','!':'','.':'',',':'',':':'',';':''};
+function buildQWords(text){ const parts=String(text||'').split(/(\s+)/); const words=[]; let html=''; let wi=0;
+  parts.forEach(function(p){ if(p==='') return; if(/^\s+$/.test(p)){ html+=' '; return; }
+    var tts=(_WSYM[p]!==undefined)? _WSYM[p] : (p.replace(/[^A-Za-z0-9']/g,' ').trim());
+    words.push({raw:p, tts:tts}); html+='<span class="word" id="qw'+wi+'" onclick="sayWord('+wi+')">'+p+'</span>'; wi++; });
+  return {html:html, words:words}; }
 function highlightOption(i){
   document.querySelectorAll('#opts .opt').forEach((b,j)=>b.classList.toggle('reading', j===i));
   document.querySelectorAll('#tfopts .opt').forEach((b,j)=>b.classList.toggle('reading', j===i));
 }
+function highlightWord(wi){ document.querySelectorAll('#qtext .word').forEach((w,j)=>w.classList.toggle('wreading', j===wi)); }
+function clearWordHi(){ document.querySelectorAll('#qtext .word.wreading').forEach(w=>w.classList.remove('wreading')); }
 function clearHighlight(){ document.querySelectorAll('.opt.reading').forEach(b=>b.classList.remove('reading')); }
 function clearIdle(){ if(idleTimer){ clearTimeout(idleTimer); idleTimer=null; } hideThink(); }
-function startIdleTimer(){ clearIdle(); idleTimer=setTimeout(()=>{ if(typeof G!=='undefined'&&G&&!G.solved){ thinkCharacter(); if(!muted) speak("Take your time! Which one do you think is right?"); } }, 9000); }
-function stopReading(){ readSeqId++; try{ if('speechSynthesis' in window) speechSynthesis.cancel(); }catch(e){} clearHighlight(); clearIdle(); }
-function readSequence(items){ const myId=++readSeqId;
+function startIdleTimer(){ clearIdle(); idleTimer=setTimeout(()=>{ if(typeof G!=='undefined'&&G&&!G.solved){ thinkCharacter(); if(!muted && readMode!=='myself') speak("Take your time! Which one do you think is right?"); } }, 9000); }
+function stopReading(){ readSeqId++; try{ if('speechSynthesis' in window) speechSynthesis.cancel(); }catch(e){} clearHighlight(); clearWordHi(); clearIdle(); }
+function playSequence(items){ const myId=++readSeqId;
   if(muted || !('speechSynthesis' in window)){ startIdleTimer(); return; }
   let k=0;
   function step(){ if(myId!==readSeqId) return;
-    if(k>=items.length){ clearHighlight(); startIdleTimer(); return; }
-    const it=items[k++]; highlightOption(it.idx);
-    if(typeof setSceneHighlight==='function') setSceneHighlight(it.idx===-1?'':(it.hi||''));
+    if(k>=items.length){ clearHighlight(); clearWordHi(); startIdleTimer(); return; }
+    const it=items[k++];
+    if(it.wi!=null){ clearHighlight(); if(typeof setSceneHighlight==='function') setSceneHighlight(''); highlightWord(it.wi); }
+    else if(it.idx!=null && it.idx>=0){ clearWordHi(); highlightOption(it.idx); if(typeof setSceneHighlight==='function') setSceneHighlight(it.hi||''); }
+    else { clearWordHi(); highlightOption(-1); if(typeof setSceneHighlight==='function') setSceneHighlight(''); }
+    if(!it.text){ setTimeout(step, it.wi!=null?230:120); return; }
     try{ speechSynthesis.cancel(); }catch(e){}
     let u; try{ u=new SpeechSynthesisUtterance(it.text); }catch(e){ return; }
-    if(voice) u.voice=voice; u.rate=rate; u.pitch=1.12; u.volume=1;
-    u.onend=()=>{ if(myId===readSeqId) setTimeout(step, it.idx===-1?260:170); };
-    u.onerror=()=>{ if(myId===readSeqId) setTimeout(step,160); };
-    try{ speechSynthesis.resume(); speechSynthesis.speak(u); }catch(e){ setTimeout(step,160); }
+    if(voice) u.voice=voice; u.rate= it.wi!=null? Math.min(rate,0.75) : rate; u.pitch=1.12; u.volume=1;
+    const gap = it.wi!=null? 110 : (it.idx===-1?260:170);
+    u.onend=()=>{ if(myId===readSeqId) setTimeout(step, gap); };
+    u.onerror=()=>{ if(myId===readSeqId) setTimeout(step, gap); };
+    try{ speechSynthesis.resume(); speechSynthesis.speak(u); }catch(e){ setTimeout(step, gap); }
   }
   setTimeout(step,300);
 }
-function readQuestionAndOptions(q, disp){ readSequence([{text:q.q,idx:-1}].concat(disp.map((o,i)=>({text:o.t,idx:i,hi:o.hi})))); }
-function readTFQuestion(q){ readSequence([{text:q.q,idx:-1},{text:'True',idx:0},{text:'False',idx:1}]); }
+function readQuestionAndOptions(q, disp){
+  const opts=disp.map((o,i)=>({text:o.t, idx:i, hi:o.hi}));
+  if(readMode==='myself'){ startIdleTimer(); return; }
+  if(readMode==='together' && typeof G!=='undefined' && G && G.qwords && G.qwords.length){
+    playSequence(G.qwords.map((w,i)=>({text:w.tts, wi:i})).filter(x=>x.text!=='').concat(opts));
+  } else { playSequence([{text:q.q, idx:-1}].concat(opts)); }
+}
+function readTFQuestion(q){
+  const opts=[{text:'True',idx:0},{text:'False',idx:1}];
+  if(readMode==='myself'){ startIdleTimer(); return; }
+  if(readMode==='together' && typeof G!=='undefined' && G && G.qwords && G.qwords.length){
+    playSequence(G.qwords.map((w,i)=>({text:w.tts, wi:i})).filter(x=>x.text!=='').concat(opts));
+  } else { playSequence([{text:q.q, idx:-1}].concat(opts)); }
+}
+function sayWord(i){ if(typeof G==='undefined'||!G||!G.qwords||!G.qwords[i]) return; stopReading();
+  const el=document.getElementById('qw'+i); if(el){ el.classList.add('wtap'); setTimeout(()=>{ if(el) el.classList.remove('wtap'); },700); }
+  const t=G.qwords[i].tts; if(t) speak(t,{rate:Math.min(rate,0.72)}); }
+function replayRead(){ if(typeof G==='undefined'||!G) return; const q=(G.qlist&&G.qlist[G.idx])|| (G.topic&&G.topic.questions&&G.topic.questions[G.idx]); if(!q) return;
+  if(G.disp) readQuestionAndOptions(q, G.disp); else readTFQuestion(q); }
 
 /* ================= INSTALL BUTTON (PWA) ================= */
 let deferredPrompt=null;
@@ -2309,6 +2402,262 @@ window.__CONTENT__ = {
   );
 })();
 </script>
+<script>
+(function(){
+  var C = window.__CONTENT__; if(!C) return;
+  var AL="#7C5CFC", DA="#14B8A6", MA="#3B82F6", SC="#22C55E", EN="#EF4444", RE="#8B5CF6";
+
+  /* =================================================================
+     ENGLISH — more topics + interactive games (main focus)
+     ================================================================= */
+  C.olympiad.topics.push(
+    /* --- L1 --- */
+    { level:1, group:"🔤 English", id:"en-spell1", title:"Spell It!", emoji:"🔤", color:EN, type:"order", rounds:[
+      {q:"Spell CAT 🐱 — tap the letters in order!",items:[{d:"C",v:1,say:"C"},{d:"A",v:2,say:"A"},{d:"T",v:3,say:"T"}]},
+      {q:"Spell DOG 🐶 — tap in order!",items:[{d:"D",v:1,say:"D"},{d:"O",v:2,say:"O"},{d:"G",v:3,say:"G"}]},
+      {q:"Spell SUN ☀️ — tap in order!",items:[{d:"S",v:1,say:"S"},{d:"U",v:2,say:"U"},{d:"N",v:3,say:"N"}]},
+      {q:"Spell PIG 🐷 — tap in order!",items:[{d:"P",v:1,say:"P"},{d:"I",v:2,say:"I"},{d:"G",v:3,say:"G"}]},
+      {q:"Spell BUS 🚌 — tap in order!",items:[{d:"B",v:1,say:"B"},{d:"U",v:2,say:"U"},{d:"S",v:3,say:"S"}]}
+    ]},
+    { level:1, group:"🔤 English", id:"en-missing", title:"Missing Letter", emoji:"🔡", color:EN, questions:[
+      {q:"Which letter is missing?",big:"🐱  C _ T",options:[{t:"A",d:"A"},{t:"O",d:"O"},{t:"E",d:"E"}],correct:0},
+      {q:"Which letter is missing?",big:"🐶  D _ G",options:[{t:"O",d:"O"},{t:"A",d:"A"}],correct:0},
+      {q:"Which letter is missing?",big:"☀️  S _ N",options:[{t:"U",d:"U"},{t:"O",d:"O"}],correct:0},
+      {q:"Which letter is missing?",big:"🐟  F _ S H",options:[{t:"I",d:"I"},{t:"E",d:"E"}],correct:0},
+      {q:"Which letter is missing?",big:"🐝  B _ E",options:[{t:"E",d:"E"},{t:"A",d:"A"}],correct:0},
+      {q:"Which letter is missing?",big:"🎩  H _ T",options:[{t:"A",d:"A"},{t:"U",d:"U"}],correct:0},
+      {q:"Which letter is missing?",big:"🐷  P _ G",options:[{t:"I",d:"I"},{t:"A",d:"A"}],correct:0},
+      {q:"Which letter is missing?",big:"🚌  B _ S",options:[{t:"U",d:"U"},{t:"O",d:"O"}],correct:0}
+    ]},
+    { level:1, group:"🔤 English", id:"en-picword", title:"Picture & Word", emoji:"🧠", color:EN, type:"memory", intro:"Match the picture to its word!", pairs:[
+      {0:"🐱",1:"cat",say:"cat",say2:"cat"},
+      {0:"🐶",1:"dog",say:"dog",say2:"dog"},
+      {0:"☀️",1:"sun",say:"sun",say2:"sun"},
+      {0:"⭐",1:"star",say:"star",say2:"star"}
+    ]},
+
+    /* --- L2 --- */
+    { level:2, group:"🔤 English", id:"en-spell2", title:"Spell It! · 2", emoji:"🔤", color:EN, type:"order", rounds:[
+      {q:"Spell STAR ⭐ — tap in order!",items:[{d:"S",v:1,say:"S"},{d:"T",v:2,say:"T"},{d:"A",v:3,say:"A"},{d:"R",v:4,say:"R"}]},
+      {q:"Spell FROG 🐸 — tap in order!",items:[{d:"F",v:1,say:"F"},{d:"R",v:2,say:"R"},{d:"O",v:3,say:"O"},{d:"G",v:4,say:"G"}]},
+      {q:"Spell MILK 🥛 — tap in order!",items:[{d:"M",v:1,say:"M"},{d:"I",v:2,say:"I"},{d:"L",v:3,say:"L"},{d:"K",v:4,say:"K"}]},
+      {q:"Spell HAND ✋ — tap in order!",items:[{d:"H",v:1,say:"H"},{d:"A",v:2,say:"A"},{d:"N",v:3,say:"N"},{d:"D",v:4,say:"D"}]},
+      {q:"Spell DRUM 🥁 — tap in order!",items:[{d:"D",v:1,say:"D"},{d:"R",v:2,say:"R"},{d:"U",v:3,say:"U"},{d:"M",v:4,say:"M"}]}
+    ]},
+    { level:2, group:"🔤 English", id:"en-blends", title:"Sound Blends", emoji:"🔊", color:EN, questions:[
+      {q:"Which word starts with the 'SH' sound?",big:"🦈 🐟",options:[{t:"Shark",d:"🦈"},{t:"Fish",d:"🐟"}],correct:0},
+      {q:"Which starts with 'SH'?",big:"🚢 🐱",options:[{t:"Ship",d:"🚢"},{t:"Cat",d:"🐱"}],correct:0},
+      {q:"Which starts with 'CH'?",big:"🧀 🍎",options:[{t:"Cheese",d:"🧀"},{t:"Apple",d:"🍎"}],correct:0},
+      {q:"Which starts with 'CH'?",big:"🍒 🍌",options:[{t:"Cherry",d:"🍒"},{t:"Banana",d:"🍌"}],correct:0},
+      {q:"Which starts with 'TH'?",big:"👍 🦶",options:[{t:"Thumb",d:"👍"},{t:"Foot",d:"🦶"}],correct:0},
+      {q:"Which starts with 'WH'?",big:"🐳 🐍",options:[{t:"Whale",d:"🐳"},{t:"Snake",d:"🐍"}],correct:0},
+      {q:"Which two letters make the 'SH' sound?",big:"🔤",options:[{t:"s and h",d:"sh"},{t:"c and h",d:"ch"}],correct:0}
+    ]},
+    { level:2, group:"🔤 English", id:"en-sentence2", title:"Make a Sentence", emoji:"📝", color:EN, type:"order", rounds:[
+      {q:"Put the words in order!",items:[{d:"I",v:1,say:"I"},{d:"see",v:2,say:"see"},{d:"a",v:3,say:"a"},{d:"dog",v:4,say:"dog"}]},
+      {q:"Make a sentence!",items:[{d:"We",v:1,say:"We"},{d:"like",v:2,say:"like"},{d:"to",v:3,say:"to"},{d:"play",v:4,say:"play"}]},
+      {q:"Make a sentence!",items:[{d:"The",v:1,say:"The"},{d:"sun",v:2,say:"sun"},{d:"is",v:3,say:"is"},{d:"hot",v:4,say:"hot"}]},
+      {q:"Make a sentence!",items:[{d:"She",v:1,say:"She"},{d:"has",v:2,say:"has"},{d:"a",v:3,say:"a"},{d:"cat",v:4,say:"cat"}]}
+    ]},
+    { level:2, group:"🔤 English", id:"en-oppmatch", title:"Opposites Match", emoji:"🧠", color:EN, type:"memory", intro:"Match each word to its opposite!", pairs:[
+      {0:"big 🐘",1:"small 🐜",say:"big",say2:"small"},
+      {0:"hot 🔥",1:"cold ❄️",say:"hot",say2:"cold"},
+      {0:"up ⬆️",1:"down ⬇️",say:"up",say2:"down"},
+      {0:"day ☀️",1:"night 🌙",say:"day",say2:"night"}
+    ]},
+
+    /* --- L3 --- */
+    { level:3, group:"🔤 English", id:"en-spell3", title:"Spell It! · 3", emoji:"🔤", color:EN, type:"order", rounds:[
+      {q:"Spell PLANT 🌱 — tap in order!",items:[{d:"P",v:1,say:"P"},{d:"L",v:2,say:"L"},{d:"A",v:3,say:"A"},{d:"N",v:4,say:"N"},{d:"T",v:5,say:"T"}]},
+      {q:"Spell CLOUD ☁️ — tap in order!",items:[{d:"C",v:1,say:"C"},{d:"L",v:2,say:"L"},{d:"O",v:3,say:"O"},{d:"U",v:4,say:"U"},{d:"D",v:5,say:"D"}]},
+      {q:"Spell GRAPE 🍇 — tap in order!",items:[{d:"G",v:1,say:"G"},{d:"R",v:2,say:"R"},{d:"A",v:3,say:"A"},{d:"P",v:4,say:"P"},{d:"E",v:5,say:"E"}]},
+      {q:"Spell BRUSH 🖌️ — tap in order!",items:[{d:"B",v:1,say:"B"},{d:"R",v:2,say:"R"},{d:"U",v:3,say:"U"},{d:"S",v:4,say:"S"},{d:"H",v:5,say:"H"}]}
+    ]},
+    { level:3, group:"🔤 English", id:"en-spellpick", title:"Spelled Right?", emoji:"✅", color:EN, questions:[
+      {q:"Which is spelled correctly?",big:"🐱",options:[{t:"cat",d:"✅"},{t:"kat",d:"❌"}],correct:0},
+      {q:"Which is spelled correctly?",big:"🐶",options:[{t:"dog",d:"✅"},{t:"dawg",d:"❌"}],correct:0},
+      {q:"Which is spelled correctly?",big:"🌳",options:[{t:"tree",d:"✅"},{t:"tre",d:"❌"}],correct:0},
+      {q:"Which is spelled correctly?",big:"🌧️",options:[{t:"rain",d:"✅"},{t:"rane",d:"❌"}],correct:0},
+      {q:"Which is spelled correctly?",big:"🏠",options:[{t:"house",d:"✅"},{t:"hows",d:"❌"}],correct:0},
+      {q:"Which is spelled correctly?",big:"🌙",options:[{t:"moon",d:"✅"},{t:"mun",d:"❌"}],correct:0},
+      {q:"Which is spelled correctly?",big:"📖",options:[{t:"book",d:"✅"},{t:"buk",d:"❌"}],correct:0},
+      {q:"Which is spelled correctly?",big:"🐟",options:[{t:"fish",d:"✅"},{t:"fsh",d:"❌"}],correct:0}
+    ]},
+    { level:3, group:"🔤 English", id:"en-comprehend", title:"Read & Answer", emoji:"📖", color:EN, questions:[
+      {q:"Tom has a red ball. What colour is the ball?",big:"🔴",options:[{t:"Red",d:"🔴"},{t:"Blue",d:"🔵"}],correct:0},
+      {q:"A cat sat on a mat. Where did the cat sit?",big:"🐱",options:[{t:"On a mat",d:"🟫"},{t:"On a hat",d:"🎩"}],correct:0},
+      {q:"Sam has two dogs. How many dogs does Sam have?",big:"🐶🐶",options:[{t:"Two",d:"2"},{t:"Five",d:"5"}],correct:0},
+      {q:"It is raining. Meena takes an umbrella. What does she take?",big:"🌧️",options:[{t:"An umbrella",d:"☂️"},{t:"A hat",d:"🎩"}],correct:0},
+      {q:"Anu ate an apple and a banana. How many fruits did she eat?",big:"🍎🍌",options:[{t:"Two",d:"2"},{t:"One",d:"1"}],correct:0},
+      {q:"The dog is under the table. Where is the dog?",big:"🐕",options:[{t:"Under the table",d:"⬇️"},{t:"On the table",d:"⬆️"}],correct:0},
+      {q:"Ravi has three balloons. One pops. How many are left?",big:"🎈🎈🎈",options:[{t:"Two",d:"2"},{t:"Three",d:"3"}],correct:0}
+    ]},
+    { level:3, group:"🔤 English", id:"en-synmatch", title:"Same Meaning Match", emoji:"🧠", color:EN, type:"memory", intro:"Match words that mean the same!", pairs:[
+      {0:"big",1:"large",say:"big",say2:"large"},
+      {0:"happy",1:"glad",say:"happy",say2:"glad"},
+      {0:"fast",1:"quick",say:"fast",say2:"quick"},
+      {0:"small",1:"little",say:"small",say2:"little"}
+    ]},
+
+    /* =================================================================
+       MATH — interactive games
+       ================================================================= */
+    { level:2, group:"🔢 Math", id:"ma-addmatch", title:"Add & Match", emoji:"🧠", color:MA, type:"memory", intro:"Match the sum to its answer!", pairs:[
+      {0:"1+1",1:"2",say:"one plus one",say2:"two"},
+      {0:"2+2",1:"4",say:"two plus two",say2:"four"},
+      {0:"3+3",1:"6",say:"three plus three",say2:"six"},
+      {0:"4+4",1:"8",say:"four plus four",say2:"eight"}
+    ]},
+    { level:2, group:"🔢 Math", id:"ma-tap2", title:"Count & Tap · 2", emoji:"👆", color:MA, type:"tapcount", rounds:[
+      {q:"Tap 6 stars!",emoji:"⭐",n:6,total:9},
+      {q:"Tap 7 apples!",emoji:"🍎",n:7,total:10},
+      {q:"Tap 8 hearts!",emoji:"❤️",n:8,total:11},
+      {q:"Tap 10 balls!",emoji:"⚽",n:10,total:13}
+    ]},
+
+    /* =================================================================
+       SCIENCE — interactive games
+       ================================================================= */
+    { level:1, group:"🔬 Science", id:"sc-babymatch", title:"Animal Babies Match", emoji:"🧠", color:SC, type:"memory", intro:"Match the animal to its baby!", pairs:[
+      {0:"🐕",1:"puppy",say:"dog",say2:"puppy"},
+      {0:"🐈",1:"kitten",say:"cat",say2:"kitten"},
+      {0:"🐄",1:"calf",say:"cow",say2:"calf"},
+      {0:"🐸",1:"tadpole",say:"frog",say2:"tadpole"}
+    ]},
+    { level:1, group:"🔬 Science", id:"sc-soundmatch", title:"Animal Sounds Match", emoji:"🧠", color:SC, type:"memory", intro:"Match the animal to its sound!", pairs:[
+      {0:"🐄",1:"moo",say:"cow",say2:"moo"},
+      {0:"🐶",1:"woof",say:"dog",say2:"woof"},
+      {0:"🐱",1:"meow",say:"cat",say2:"meow"},
+      {0:"🐝",1:"buzz",say:"bee",say2:"buzz"}
+    ]},
+    { level:1, group:"🔬 Science", id:"sc-alive", title:"Is It Alive?", emoji:"✅", color:SC, type:"truefalse", questions:[
+      {q:"A dog is alive.",big:"🐶",tf:true},
+      {q:"A rock is alive.",big:"🪨",tf:false},
+      {q:"A tree is a living thing.",big:"🌳",tf:true},
+      {q:"A toy car can eat food.",big:"🚗",tf:false},
+      {q:"A flower grows.",big:"🌷",tf:true},
+      {q:"A chair can breathe.",big:"🪑",tf:false},
+      {q:"A fish is alive.",big:"🐟",tf:true}
+    ]},
+    { level:2, group:"🔬 Science", id:"sc-foodchain", title:"Food Chain", emoji:"🎮", color:SC, type:"order", rounds:[
+      {q:"Order the food chain! Tap in order.",items:[{d:"☀️",v:1,say:"sun"},{d:"🌿",v:2,say:"plant"},{d:"🐛",v:3,say:"caterpillar"},{d:"🐦",v:4,say:"bird"}]},
+      {q:"How does a plant grow? Tap in order.",items:[{d:"🌰",v:1,say:"seed"},{d:"🌱",v:2,say:"sprout"},{d:"🌿",v:3,say:"plant"},{d:"🌳",v:4,say:"tree"}]},
+      {q:"Order the chicken's life! Tap in order.",items:[{d:"🥚",v:1,say:"egg"},{d:"🐤",v:2,say:"chick"},{d:"🐔",v:3,say:"hen"}]}
+    ]},
+
+    /* =================================================================
+       REASONING — interactive game
+       ================================================================= */
+    { level:2, group:"🧠 Reasoning", id:"re-gomatch", title:"Goes Together Match", emoji:"🧠", color:RE, type:"memory", intro:"Match the things that go together!", pairs:[
+      {0:"🧦",1:"👟",say:"sock",say2:"shoe"},
+      {0:"🖐️",1:"🧤",say:"hand",say2:"glove"},
+      {0:"🌧️",1:"☂️",say:"rain",say2:"umbrella"},
+      {0:"🐝",1:"🍯",say:"bee",say2:"honey"}
+    ]}
+  );
+
+  /* =================================================================
+     DSA — interactive games (Algorithms & Data)
+     ================================================================= */
+  C.algorithms.topics.push(
+    { level:1, id:"al-steps", title:"Daily Steps", emoji:"🎮", color:AL, type:"order", rounds:[
+      {q:"Morning routine — tap in order!",items:[{d:"⏰",v:1,say:"wake up"},{d:"🪥",v:2,say:"brush teeth"},{d:"🍳",v:3,say:"eat breakfast"},{d:"🎒",v:4,say:"go to school"}]},
+      {q:"Getting dressed — tap in order!",items:[{d:"🩲",v:1,say:"underwear"},{d:"👕",v:2,say:"shirt"},{d:"👖",v:3,say:"trousers"},{d:"🧦",v:4,say:"socks"},{d:"👟",v:5,say:"shoes"}]},
+      {q:"Bedtime routine — tap in order!",items:[{d:"🛁",v:1,say:"bath"},{d:"👕",v:2,say:"pyjamas"},{d:"📖",v:3,say:"story"},{d:"😴",v:4,say:"sleep"}]}
+    ]}
+  );
+  C.data.topics.push(
+    { level:2, id:"da-sizeorder", title:"Fewest to Most", emoji:"🎮", color:DA, type:"order", rounds:[
+      {q:"Tap from fewest to most!",items:[{d:"⭐",v:1,say:"one"},{d:"⭐⭐",v:2,say:"two"},{d:"⭐⭐⭐",v:3,say:"three"}]},
+      {q:"Tap from fewest to most!",items:[{d:"🍎🍎",v:2,say:"two"},{d:"🍎",v:1,say:"one"},{d:"🍎🍎🍎🍎",v:4,say:"four"},{d:"🍎🍎🍎",v:3,say:"three"}]},
+      {q:"Tap the groups small to big!",items:[{d:"🔵🔵🔵",v:3,say:"three"},{d:"🔵",v:1,say:"one"},{d:"🔵🔵",v:2,say:"two"},{d:"🔵🔵🔵🔵🔵",v:5,say:"five"},{d:"🔵🔵🔵🔵",v:4,say:"four"}]}
+    ]}
+  );
+})();
+</script>
+
+<script>
+(function(){
+  var C = window.__CONTENT__; if(!C) return;
+  var EN="#EF4444";
+  C.olympiad.topics.push(
+    /* ---------- L1: word formation & first reading ---------- */
+    { level:1, group:"🔤 English", id:"en-family", title:"Blend the Word", emoji:"🔡", color:EN, questions:[
+      {q:"What word do these letters make? C, A, T",big:"🐱",options:[{t:"cat",d:"🐱"},{t:"cot",d:"🔠"}],correct:0},
+      {q:"What word is D, O, G?",big:"🐶",options:[{t:"dog",d:"🐶"},{t:"dig",d:"🔠"}],correct:0},
+      {q:"What word is S, U, N?",big:"☀️",options:[{t:"sun",d:"☀️"},{t:"sin",d:"🔠"}],correct:0},
+      {q:"What word is H, A, T?",big:"🎩",options:[{t:"hat",d:"🎩"},{t:"hit",d:"🔠"}],correct:0},
+      {q:"What word is P, I, G?",big:"🐷",options:[{t:"pig",d:"🐷"},{t:"peg",d:"🔠"}],correct:0},
+      {q:"What word is B, E, D?",big:"🛏️",options:[{t:"bed",d:"🛏️"},{t:"bad",d:"🔠"}],correct:0},
+      {q:"What word is C, U, P?",big:"☕",options:[{t:"cup",d:"☕"},{t:"cap",d:"🔠"}],correct:0},
+      {q:"What word is N, E, T?",big:"🥅",options:[{t:"net",d:"🥅"},{t:"nut",d:"🔠"}],correct:0}
+    ]},
+    { level:1, group:"🔤 English", id:"en-sight1", title:"Little Words", emoji:"👁️", color:EN, questions:[
+      {q:"Read: I ___ a dog.",big:"👁️ 🐶",options:[{t:"see",d:"👁️"},{t:"saw",d:"🔠"}],correct:0},
+      {q:"Read: The ___ is hot.",big:"☀️",options:[{t:"sun",d:"☀️"},{t:"sit",d:"🔠"}],correct:0},
+      {q:"Read: This is ___ cat.",big:"🙋🐱",options:[{t:"my",d:"🙋"},{t:"me",d:"🔠"}],correct:0},
+      {q:"Read: We ___ happy.",big:"😊",options:[{t:"are",d:"😊"},{t:"is",d:"🔠"}],correct:0},
+      {q:"Read: ___ dog is big.",big:"🐶",options:[{t:"The",d:"🐶"},{t:"To",d:"🔠"}],correct:0},
+      {q:"Read: I ___ a ball.",big:"⚽",options:[{t:"have",d:"⚽"},{t:"has",d:"🔠"}],correct:0},
+      {q:"Read: I like ___ play.",big:"🧸",options:[{t:"to",d:"➡️"},{t:"too",d:"🔠"}],correct:0}
+    ]},
+    { level:1, group:"🔤 English", id:"en-phrase", title:"Read & Find", emoji:"🔍", color:EN, questions:[
+      {q:"Read the words: 'red apple'. Which one?",options:[{t:"Red apple",d:"🍎"},{t:"Green apple",d:"🍏"}],correct:0},
+      {q:"Read: 'big dog'. Which one?",options:[{t:"Big dog",d:"🐕"},{t:"Small ant",d:"🐜"}],correct:0},
+      {q:"Read: 'yellow sun'. Which one?",options:[{t:"Yellow sun",d:"☀️"},{t:"Blue moon",d:"🌙"}],correct:0},
+      {q:"Read: 'blue car'. Which one?",options:[{t:"Blue car",d:"🚙"},{t:"Red bus",d:"🚌"}],correct:0},
+      {q:"Read: 'happy face'. Which one?",options:[{t:"Happy face",d:"😀"},{t:"Sad face",d:"😢"}],correct:0},
+      {q:"Read: 'hot tea'. Which one?",options:[{t:"Hot tea",d:"☕"},{t:"Cold ice",d:"🧊"}],correct:0},
+      {q:"Read: 'baby cat'. Which one?",options:[{t:"Baby cat",d:"🐱"},{t:"Big elephant",d:"🐘"}],correct:0}
+    ]},
+
+    /* ---------- L2: sentences, syllables, blends ---------- */
+    { level:2, group:"🔤 English", id:"en-readsent", title:"Read the Sentence", emoji:"📄", color:EN, questions:[
+      {q:"Read: The dog is big. Is the dog big or small?",big:"🐕",options:[{t:"Big",d:"🐘"},{t:"Small",d:"🐜"}],correct:0},
+      {q:"Read: The cat is on the box. Where is the cat?",big:"🐱📦",options:[{t:"On the box",d:"⬆️"},{t:"In the box",d:"📥"}],correct:0},
+      {q:"Read: Sam has a red hat. What colour is the hat?",big:"🎩",options:[{t:"Red",d:"🔴"},{t:"Blue",d:"🔵"}],correct:0},
+      {q:"Read: The sun is hot. Is the sun hot or cold?",big:"☀️",options:[{t:"Hot",d:"🔥"},{t:"Cold",d:"❄️"}],correct:0},
+      {q:"Read: I see two cats. How many cats?",big:"🐱🐱",options:[{t:"Two",d:"2"},{t:"Three",d:"3"}],correct:0},
+      {q:"Read: The frog can jump. What can the frog do?",big:"🐸",options:[{t:"Jump",d:"🦘"},{t:"Fly",d:"🪽"}],correct:0},
+      {q:"Read: Mum has a pink bag. What colour is the bag?",big:"👜",options:[{t:"Pink",d:"🩷"},{t:"Black",d:"⬛"}],correct:0}
+    ]},
+    { level:2, group:"🔤 English", id:"en-syllable", title:"Clap the Parts", emoji:"👏", color:EN, questions:[
+      {q:"Clap the parts: cat. How many claps?",big:"🐱 (cat)",options:[{t:"One",d:"1"},{t:"Two",d:"2"}],correct:0},
+      {q:"Clap the parts: ap-ple. How many?",big:"🍎 (ap-ple)",options:[{t:"Two",d:"2"},{t:"One",d:"1"}],correct:0},
+      {q:"Clap the parts: ba-na-na. How many?",big:"🍌 (ba-na-na)",options:[{t:"Three",d:"3"},{t:"Two",d:"2"}],correct:0},
+      {q:"Clap the parts: sun. How many?",big:"☀️ (sun)",options:[{t:"One",d:"1"},{t:"Three",d:"3"}],correct:0},
+      {q:"Clap the parts: el-e-phant. How many?",big:"🐘 (el-e-phant)",options:[{t:"Three",d:"3"},{t:"One",d:"1"}],correct:0},
+      {q:"Clap the parts: ti-ger. How many?",big:"🐯 (ti-ger)",options:[{t:"Two",d:"2"},{t:"Four",d:"4"}],correct:0},
+      {q:"Clap the parts: but-ter-fly. How many?",big:"🦋 (but-ter-fly)",options:[{t:"Three",d:"3"},{t:"Two",d:"2"}],correct:0}
+    ]},
+    { level:2, group:"🔤 English", id:"en-blendbuild", title:"Put It Together", emoji:"🧩", color:EN, questions:[
+      {q:"Put together: bl + ock = ?",big:"🧱",options:[{t:"block",d:"🧱"},{t:"black",d:"🔠"}],correct:0},
+      {q:"Put together: fl + ag = ?",big:"🚩",options:[{t:"flag",d:"🚩"},{t:"frog",d:"🔠"}],correct:0},
+      {q:"Put together: st + ar = ?",big:"⭐",options:[{t:"star",d:"⭐"},{t:"stir",d:"🔠"}],correct:0},
+      {q:"Put together: tr + ee = ?",big:"🌳",options:[{t:"tree",d:"🌳"},{t:"try",d:"🔠"}],correct:0},
+      {q:"Put together: sw + im = ?",big:"🏊",options:[{t:"swim",d:"🏊"},{t:"swam",d:"🔠"}],correct:0},
+      {q:"Put together: cl + ap = ?",big:"👏",options:[{t:"clap",d:"👏"},{t:"clip",d:"🔠"}],correct:0}
+    ]},
+
+    /* ---------- L3: stories & longer sentences ---------- */
+    { level:3, group:"🔤 English", id:"en-story", title:"Story Time", emoji:"📚", color:EN, questions:[
+      {q:"Ravi has a dog. The dog is black. What colour is the dog?",big:"🐕",options:[{t:"Black",d:"⬛"},{t:"White",d:"⬜"}],correct:0},
+      {q:"Meena went to the park. She played on the swing. Where did Meena go?",big:"🏞️",options:[{t:"The park",d:"🌳"},{t:"School",d:"🏫"}],correct:0},
+      {q:"The bird had two eggs. One egg hatched. How many eggs are left?",big:"🥚",options:[{t:"One",d:"1"},{t:"Two",d:"2"}],correct:0},
+      {q:"Sam likes apples. He ate three apples. What does Sam like?",big:"🍎",options:[{t:"Apples",d:"🍎"},{t:"Bananas",d:"🍌"}],correct:0},
+      {q:"It was raining. Anu opened her umbrella. Why did she open it?",big:"🌧️",options:[{t:"Because it was raining",d:"☔"},{t:"Because it was sunny",d:"☀️"}],correct:0},
+      {q:"The cat saw a mouse. The mouse ran away. Who ran away?",big:"🐭",options:[{t:"The mouse",d:"🐭"},{t:"The cat",d:"🐱"}],correct:0}
+    ]},
+    { level:3, group:"🔤 English", id:"en-sentence3", title:"Make a Long Sentence", emoji:"📝", color:EN, type:"order", rounds:[
+      {q:"Make a sentence!",items:[{d:"I",v:1,say:"I"},{d:"have",v:2,say:"have"},{d:"a",v:3,say:"a"},{d:"red",v:4,say:"red"},{d:"ball",v:5,say:"ball"}]},
+      {q:"Make a sentence!",items:[{d:"The",v:1,say:"The"},{d:"dog",v:2,say:"dog"},{d:"can",v:3,say:"can"},{d:"run",v:4,say:"run"},{d:"fast",v:5,say:"fast"}]},
+      {q:"Make a sentence!",items:[{d:"We",v:1,say:"We"},{d:"like",v:2,say:"like"},{d:"to",v:3,say:"to"},{d:"eat",v:4,say:"eat"},{d:"cake",v:5,say:"cake"}]},
+      {q:"Make a sentence!",items:[{d:"My",v:1,say:"My"},{d:"mum",v:2,say:"mum"},{d:"has",v:3,say:"has"},{d:"a",v:4,say:"a"},{d:"hat",v:5,say:"hat"}]}
+    ]}
+  );
+})();
+</script>
+
 <script>
 (function(){
   var C = window.__CONTENT__; if(!C) return;
