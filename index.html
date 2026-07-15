@@ -215,7 +215,7 @@
 
   /* Settings modal */
   #settings{ display:none; position:fixed; inset:0; z-index:110; background:rgba(40,20,70,.45); align-items:flex-end; justify-content:center; }
-  .sheet{ background:#fff; border-radius:26px 26px 0 0; padding:22px 20px calc(22px + env(safe-area-inset-bottom)); width:100%; max-width:600px; box-shadow:0 -10px 40px rgba(0,0,0,.2); animation:slideup .3s ease; }
+  .sheet{ background:#fff; border-radius:26px 26px 0 0; padding:22px 20px calc(22px + env(safe-area-inset-bottom)); width:100%; max-width:600px; box-shadow:0 -10px 40px rgba(0,0,0,.2); animation:slideup .3s ease; max-height:88vh; overflow-y:auto; -webkit-overflow-scrolling:touch; }
   @keyframes slideup{ from{transform:translateY(100%)} to{transform:none} }
   .sheet h2{ font-size:22px; color:var(--purple); margin-bottom:6px; }
   .sheet label{ display:block; font-weight:800; font-size:14px; margin:14px 0 6px; color:var(--muted); }
@@ -259,7 +259,7 @@
   .avpick{ font-size:34px; padding:10px 0; border-radius:16px; background:#F3EEFF; border:3px solid transparent; }
   .avpick.on{ border-color:var(--purple); background:#fff; box-shadow:var(--shadow); }
   .puzwrap{ position:relative; margin:14px auto; width:max-content; }
-  .puzgrid{ display:grid; gap:4px; position:relative; z-index:2; }
+  .puzgrid{ display:grid; gap:4px; position:relative; z-index:2; touch-action:none; user-select:none; -webkit-user-select:none; }
   .puzsvg{ position:absolute; left:0; top:0; z-index:5; pointer-events:none; overflow:visible; }
   .npcell{ background:#EFE9F7; border-radius:10px; }
   .npcell.onpath{ background:#FBD9EC; }
@@ -563,7 +563,7 @@ function renderHome(){ setTab('home'); showNav(true); curLevel=1; curSubject=nul
 function levelStats(pool,prog,lv){ const ts=pool.filter(t=>(t.level||1)===lv); let played=0,sum=0;
   ts.forEach(t=>{ const pr=prog[t.id]; if(pr&&pr.plays){ played++; sum+=pr.best; } });
   return {count:ts.length, played, avg: played? sum/played : 0}; }
-function levelUnlocked(pool,prog,lv){ if(lv<=1) return true; const p=levelStats(pool,prog,lv-1); return p.played>=3 && p.avg>=0.5; }
+function levelUnlocked(pool,prog,lv){ if(lv<=1) return true; const p=levelStats(pool,prog,lv-1); const need=Math.min(3, p.count||1); return p.played>=need && p.avg>=0.5; }
 function renderSubjectPicker(){ setTab('home'); showNav(true); window.scrollTo(0,0);
   const s=CONTENT.olympiad; const prog=getProg(); let cards='';
   SUBJECTS.forEach(sub=>{ const tps=s.topics.filter(t=>t.group===sub.group); if(!tps.length) return;
@@ -1139,8 +1139,8 @@ function playSequence(items){ const myId=++readSeqId;
     var _sp=(typeof ttsClean==='function')?ttsClean(it.text):it.text; if(!_sp){ setTimeout(step, it.wi!=null?200:120); return; }
     try{ speechSynthesis.cancel(); }catch(e){}
     let u; try{ u=new SpeechSynthesisUtterance(_sp); }catch(e){ return; }
-    if(voice) u.voice=voice; u.rate= it.wi!=null? Math.min(rate,0.75) : rate; u.pitch=1.12; u.volume=1;
-    const gap = it.wi!=null? 110 : (it.idx===-1?260:170);
+    if(voice) u.voice=voice; u.rate= it.wi!=null? Math.max(0.55, rate*0.88) : rate; u.pitch=1.12; u.volume=1;
+    const gap = Math.round((it.wi!=null? 110 : (it.idx===-1?260:170)) * (0.9/Math.max(0.5,rate)));
     u.onend=()=>{ if(myId===readSeqId) setTimeout(step, gap); };
     u.onerror=()=>{ if(myId===readSeqId) setTimeout(step, gap); };
     try{ speechSynthesis.resume(); speechSynthesis.speak(u); }catch(e){ setTimeout(step, gap); }
@@ -1163,7 +1163,7 @@ function readTFQuestion(q){
 }
 function sayWord(i){ if(typeof G==='undefined'||!G||!G.qwords||!G.qwords[i]) return; stopReading();
   const el=document.getElementById('qw'+i); if(el){ el.classList.add('wtap'); setTimeout(()=>{ if(el) el.classList.remove('wtap'); },700); }
-  const t=G.qwords[i].tts; if(t) speak(t,{rate:Math.min(rate,0.72)}); }
+  const t=G.qwords[i].tts; if(t) speak(t,{rate:Math.max(0.55, rate*0.85)}); }
 function replayRead(){ if(typeof G==='undefined'||!G) return; const q=(G.qlist&&G.qlist[G.idx])|| (G.topic&&G.topic.questions&&G.topic.questions[G.idx]); if(!q) return;
   if(G.disp) readQuestionAndOptions(q, G.disp); else readTFQuestion(q); }
 
@@ -1482,7 +1482,7 @@ window.__CONTENT__ = {
       {q:"What comes next?",big:"🔴 🔵 🔴 🔵 ❓",options:[{t:"Red",d:"🔴"},{t:"Blue",d:"🔵"},{t:"Green",d:"🟢"}],correct:0},
       {q:"What comes next?",big:"⭐ 🌙 ⭐ 🌙 ❓",options:[{t:"Star",d:"⭐"},{t:"Moon",d:"🌙"}],correct:0},
       {q:"What comes next?",big:"🐶 🐱 🐶 🐱 ❓",options:[{t:"Dog",d:"🐶"},{t:"Cat",d:"🐱"}],correct:0},
-      {q:"What comes next?",big:"🔺 🔺 🟦 🔺 🔺 ❓",options:[{t:"Blue square",d:"🟦"},{t:"Triangle",d:"🔺"}],correct:1},
+      {q:"What comes next?",big:"🔺 🔺 🟦 🔺 🔺 ❓",options:[{t:"Blue square",d:"🟦"},{t:"Triangle",d:"🔺"}],correct:0},
       {q:"What comes next?",big:"🍎 🍎 🍌 🍎 🍎 ❓",options:[{t:"Banana",d:"🍌"},{t:"Apple",d:"🍎"}],correct:0},
       {q:"Small, big, small — what's next?",big:"🐜 🐘 🐜 ❓",options:[{t:"Big elephant",d:"🐘"},{t:"Small ant",d:"🐜"}],correct:0},
       {q:"What comes next?",big:"1️⃣ 2️⃣ 3️⃣ 1️⃣ 2️⃣ ❓",options:[{t:"Three",d:"3️⃣"},{t:"One",d:"1️⃣"}],correct:0},
@@ -1550,7 +1550,7 @@ window.__CONTENT__ = {
     { id:"stack", title:"Stacks", emoji:"🥞", color:"#14B8A6", questions:[
       {q:"Plates are stacked. Which do you take first?",scene:"plates",options:[{t:"The top one",d:"⬆️🍽️",hi:"top"},{t:"The bottom one",d:"⬇️🍽️",hi:"bottom"}],correct:0},
       {q:"You pile books. The LAST book goes...?",scene:"books",options:[{t:"On top",d:"⬆️",hi:"top"},{t:"At the bottom",d:"⬇️",hi:"bottom"}],correct:0},
-      {q:"Pancakes are stacked. Which is eaten first?",scene:"plates",options:[{t:"The top pancake",d:"⬆️",hi:"top"},{t:"The bottom pancake",d:"⬇️",hi:"bottom"}],correct:0},
+      {q:"Pancakes are stacked. Which is eaten first?",scene:"pancakes",options:[{t:"The top pancake",d:"⬆️",hi:"top"},{t:"The bottom pancake",d:"⬇️",hi:"bottom"}],correct:0},
       {q:"In a stack we take from the...?",big:"📦",options:[{t:"Top",d:"⬆️"},{t:"Middle",d:"↔️"}],correct:0},
       {q:"Stack 3 blocks. Which went on LAST?",big:"🧱",options:[{t:"Top block",d:"⬆️"},{t:"Bottom block",d:"⬇️"}],correct:0},
       {q:"A stack of cups: to reach the bottom cup you must move...?",big:"🥤",options:[{t:"The top cups first",d:"⬆️"},{t:"Nothing",d:"🚫"}],correct:0},
@@ -2772,34 +2772,77 @@ function renderNumPath(){ const np=G.np; const cell=Math.min(66, Math.floor(320/
   });
   let cells='';
   for(let rr=0;rr<np.rows;rr++){ for(let cc=0;cc<np.cols;cc++){ const inp=npInPath(np,rr,cc); const isHint=np.hint&&np.hint[0]===rr&&np.hint[1]===cc;
-    cells+='<div class="npcell '+(inp?'onpath':'')+' '+(isHint?'hintcell':'')+'" style="width:'+cell+'px;height:'+cell+'px" onclick="tapNumPath('+rr+','+cc+')"></div>'; } }
+    cells+='<div class="npcell '+(inp?'onpath':'')+' '+(isHint?'hintcell':'')+'" data-r="'+rr+'" data-c="'+cc+'" style="width:'+cell+'px;height:'+cell+'px"></div>'; } }
   view.innerHTML='<div class="screen">'+gameHead(G.topic,G.accent,G.ri,G.topic.rounds.length,G.stars)+
-    '<div class="qcard"><p class="qtext">Fill every square! Start at 1 and touch the numbers in order.</p></div>'+
-    '<div class="puzcount">Squares: '+np.path.length+' / '+np.total+'</div>'+
-    '<div class="puzwrap"><svg class="puzsvg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">'+poly+svgNums+'</svg>'+
-    '<div class="puzgrid" style="grid-template-columns:repeat('+np.cols+','+cell+'px)">'+cells+'</div></div>'+
+    '<div class="qcard"><p class="qtext">Swipe to draw a path through every square, touching 1, 2, 3… in order.</p></div>'+
+    '<div class="puzcount" id="puzcount">Squares: '+np.path.length+' / '+np.total+'</div>'+
+    '<div class="puzwrap" id="puzwrap"><svg class="puzsvg" id="puzsvg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">'+poly+svgNums+'</svg>'+
+    '<div class="puzgrid" id="puzgrid" style="grid-template-columns:repeat('+np.cols+','+cell+'px)">'+cells+'</div></div>'+
     '<div class="puzbtns"><button class="kbtn puzbtn" onclick="npUndo()">↶ Undo</button><button class="kbtn puzbtn" onclick="npHint()">💡 Hint</button><button class="kbtn puzbtn" onclick="setupNumPath()">↺ Restart</button></div>'+
     '</div>';
+  G.np.geom={cell:cell,gap:gap};
+  attachSwipe('npcell', tapNumPath);
 }
-function npTryWin(){ const np=G.np; if(np.path.length===np.total && npNumbersHit(np)===Object.keys(np.nums).length){ G.stars++; renderNumPath(); happy(); confetti(); if(typeof partyCharacters==='function') partyCharacters(); speakThen("Amazing! You filled every square!", npNext); return true; } return false; }
+/* cheap in-place repaint: no innerHTML rebuild of the screen -> no flicker, listeners survive */
+function npPaint(){ const np=G.np; if(!np||!np.geom) return;
+  const cell=np.geom.cell, gap=np.geom.gap; const ctr=function(i){ return i*(cell+gap)+cell/2; };
+  const svg=document.getElementById('puzsvg'); const cnt=document.getElementById('puzcount');
+  if(!svg){ renderNumPath(); return; }
+  let poly=''; if(np.path.length>1){ poly='<polyline points="'+np.path.map(function(p){return ctr(p[1])+','+ctr(p[0]);}).join(' ')+'" fill="none" stroke="'+G.accent+'" stroke-width="'+(cell*0.44).toFixed(0)+'" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>'; }
+  const hit=npNumbersHit(np); let svgNums='';
+  Object.keys(np.nums).forEach(function(k){ const rc=k.split('_'); const r=+rc[0],c=+rc[1]; const n=np.nums[k];
+    const cx=ctr(c),cy=ctr(r),rad=(cell*0.34).toFixed(0); const visited=npInPath(np,r,c); const isNext=(n===hit+1);
+    svgNums+='<circle cx="'+cx+'" cy="'+cy+'" r="'+rad+'" fill="'+(visited?'#22C55E':'#241C3B')+'"/>';
+    if(isNext) svgNums+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(rad*1.25).toFixed(0)+'" fill="none" stroke="#FCD34D" stroke-width="4"><animate attributeName="opacity" values="1;.3;1" dur="1s" repeatCount="indefinite"/></circle>';
+    svgNums+='<text x="'+cx+'" y="'+(cy+5)+'" text-anchor="middle" font-family="Baloo 2,sans-serif" font-weight="800" font-size="'+(cell*0.32).toFixed(0)+'" fill="#fff">'+n+'</text>';
+  });
+  svg.innerHTML=poly+svgNums;
+  if(cnt) cnt.textContent='Squares: '+np.path.length+' / '+np.total;
+  const cells=document.querySelectorAll('#puzgrid .npcell');
+  for(let i=0;i<cells.length;i++){ const el=cells[i];
+    const r=parseInt(el.getAttribute('data-r'),10), c=parseInt(el.getAttribute('data-c'),10);
+    el.classList.toggle('onpath', npInPath(np,r,c));
+    el.classList.toggle('hintcell', !!(np.hint && np.hint[0]===r && np.hint[1]===c));
+  }
+}
+/* --- shared swipe/drag handler for the puzzle grids --- */
+function attachSwipe(cellClass, handler){
+  var grid=document.getElementById('puzgrid'); if(!grid) return;
+  var dragging=false, last=null;
+  function cellAt(x,y){ var el=document.elementFromPoint(x,y); if(!el) return null;
+    if(!el.classList || !el.classList.contains(cellClass)) return null;
+    var r=el.getAttribute('data-r'), c=el.getAttribute('data-c');
+    if(r==null||c==null) return null; return [parseInt(r,10), parseInt(c,10)]; }
+  function fire(p){ if(!p) return; var k=p[0]+'_'+p[1]; if(k===last) return; last=k; handler(p[0],p[1]); }
+  function down(e){ dragging=true; last=null; var t=e.touches?e.touches[0]:e; fire(cellAt(t.clientX,t.clientY)); }
+  function move(e){ if(!dragging) return; var t=e.touches?e.touches[0]:e; var p=cellAt(t.clientX,t.clientY); if(p){ e.preventDefault(); fire(p); } }
+  function up(){ dragging=false; last=null; }
+  grid.addEventListener('touchstart', down, {passive:true});
+  grid.addEventListener('touchmove', move, {passive:false});
+  grid.addEventListener('touchend', up);
+  grid.addEventListener('mousedown', down);
+  grid.addEventListener('mousemove', move);
+  document.addEventListener('mouseup', up);
+}
+function npTryWin(){ const np=G.np; if(np.path.length===np.total && npNumbersHit(np)===Object.keys(np.nums).length){ G.stars++; npPaint(); happy(); confetti(); if(typeof partyCharacters==='function') partyCharacters(); speakThen("Amazing! You filled every square!", npNext); return true; } return false; }
 function tapNumPath(rr,cc){ const np=G.np; np.hint=null;
-  if(np.path.length===0){ if(npNumAt(np,rr,cc)===1){ np.path.push([rr,cc]); pop(); } else { oops(); speak("Start at number one."); } return renderNumPath(); }
+  if(np.path.length===0){ if(npNumAt(np,rr,cc)===1){ np.path.push([rr,cc]); pop(); npPaint(); } else { oops(); } return; }
   const idx=np.path.findIndex(function(p){return p[0]===rr&&p[1]===cc;});
-  if(idx>=0){ np.path=np.path.slice(0, idx+1); pop(); return renderNumPath(); }
+  if(idx>=0){ if(idx===np.path.length-1) return; np.path=np.path.slice(0, idx+1); pop(); npPaint(); return; }
   const last=np.path[np.path.length-1];
-  if(!npAdj(last,[rr,cc])){ oops(); speak("Tap a square next to the line."); return; }
+  if(!npAdj(last,[rr,cc])) return;                       /* silently ignore: swiping over far cells */
   const n=npNumAt(np,rr,cc);
-  if(n){ const expected=npNumbersHit(np)+1; if(n!==expected){ oops(); speak("Reach number "+expected+" first."); return; } }
+  if(n){ const expected=npNumbersHit(np)+1; if(n!==expected){ oops(); return; } }
   np.path.push([rr,cc]); pop();
   if(npTryWin()) return;
-  renderNumPath();
+  npPaint();
 }
-function npUndo(){ const np=G.np; if(np.path.length){ np.path.pop(); np.hint=null; pop(); renderNumPath(); } }
+function npUndo(){ const np=G.np; if(np.path.length){ np.path.pop(); np.hint=null; pop(); npPaint(); } }
 function npHint(){ const np=G.np; const sol=np.sol; let k=0;
   while(k<np.path.length && k<sol.length && np.path[k][0]===sol[k][0] && np.path[k][1]===sol[k][1]) k++;
   np.path=np.path.slice(0,k);
   if(k<sol.length){ np.path.push([sol[k][0],sol[k][1]]); np.hint=[sol[k][0],sol[k][1]]; }
-  pop(); if(npTryWin()) return; renderNumPath(); }
+  pop(); if(npTryWin()) return; npPaint(); }
 function npNext(){ if(G.ri+1<G.topic.rounds.length){ G.ri++; setupNumPath(); } else finish(G.topic.rounds.length, G.topic.rounds.length); }
 
 /* ================= FILL SQUARES ENGINE ================= */
@@ -2810,27 +2853,45 @@ function fsAdj(f,r,c){ return [[1,0],[-1,0],[0,1],[0,-1]].some(function(d){ retu
 function renderFill(){ const f=G.fs; const cell=Math.min(64,Math.floor(300/f.cols)); const count=Object.keys(f.filled).length;
   let cells='';
   for(let rr=0;rr<f.rows;rr++){ for(let cc=0;cc<f.cols;cc++){ const key=rr+'_'+cc; const isSeed=(f.seed.r===rr&&f.seed.c===cc); const fill=f.filled[key];
-    cells+='<div class="fscell '+(fill?'fill':'')+' '+(isSeed?'seed':'')+'" style="width:'+cell+'px;height:'+cell+'px" onclick="tapFill('+rr+','+cc+')">'+(isSeed?('<span>'+f.target+'</span>'):'')+'</div>'; } }
+    cells+='<div class="fscell '+(fill?'fill':'')+' '+(isSeed?'seed':'')+'" data-r="'+rr+'" data-c="'+cc+'" style="width:'+cell+'px;height:'+cell+'px">'+(isSeed?('<span>'+f.target+'</span>'):'')+'</div>'; } }
   view.innerHTML='<div class="screen">'+gameHead(G.topic,G.accent,G.ri,G.topic.rounds.length,G.stars)+
-    '<div class="qcard"><p class="qtext">Colour exactly '+f.target+' squares. Tap squares next to the dark one!</p></div>'+
-    '<div class="puzcount">Filled: '+count+' / '+f.target+'</div>'+
-    '<div class="puzwrap"><div class="puzgrid" style="grid-template-columns:repeat('+f.cols+','+cell+'px)">'+cells+'</div></div>'+
+    '<div class="qcard"><p class="qtext">Swipe to colour exactly '+f.target+' squares, joined to the dark one!</p></div>'+
+    '<div class="puzcount" id="puzcount">Filled: '+count+' / '+f.target+'</div>'+
+    '<div class="puzwrap" id="puzwrap"><div class="puzgrid" id="puzgrid" style="grid-template-columns:repeat('+f.cols+','+cell+'px)">'+cells+'</div></div>'+
     '<div class="puzbtns"><button class="kbtn puzbtn" onclick="fsUndo()">↶ Undo</button><button class="kbtn puzbtn" onclick="fsHint()">💡 Hint</button><button class="kbtn puzbtn" onclick="setupFill()">↺ Restart</button></div>'+
     '</div>';
+  attachSwipe('fscell', swipeFill);
+}
+/* cheap in-place repaint -> no flicker while swiping */
+function fsPaint(){ const f=G.fs; const grid=document.getElementById('puzgrid'); if(!grid){ renderFill(); return; }
+  const cnt=document.getElementById('puzcount');
+  const cells=document.querySelectorAll('#puzgrid .fscell');
+  for(let i=0;i<cells.length;i++){ const el=cells[i];
+    const r=el.getAttribute('data-r'), c=el.getAttribute('data-c');
+    el.classList.toggle('fill', !!f.filled[r+'_'+c]);
+  }
+  if(cnt) cnt.textContent='Filled: '+Object.keys(f.filled).length+' / '+f.target;
+}
+/* while swiping we only ADD squares (never toggle off) so a drag paints smoothly */
+function swipeFill(rr,cc){ const f=G.fs; const key=rr+'_'+cc;
+  if(f.seed.r===rr&&f.seed.c===cc) return;
+  if(f.filled[key]) return;                       /* already coloured: leave it */
+  if(!fsAdj(f,rr,cc)){ oops(); speak("Colour a square touching the coloured ones."); return; }
+  f.filled[key]=true; f.order.push(key); pop(); fsPaint(); fsTryWin();
 }
 function fsTryWin(){ const f=G.fs; if(Object.keys(f.filled).length===f.target){ G.stars++; happy(); confetti(); if(typeof partyCharacters==='function') partyCharacters(); speakThen("Perfect! You filled "+f.target+" squares!", fillNext); return true; } return false; }
 function tapFill(rr,cc){ const f=G.fs; const key=rr+'_'+cc; if(f.seed.r===rr&&f.seed.c===cc) return;
   if(f.filled[key]){ delete f.filled[key]; const oi=f.order.indexOf(key); if(oi>=0) f.order.splice(oi,1); pop(); }
-  else { if(!fsAdj(f,rr,cc)){ oops(); speak("Tap a square touching the coloured ones."); return; } f.filled[key]=true; f.order.push(key); pop(); }
-  renderFill(); fsTryWin();
+  else { if(!fsAdj(f,rr,cc)){ oops(); return; } f.filled[key]=true; f.order.push(key); pop(); }
+  fsPaint(); fsTryWin();
 }
-function fsUndo(){ const f=G.fs; const k=f.order.pop(); if(k){ delete f.filled[k]; pop(); renderFill(); } }
+function fsUndo(){ const f=G.fs; const k=f.order.pop(); if(k){ delete f.filled[k]; pop(); fsPaint(); } }
 function fsHint(){ const f=G.fs; const count=Object.keys(f.filled).length;
   if(count<f.target){ let placed=false;
     for(let rr=0;rr<f.rows&&!placed;rr++){ for(let cc=0;cc<f.cols&&!placed;cc++){ const key=rr+'_'+cc; if(!f.filled[key] && fsAdj(f,rr,cc)){ f.filled[key]=true; f.order.push(key); placed=true; } } }
     pop();
   } else if(count>f.target){ const k=f.order.pop(); if(k) delete f.filled[k]; pop(); }
-  renderFill(); fsTryWin(); }
+  fsPaint(); fsTryWin(); }
 function fillNext(){ if(G.ri+1<G.topic.rounds.length){ G.ri++; setupFill(); } else finish(G.topic.rounds.length, G.topic.rounds.length); }
 </script>
 
@@ -2962,6 +3023,344 @@ function fillNext(){ if(G.ri+1<G.topic.rounds.length){ G.ri++; setupFill(); } el
 </script>
 
 <script>
+/* ============ NEW ANIMATED SCENES (feedback batch) ============ */
+(function(){
+  if(typeof SCENES==='undefined') return;
+
+  function face(cx,cy,r,mood,skin){ skin=skin||'#FFD9B3';
+    var eyes = mood==='sleepy'
+      ? '<path d="M'+(cx-9)+' '+(cy-2)+' q4 4 8 0" stroke="#3A2B4A" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M'+(cx+1)+' '+(cy-2)+' q4 4 8 0" stroke="#3A2B4A" stroke-width="2" fill="none" stroke-linecap="round"/>'
+      : '<circle cx="'+(cx-6)+'" cy="'+(cy-2)+'" r="2.6" fill="#3A2B4A"/><circle cx="'+(cx+6)+'" cy="'+(cy-2)+'" r="2.6" fill="#3A2B4A"/>';
+    var mouth = mood==='sleepy' ? '<ellipse cx="'+cx+'" cy="'+(cy+9)+'" rx="4.5" ry="6" fill="#7A3B52"><animate attributeName="ry" values="6;3;6" dur="2.4s" repeatCount="indefinite"/></ellipse>'
+      : mood==='hungry' ? '<path d="M'+(cx-7)+' '+(cy+8)+' q7 7 14 0" stroke="#7A3B52" stroke-width="2.4" fill="none" stroke-linecap="round"/>'
+      : '<path d="M'+(cx-7)+' '+(cy+7)+' q7 6 14 0" stroke="#B14A66" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
+    return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+skin+'"/>'
+      +'<path d="M'+(cx-r)+' '+(cy-r*0.45)+' q'+r+' -'+(r*0.95)+' '+(2*r)+' 0 l0 '+(r*0.3)+' q-'+r+' -'+(r*0.6)+' -'+(2*r)+' 0 Z" fill="#5A3B22"/>'
+      +eyes+mouth
+      +'<ellipse cx="'+(cx-r*0.62)+'" cy="'+(cy+4)+'" rx="4" ry="2.6" fill="#FF8FB0" opacity=".5"/>'
+      +'<ellipse cx="'+(cx+r*0.62)+'" cy="'+(cy+4)+'" rx="4" ry="2.6" fill="#FF8FB0" opacity=".5"/>'; }
+
+  /* HUNGRY: child holding rumbling tummy, thought bubble of food */
+  SCENES.hungry=function(){ return '<svg viewBox="0 0 224 130">'
+    +'<ellipse cx="80" cy="122" rx="30" ry="6" fill="#000" opacity=".07"/>'
+    +'<g><animateTransform attributeName="transform" type="translate" values="0 0;0 -3;0 0" dur="1.8s" repeatCount="indefinite"/>'
+    +'<rect x="58" y="62" width="44" height="52" rx="18" fill="#7C5CFC"/>'
+    +'<ellipse cx="80" cy="92" rx="16" ry="14" fill="#6B4BE8"><animate attributeName="rx" values="16;19;16" dur="0.9s" repeatCount="indefinite"/></ellipse>'
+    +'<path d="M66 92 q6 -5 12 0 q6 5 12 0" stroke="#fff" stroke-width="2" fill="none" opacity=".6"><animate attributeName="opacity" values=".2;.8;.2" dur="0.9s" repeatCount="indefinite"/></path>'
+    +'<rect x="44" y="70" width="12" height="30" rx="6" fill="#7C5CFC"/><rect x="104" y="70" width="12" height="30" rx="6" fill="#7C5CFC"/>'
+    +face(80,44,22,'hungry')
+    +'</g>'
+    +'<circle cx="130" cy="80" r="4" fill="#fff" stroke="#E7D9F2" stroke-width="2"/><circle cx="141" cy="68" r="6" fill="#fff" stroke="#E7D9F2" stroke-width="2"/>'
+    +'<ellipse cx="172" cy="44" rx="36" ry="27" fill="#fff" stroke="#E7D9F2" stroke-width="2"/>'
+    +'<text x="172" y="54" font-size="26" text-anchor="middle">🍎</text>'
+    +'<text x="150" y="112" font-family="Baloo 2,sans-serif" font-weight="800" font-size="13" fill="#E59400">grr… grr…<animate attributeName="opacity" values="1;.3;1" dur="1.1s" repeatCount="indefinite"/></text>'
+    +'</svg>'; };
+
+  /* SLEEPY: yawning child in pyjamas with Zzz */
+  SCENES.sleepy=function(){ return '<svg viewBox="0 0 224 130">'
+    +'<ellipse cx="90" cy="122" rx="30" ry="6" fill="#000" opacity=".07"/>'
+    +'<g><animateTransform attributeName="transform" type="rotate" values="-3 90 120;3 90 120;-3 90 120" dur="3s" repeatCount="indefinite"/>'
+    +'<rect x="68" y="62" width="44" height="52" rx="18" fill="#6BB7FF"/>'
+    +'<path d="M68 78 h44 M68 92 h44" stroke="#fff" stroke-width="2" opacity=".5"/>'
+    +'<rect x="54" y="70" width="12" height="30" rx="6" fill="#6BB7FF"/><rect x="114" y="70" width="12" height="30" rx="6" fill="#6BB7FF"/>'
+    +face(90,44,22,'sleepy')
+    +'</g>'
+    +'<text x="140" y="46" font-family="Baloo 2,sans-serif" font-weight="800" font-size="18" fill="#7C5CFC">z<animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite"/><animate attributeName="y" values="46;30;46" dur="2s" repeatCount="indefinite"/></text>'
+    +'<text x="158" y="36" font-family="Baloo 2,sans-serif" font-weight="800" font-size="24" fill="#9FB0D8">z<animate attributeName="opacity" values="0;1;0" dur="2s" begin="0.6s" repeatCount="indefinite"/><animate attributeName="y" values="36;18;36" dur="2s" begin="0.6s" repeatCount="indefinite"/></text>'
+    +'<text x="180" y="28" font-family="Baloo 2,sans-serif" font-weight="800" font-size="30" fill="#C9BEE0">z<animate attributeName="opacity" values="0;1;0" dur="2s" begin="1.2s" repeatCount="indefinite"/></text>'
+    +'</svg>'; };
+
+  /* RAIN: person under the rain (no umbrella yet) */
+  SCENES.rain=function(){ var drops='';
+    for(var i=0;i<9;i++){ var x=24+i*21, d=(i%4)*0.25;
+      drops+='<line x1="'+x+'" y1="30" x2="'+(x-3)+'" y2="42" stroke="#5BA9F0" stroke-width="3" stroke-linecap="round"><animate attributeName="y1" values="26;96" dur="0.9s" begin="'+d+'s" repeatCount="indefinite"/><animate attributeName="y2" values="38;108" dur="0.9s" begin="'+d+'s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;1;0" dur="0.9s" begin="'+d+'s" repeatCount="indefinite"/></line>'; }
+    return '<svg viewBox="0 0 224 132">'
+      +'<ellipse cx="52" cy="24" rx="30" ry="15" fill="#B7C4E8"/><ellipse cx="88" cy="20" rx="34" ry="17" fill="#9FB0D8"/><ellipse cx="140" cy="24" rx="36" ry="16" fill="#B7C4E8"/><ellipse cx="184" cy="26" rx="28" ry="13" fill="#9FB0D8"/>'
+      +drops
+      +'<ellipse cx="112" cy="124" rx="28" ry="6" fill="#000" opacity=".07"/>'
+      +'<g><animateTransform attributeName="transform" type="translate" values="0 0;0 -2;0 0" dur="1.6s" repeatCount="indefinite"/>'
+      +'<rect x="92" y="76" width="40" height="42" rx="16" fill="#EC4899"/>'
+      +'<rect x="80" y="82" width="11" height="26" rx="5" fill="#EC4899"/><rect x="133" y="82" width="11" height="26" rx="5" fill="#EC4899"/>'
+      +face(112,60,19,'')
+      +'</g>'
+      +'<text x="112" y="24" font-family="Baloo 2,sans-serif" font-weight="800" font-size="13" fill="#2C3E66" text-anchor="middle">Rain!</text>'
+      +'</svg>'; };
+
+  /* TRAFFIC: signal switching red -> green, car waiting then going */
+  SCENES.traffic=function(hl){ var green = (hl==='go');
+    return '<svg viewBox="0 0 224 132">'
+      +'<rect x="30" y="16" width="34" height="82" rx="12" fill="#3A3A4A"/>'
+      +'<circle cx="47" cy="36" r="11" fill="#EF4444" opacity="'+(green?'0.25':'1')+'">'+(green?'':'<animate attributeName="opacity" values="1;.45;1" dur="1.1s" repeatCount="indefinite"/>')+'</circle>'
+      +'<circle cx="47" cy="58" r="11" fill="#F5C518" opacity="0.25"/>'
+      +'<circle cx="47" cy="80" r="11" fill="#22C55E" opacity="'+(green?'1':'0.25')+'">'+(green?'<animate attributeName="opacity" values="1;.45;1" dur="1.1s" repeatCount="indefinite"/>':'')+'</circle>'
+      +'<rect x="42" y="98" width="10" height="24" fill="#5A5A6A"/>'
+      +'<line x1="76" y1="120" x2="216" y2="120" stroke="#9AA3B2" stroke-width="3" stroke-dasharray="10 8"/>'
+      +'<g>'+(green?'<animateTransform attributeName="transform" type="translate" values="0 0;60 0" dur="1.6s" repeatCount="indefinite"/>':'<animateTransform attributeName="transform" type="translate" values="0 0;3 0;0 0" dur="0.6s" repeatCount="indefinite"/>')+'</g>'
+      +'<g>'+(green?'<animateTransform attributeName="transform" type="translate" values="0 0;54 0" dur="1.8s" repeatCount="indefinite"/>':'')+'>'
+      +'<rect x="96" y="86" width="62" height="24" rx="8" fill="#3B82F6"/>'
+      +'<path d="M108 86 l8 -14 h30 l8 14 Z" fill="#6DA8FF"/>'
+      +'<circle cx="112" cy="112" r="8" fill="#241C3B"/><circle cx="146" cy="112" r="8" fill="#241C3B"/>'
+      +'<circle cx="112" cy="112" r="3" fill="#9AA3B2"/><circle cx="146" cy="112" r="3" fill="#9AA3B2"/>'
+      +'</g>'
+      +(green? '<text x="180" y="60" font-family="Baloo 2,sans-serif" font-weight="800" font-size="15" fill="#22C55E">GO!</text>'
+             : '<text x="176" y="60" font-family="Baloo 2,sans-serif" font-weight="800" font-size="15" fill="#EF4444">WAIT</text>')
+      +'</svg>'; };
+
+  /* QUEUE upgraded: kids OR cars, with join/leave animation */
+  function qkid(x,phase,color){ return '<g><animateTransform attributeName="transform" type="translate" values="0 0;0 -3;0 0" dur="1.5s" begin="'+phase+'s" repeatCount="indefinite"/>'
+    +'<ellipse cx="'+x+'" cy="92" rx="13" ry="4" fill="#000" opacity=".08"/>'
+    +'<rect x="'+(x-11)+'" y="60" width="22" height="30" rx="10" fill="'+color+'"/>'
+    +'<circle cx="'+x+'" cy="50" r="12" fill="#FFD9B3"/>'
+    +'<path d="M'+(x-11)+' 44 Q'+x+' 34 '+(x+11)+' 44 L'+(x+11)+' 48 Q'+x+' 42 '+(x-11)+' 48 Z" fill="#5A3B22"/>'
+    +'<circle cx="'+(x-4)+'" cy="50" r="1.7" fill="#3A2B4A"/><circle cx="'+(x+4)+'" cy="50" r="1.7" fill="#3A2B4A"/>'
+    +'<path d="M'+(x-4)+' 55 Q'+x+' 58 '+(x+4)+' 55" stroke="#B14A66" stroke-width="1.6" fill="none" stroke-linecap="round"/>'
+    +'</g>'; }
+  function qcar(x,phase,color){ return '<g><animateTransform attributeName="transform" type="translate" values="0 0;2 0;0 0" dur="1.2s" begin="'+phase+'s" repeatCount="indefinite"/>'
+    +'<ellipse cx="'+x+'" cy="94" rx="20" ry="4" fill="#000" opacity=".08"/>'
+    +'<rect x="'+(x-20)+'" y="64" width="40" height="20" rx="7" fill="'+color+'"/>'
+    +'<path d="M'+(x-12)+' 64 l5 -11 h15 l5 11 Z" fill="#ffffff" opacity=".55"/>'
+    +'<circle cx="'+(x-11)+'" cy="87" r="6.5" fill="#241C3B"/><circle cx="'+(x+11)+'" cy="87" r="6.5" fill="#241C3B"/>'
+    +'<circle cx="'+(x-11)+'" cy="87" r="2.4" fill="#9AA3B2"/><circle cx="'+(x+11)+'" cy="87" r="2.4" fill="#9AA3B2"/>'
+    +'</g>'; }
+  SCENES.queue=function(hl,data){
+    var cars = data && data.actors==='cars';
+    var xs=[64,108,152,196]; var cols=['#7C5CFC','#22C55E','#F5A623','#EC4899'];
+    var actors='';
+    xs.forEach(function(x,i){
+      var g = cars? qcar(x,i*0.2,cols[i]) : qkid(x,i*0.3,cols[i]);
+      // first one leaves (exits left), last one joins (slides in from right)
+      if(i===0) g='<g><animateTransform attributeName="transform" type="translate" values="0 0;0 0;-70 0;-70 0;0 0" keyTimes="0;0.55;0.75;0.95;1" dur="5s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.55;0.78;0.95;1" dur="5s" repeatCount="indefinite"/>'+g+'</g>';
+      if(i===3) g='<g><animateTransform attributeName="transform" type="translate" values="60 0;0 0;0 0" keyTimes="0;0.25;1" dur="5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;1" keyTimes="0;0.25;1" dur="5s" repeatCount="indefinite"/>'+g+'</g>';
+      actors+=g;
+    });
+    var goal='<text x="22" y="76" font-size="22">'+(cars?'🛣️':'🎯')+'</text><text x="40" y="58" font-size="14">⬅️</text>';
+    var hlmark='';
+    if(hl==='first') hlmark='<circle cx="64" cy="'+(cars?78:62)+'" r="30" fill="none" stroke="#FF8A3D" stroke-width="4"><animate attributeName="opacity" values="1;.35;1" dur=".9s" repeatCount="indefinite"/></circle>'+_lbl(64,124,'FIRST');
+    if(hl==='last') hlmark='<circle cx="196" cy="'+(cars?78:62)+'" r="30" fill="none" stroke="#FF8A3D" stroke-width="4"><animate attributeName="opacity" values="1;.35;1" dur=".9s" repeatCount="indefinite"/></circle>'+_lbl(196,124,'LAST');
+    return '<svg viewBox="0 0 224 132">'+goal+actors+hlmark+'</svg>';
+  };
+
+  /* SHADOW: a black silhouette the child must match to the real object */
+  var SHAPES={
+    tree:'<path d="M60 18 L86 62 H70 L92 100 H28 L50 62 H34 Z"/><rect x="53" y="98" width="14" height="20" rx="2"/>',
+    umbrella:'<path d="M12 66 a48 40 0 0 1 96 0 Z"/><path d="M60 66 v38 a12 12 0 0 0 22 0" fill="none" stroke="#241C3B" stroke-width="7" stroke-linecap="round"/>',
+    broccoli:'<circle cx="42" cy="46" r="20"/><circle cx="72" cy="42" r="22"/><circle cx="58" cy="30" r="18"/><rect x="52" y="60" width="14" height="46" rx="6"/>',
+    cat:'<circle cx="60" cy="58" r="26"/><path d="M38 42 L34 18 L54 34 Z"/><path d="M82 42 L86 18 L66 34 Z"/><path d="M84 78 q22 6 16 30 l-8 0 q4 -18 -12 -22 Z"/>',
+    rabbit:'<circle cx="60" cy="66" r="24"/><ellipse cx="48" cy="26" rx="8" ry="22"/><ellipse cx="72" cy="26" rx="8" ry="22"/>',
+    dog:'<circle cx="60" cy="60" r="25"/><ellipse cx="33" cy="52" rx="9" ry="18"/><ellipse cx="87" cy="52" rx="9" ry="18"/><ellipse cx="60" cy="82" rx="13" ry="9"/>',
+    car:'<rect x="16" y="62" width="88" height="26" rx="9"/><path d="M34 62 l12 -20 h28 l12 20 Z"/><circle cx="38" cy="94" r="12"/><circle cx="84" cy="94" r="12"/>',
+    bus:'<rect x="14" y="30" width="92" height="58" rx="8"/><circle cx="36" cy="94" r="11"/><circle cx="84" cy="94" r="11"/>',
+    cup:'<path d="M30 40 h54 v34 a27 27 0 0 1 -54 0 Z"/><path d="M84 46 a16 16 0 0 1 0 26" fill="none" stroke="#241C3B" stroke-width="8"/>',
+    boat:'<path d="M16 76 h88 l-14 26 H30 Z"/><rect x="56" y="20" width="7" height="54"/><path d="M63 26 l30 34 H63 Z"/>',
+    star:'<path d="M60 14 L72 48 H108 L78 68 L90 102 L60 82 L30 102 L42 68 L12 48 H48 Z"/>',
+    house:'<path d="M60 18 L108 60 H92 V104 H28 V60 H12 Z"/>'
+  };
+  SCENES.shadow=function(hl,data){
+    var k=(data&&data.shape)||'tree';
+    return '<svg viewBox="0 0 120 130">'
+      +'<ellipse cx="60" cy="120" rx="42" ry="7" fill="#000" opacity=".10"/>'
+      +'<g fill="#241C3B" opacity=".92">'+(SHAPES[k]||SHAPES.tree)+'</g>'
+      +'<g><animateTransform attributeName="transform" type="rotate" values="-1.5 60 120;1.5 60 120;-1.5 60 120" dur="3s" repeatCount="indefinite"/></g>'
+      +'</svg>';
+  };
+
+  /* PANCAKES: a real stack of pancakes with syrup */
+  SCENES.pancakes=function(hl){
+    var ys=[46,64,82,100]; var out='';
+    ys.forEach(function(y,i){
+      out+='<ellipse cx="110" cy="'+y+'" rx="'+(52-i*1.5)+'" ry="11" fill="#E8A85C" stroke="#C9853F" stroke-width="2"/>'
+        +'<ellipse cx="110" cy="'+(y-3)+'" rx="'+(46-i*1.5)+'" ry="7.5" fill="#F5C27D"/>';
+    });
+    out+='<path d="M70 40 q10 -8 22 -2 q12 -8 24 -1 q12 -7 24 3 q-6 12 -18 8 q-12 6 -24 -2 q-12 6 -22 -2 Z" fill="#B4652A" opacity=".85"/>';
+    out+='<path d="M132 44 q6 12 2 22" stroke="#B4652A" stroke-width="5" fill="none" stroke-linecap="round" opacity=".8"><animate attributeName="d" values="M132 44 q6 12 2 22;M132 44 q6 16 2 28;M132 44 q6 12 2 22" dur="2.5s" repeatCount="indefinite"/></path>';
+    out+='<rect x="98" y="24" width="24" height="8" rx="3" fill="#FFE08A" stroke="#E0A83C" stroke-width="1.5"/>';
+    var hlmark='';
+    if(hl==='top') hlmark='<ellipse cx="110" cy="46" rx="60" ry="17" fill="none" stroke="#FF8A3D" stroke-width="4"><animate attributeName="opacity" values="1;.35;1" dur=".9s" repeatCount="indefinite"/></ellipse>'+_lbl(110,20,'TOP');
+    if(hl==='bottom') hlmark='<ellipse cx="110" cy="100" rx="60" ry="17" fill="none" stroke="#FF8A3D" stroke-width="4"><animate attributeName="opacity" values="1;.35;1" dur=".9s" repeatCount="indefinite"/></ellipse>'+_lbl(110,128,'BOTTOM');
+    return '<svg viewBox="0 0 220 134">'+out+hlmark+'</svg>';
+  };
+
+  /* CLAP / STOMP: hands actually clap, feet actually stomp, in sequence */
+  SCENES.clapstomp=function(hl,data){
+    var seq=(data&&data.seq)||['clap','stomp','clap','stomp'];
+    var per=1.0, total=seq.length*per;
+    var out='', x0=30;
+    seq.forEach(function(kind,i){
+      var x=x0+i*44, begin=(i*per).toFixed(2);
+      if(kind==='clap'){
+        out+='<g><animateTransform attributeName="transform" type="scale" values="1;1.25;1" dur="0.45s" begin="'+begin+'s;'+begin+'s+'+total+'s" additive="sum"/>'
+          +'<path d="M'+(x-13)+' 46 q-7 -14 3 -20 q6 -3 8 4 l4 12 Z" fill="#FFCE73" stroke="#E0A83C" stroke-width="1.5"/>'
+          +'<path d="M'+(x+13)+' 46 q7 -14 -3 -20 q-6 -3 -8 4 l-4 12 Z" fill="#FFDD9A" stroke="#E0A83C" stroke-width="1.5"/>'
+          +'<g opacity="0"><animate attributeName="opacity" values="0;1;0" dur="0.45s" begin="'+begin+'s;'+begin+'s+'+total+'s"/>'
+          +'<line x1="'+(x-16)+'" y1="30" x2="'+(x-22)+'" y2="24" stroke="#F5A623" stroke-width="2.4" stroke-linecap="round"/>'
+          +'<line x1="'+(x+16)+'" y1="30" x2="'+(x+22)+'" y2="24" stroke="#F5A623" stroke-width="2.4" stroke-linecap="round"/>'
+          +'<line x1="'+x+'" y1="24" x2="'+x+'" y2="17" stroke="#F5A623" stroke-width="2.4" stroke-linecap="round"/></g></g>';
+        out+='<text x="'+x+'" y="66" text-anchor="middle" font-family="Baloo 2,sans-serif" font-weight="800" font-size="10" fill="#8B84A3">clap</text>';
+      } else {
+        out+='<g><animateTransform attributeName="transform" type="translate" values="0 0;0 8;0 0" dur="0.45s" begin="'+begin+'s;'+begin+'s+'+total+'s" additive="sum"/>'
+          +'<path d="M'+(x-9)+' 24 q0 -8 8 -8 q9 0 9 10 l0 12 q0 8 -9 8 q-8 0 -8 -8 Z" fill="#FFCE73" stroke="#E0A83C" stroke-width="1.5"/>'
+          +'<ellipse cx="'+x+'" cy="47" rx="12" ry="5" fill="#FFDD9A" stroke="#E0A83C" stroke-width="1.5"/></g>'
+          +'<g opacity="0"><animate attributeName="opacity" values="0;1;0" dur="0.45s" begin="'+begin+'s;'+begin+'s+'+total+'s"/>'
+          +'<ellipse cx="'+x+'" cy="54" rx="16" ry="4" fill="none" stroke="#B7AEC9" stroke-width="2"/></g>';
+        out+='<text x="'+x+'" y="66" text-anchor="middle" font-family="Baloo 2,sans-serif" font-weight="800" font-size="10" fill="#8B84A3">stomp</text>';
+      }
+    });
+    var qx=x0+seq.length*44;
+    out+='<text x="'+qx+'" y="44" text-anchor="middle" font-size="30" font-family="Baloo 2,sans-serif" font-weight="800" fill="#EF4444">?<animate attributeName="opacity" values="1;.35;1" dur="1s" repeatCount="indefinite"/></text>';
+    return '<svg viewBox="0 0 '+(qx+28)+' 76">'+out+'</svg>';
+  };
+
+  /* PATTERN STRIP: show the whole sequence, with the ? clearly at the END */
+  SCENES.patstrip=function(hl,data){
+    var items=(data&&data.items)||[]; var n=items.length;
+    var w=Math.min(46, Math.floor(200/(n+1))), x0=16, out='';
+    items.forEach(function(e,i){ var x=x0+i*(w+6)+w/2;
+      out+='<text x="'+x.toFixed(0)+'" y="42" font-size="'+(w*0.8).toFixed(0)+'" text-anchor="middle">'+e+'</text>'; });
+    var qx=x0+n*(w+6)+w/2;
+    out+='<rect x="'+(qx-w/2)+'" y="12" width="'+w+'" height="'+w+'" rx="8" fill="#FEF3C7" stroke="#F5A623" stroke-width="2" stroke-dasharray="4 3"/>';
+    out+='<text x="'+qx.toFixed(0)+'" y="44" font-size="'+(w*0.75).toFixed(0)+'" text-anchor="middle" font-family="Baloo 2,sans-serif" font-weight="800" fill="#EF4444">?<animate attributeName="opacity" values="1;.4;1" dur="1s" repeatCount="indefinite"/></text>';
+    return '<svg viewBox="0 0 '+(qx+w)+' 60">'+out+'</svg>';
+  };
+
+  /* PATTERN ROWS: show the repeating sequence across rows with a ? at the end */
+  SCENES.patrows=function(hl,data){
+    var items=(data&&data.items)||[]; var per=(data&&data.per)||4;
+    var rows=[]; for(var i=0;i<items.length;i+=per) rows.push(items.slice(i,i+per));
+    var y=34, out='';
+    rows.forEach(function(row){
+      row.forEach(function(e,j){ var x=30+j*46;
+        out+='<text x="'+x+'" y="'+y+'" font-size="30" text-anchor="middle">'+e+'</text>'; });
+      y+=48;
+    });
+    out+='<text x="'+(30+(rows.length?rows[rows.length-1].length:0)*46)+'" y="'+(y-48)+'" font-size="32" text-anchor="middle" fill="#EF4444" font-family="Baloo 2,sans-serif" font-weight="800">?<animate attributeName="opacity" values="1;.35;1" dur="1s" repeatCount="indefinite"/></text>';
+    return '<svg viewBox="0 0 224 '+(y)+'">'+out+'</svg>';
+  };
+})();
+</script>
+
+<script>
+(function(){
+  var C=window.__CONTENT__; if(!C) return;
+  var MA="#3B82F6", SC="#22C55E", EN="#EF4444", RE="#8B5CF6", GK="#F59E0B", PZ="#EC4899";
+
+  /* ---------- MORE PUZZLE ROUNDS (easier ramp + more of them) ---------- */
+  var np1=C.puzzles.topics.find(function(t){return t.id==='np-1';});
+  if(np1) np1.rounds=[{rows:2,cols:2,numAt:[0,3]},{rows:2,cols:3,numAt:[0,5]},{rows:2,cols:2,numAt:[0,1,2,3]},
+                      {rows:3,cols:3,numAt:[0,4,8]},{rows:3,cols:3,numAt:[0,2,4,6,8]}];
+  var fs1=C.puzzles.topics.find(function(t){return t.id==='fs-1';});
+  if(fs1) fs1.rounds=[{rows:3,cols:3,seed:{r:1,c:1,n:2}},{rows:3,cols:3,seed:{r:1,c:1,n:3}},
+                      {rows:3,cols:3,seed:{r:0,c:0,n:4}},{rows:3,cols:4,seed:{r:1,c:1,n:5}}];
+
+  /* ---------- NEW PUZZLE: Odd Shape Out grid (visual scanning) ---------- */
+  C.puzzles.topics.push(
+    { level:1, id:'pz-count', title:'How Many?', emoji:'🔢', color:PZ, type:'tapcount', rounds:[
+      {q:"Tap 3 stars!",emoji:"⭐",n:3,total:6},
+      {q:"Tap 5 apples!",emoji:"🍎",n:5,total:8},
+      {q:"Tap 4 hearts!",emoji:"❤️",n:4,total:7},
+      {q:"Tap 6 balls!",emoji:"⚽",n:6,total:9}
+    ]},
+    { level:1, id:'pz-shadow', title:'Whose Shadow?', emoji:'🌑', color:PZ, questions:[
+      {q:"Look at the shadow. Which one made it?",scene:"shadow",sceneData:{shape:"tree"},options:[{t:"Tree",d:"🌳"},{t:"Broccoli",d:"🥦"},{t:"Umbrella",d:"☂️"}],correct:0},
+      {q:"Look at the shadow. Which one made it?",scene:"shadow",sceneData:{shape:"umbrella"},options:[{t:"Umbrella",d:"☂️"},{t:"Mushroom",d:"🍄"},{t:"Tree",d:"🌳"}],correct:0},
+      {q:"Look at the shadow. Which one made it?",scene:"shadow",sceneData:{shape:"cat"},options:[{t:"Cat",d:"🐱"},{t:"Rabbit",d:"🐰"},{t:"Dog",d:"🐶"}],correct:0},
+      {q:"Look at the shadow. Which one made it?",scene:"shadow",sceneData:{shape:"rabbit"},options:[{t:"Rabbit",d:"🐰"},{t:"Cat",d:"🐱"},{t:"Mouse",d:"🐭"}],correct:0},
+      {q:"Look at the shadow. Which one made it?",scene:"shadow",sceneData:{shape:"car"},options:[{t:"Car",d:"🚗"},{t:"Bus",d:"🚌"},{t:"Boat",d:"⛵"}],correct:0},
+      {q:"Look at the shadow. Which one made it?",scene:"shadow",sceneData:{shape:"bus"},options:[{t:"Bus",d:"🚌"},{t:"Car",d:"🚗"},{t:"House",d:"🏠"}],correct:0},
+      {q:"Look at the shadow. Which one made it?",scene:"shadow",sceneData:{shape:"cup"},options:[{t:"Cup",d:"☕"},{t:"Bucket",d:"🪣"},{t:"Hat",d:"🎩"}],correct:0},
+      {q:"Look at the shadow. Which one made it?",scene:"shadow",sceneData:{shape:"boat"},options:[{t:"Boat",d:"⛵"},{t:"Car",d:"🚗"},{t:"Kite",d:"🪁"}],correct:0},
+      {q:"Look at the shadow. Which one made it?",scene:"shadow",sceneData:{shape:"house"},options:[{t:"House",d:"🏠"},{t:"Tent",d:"⛺"},{t:"Star",d:"⭐"}],correct:0},
+      {q:"Look at the shadow. Which one made it?",scene:"shadow",sceneData:{shape:"star"},options:[{t:"Star",d:"⭐"},{t:"Flower",d:"🌸"},{t:"Sun",d:"☀️"}],correct:0}
+    ]},
+    { level:2, id:'pz-mirror', title:'Mirror Puzzle', emoji:'🪞', color:PZ, questions:[
+      {q:"In a mirror, which way does this arrow point?",big:"➡️ 🪞",options:[{t:"Left",d:"⬅️"},{t:"Right",d:"➡️"}],correct:0},
+      {q:"In a mirror, the letter b becomes?",big:"b 🪞",options:[{t:"d",d:"d"},{t:"p",d:"p"}],correct:0},
+      {q:"In a mirror, the letter p becomes?",big:"p 🪞",options:[{t:"q",d:"q"},{t:"b",d:"b"}],correct:0},
+      {q:"In a mirror, this hand becomes?",big:"👉 🪞",options:[{t:"Pointing left",d:"👈"},{t:"Pointing up",d:"👆"}],correct:0},
+      {q:"You wave with your RIGHT hand. The mirror waves with the...?",big:"🖐️",options:[{t:"Left hand",d:"⬅️"},{t:"Right hand",d:"➡️"}],correct:0}
+    ]},
+    { level:2, id:'pz-fold', title:'Paper Fold', emoji:'📄', color:PZ, questions:[
+      {q:"Fold a square paper in half. What shape do you get?",big:"⬜",options:[{t:"Rectangle",d:"▭"},{t:"Circle",d:"⭕"}],correct:0},
+      {q:"Cut a square along the middle. How many pieces?",big:"✂️ ⬜",options:[{t:"Two",d:"2"},{t:"Three",d:"3"}],correct:0},
+      {q:"Fold a circle in half. What shape do you get?",big:"🔵",options:[{t:"Half circle",d:"◑"},{t:"Square",d:"⬜"}],correct:0},
+      {q:"Cut a cake into 2 equal parts. Each part is a...?",big:"🎂",options:[{t:"Half",d:"½"},{t:"Whole",d:"1"}],correct:0}
+    ]},
+    { level:3, id:'pz-sudoku', title:'Mini Logic Grid', emoji:'🎲', color:PZ, questions:[
+      {q:"Each row must have 🍎 and 🍌 once. Row is [🍎, ?]. What is ?",options:[{t:"Banana",d:"🍌"},{t:"Apple",d:"🍎"}],correct:0},
+      {q:"Each row must have ⭐ and 🌙 once. Row is [?, ⭐]. What is ?",options:[{t:"Moon",d:"🌙"},{t:"Star",d:"⭐"}],correct:0},
+      {q:"Each row has 🔴, 🔵, 🟢 once. Row is [🔴, 🔵, ?]. What is ?",options:[{t:"Green",d:"🟢"},{t:"Red",d:"🔴"}],correct:0},
+      {q:"Each row has 1, 2, 3 once. Row is [2, 3, ?]. What is ?",options:[{t:"1",d:"1"},{t:"3",d:"3"}],correct:0},
+      {q:"Each column has 🐶 and 🐱 once. Column is [🐱, ?]. What is ?",options:[{t:"Dog",d:"🐶"},{t:"Cat",d:"🐱"}],correct:0}
+    ]}
+  );
+
+  /* ---------- MORE OLYMPIAD QUESTIONS (LogiqIDS-style think sheets) ---------- */
+  C.olympiad.topics.push(
+    { level:2, group:"🔢 Math", id:"ma-word", title:"Story Sums", emoji:"📖", color:MA, questions:[
+      {q:"Riya has 3 pens. Her friend gives 2 more. How many pens now?",big:"🖊️🖊️🖊️ ➕ 🖊️🖊️",options:[{t:"5",d:"5"},{t:"4",d:"4"},{t:"6",d:"6"}],correct:0},
+      {q:"There are 7 birds. 3 fly away. How many are left?",big:"🐦",options:[{t:"4",d:"4"},{t:"3",d:"3"},{t:"5",d:"5"}],correct:0},
+      {q:"A box has 4 balls. Another box has 4 balls. How many altogether?",big:"📦📦",options:[{t:"8",d:"8"},{t:"6",d:"6"},{t:"4",d:"4"}],correct:0},
+      {q:"Amit had 10 sweets and ate 4. How many are left?",big:"🍬",options:[{t:"6",d:"6"},{t:"5",d:"5"},{t:"7",d:"7"}],correct:0},
+      {q:"5 kids are playing. 2 more join. How many kids now?",big:"🧒",options:[{t:"7",d:"7"},{t:"3",d:"3"},{t:"6",d:"6"}],correct:0},
+      {q:"A hen lays 2 eggs each day. How many eggs in 2 days?",big:"🥚",options:[{t:"4",d:"4"},{t:"2",d:"2"},{t:"3",d:"3"}],correct:0}
+    ]},
+    { level:3, group:"🔢 Math", id:"ma-money", title:"Money & Measure", emoji:"🪙", color:MA, questions:[
+      {q:"You have a 10 rupee coin and a 5 rupee coin. How much in total?",big:"🪙",options:[{t:"15",d:"15"},{t:"5",d:"5"},{t:"20",d:"20"}],correct:0},
+      {q:"A pencil costs 5 rupees. Two pencils cost?",big:"✏️✏️",options:[{t:"10",d:"10"},{t:"7",d:"7"},{t:"5",d:"5"}],correct:0},
+      {q:"Which is heavier: 1 kg of stones or 1 kg of cotton?",big:"⚖️",options:[{t:"They are the same",d:"="},{t:"Stones",d:"🪨"}],correct:0},
+      {q:"Which holds more: a spoon or a bucket?",options:[{t:"Bucket",d:"🪣"},{t:"Spoon",d:"🥄"}],correct:0},
+      {q:"How many 2-rupee coins make 6 rupees?",big:"🪙",options:[{t:"3",d:"3"},{t:"2",d:"2"},{t:"6",d:"6"}],correct:0}
+    ]},
+    { level:2, group:"🔬 Science", id:"sc-senses", title:"My Five Senses", emoji:"👀", color:SC, questions:[
+      {q:"Which part do we use to SEE?",options:[{t:"Eyes",d:"👁️"},{t:"Nose",d:"👃"},{t:"Ears",d:"👂"}],correct:0},
+      {q:"Which part do we use to SMELL?",options:[{t:"Nose",d:"👃"},{t:"Eyes",d:"👁️"},{t:"Hands",d:"🖐️"}],correct:0},
+      {q:"Which part do we use to HEAR?",options:[{t:"Ears",d:"👂"},{t:"Nose",d:"👃"},{t:"Eyes",d:"👁️"}],correct:0},
+      {q:"Which part do we use to TASTE?",options:[{t:"Tongue",d:"👅"},{t:"Ears",d:"👂"}],correct:0},
+      {q:"Which part do we use to TOUCH and feel?",options:[{t:"Skin and hands",d:"🖐️"},{t:"Eyes",d:"👁️"}],correct:0},
+      {q:"You smell a flower. Which sense is it?",big:"🌹",options:[{t:"Smell",d:"👃"},{t:"Hearing",d:"👂"}],correct:0}
+    ]},
+    { level:3, group:"🔬 Science", id:"sc-habitat", title:"Where Do I Live?", emoji:"🏡", color:SC, questions:[
+      {q:"Where does a fish live?",big:"🐟",options:[{t:"In water",d:"💧"},{t:"In a tree",d:"🌳"}],correct:0},
+      {q:"Where does a bird build its home?",big:"🐦",options:[{t:"A nest",d:"🪹"},{t:"A hole in water",d:"💧"}],correct:0},
+      {q:"Where does a bee live?",big:"🐝",options:[{t:"A hive",d:"🍯"},{t:"A kennel",d:"🐕"}],correct:0},
+      {q:"Which animal lives in the water AND on land?",options:[{t:"Frog",d:"🐸"},{t:"Cat",d:"🐱"}],correct:0},
+      {q:"Which animal lives in a den?",options:[{t:"Lion",d:"🦁"},{t:"Fish",d:"🐟"}],correct:0},
+      {q:"Which of these can fly?",options:[{t:"Bird",d:"🐦"},{t:"Cow",d:"🐄"},{t:"Fish",d:"🐟"}],correct:0}
+    ]},
+    { level:3, group:"🌍 GK & EVS", id:"gk-safety", title:"Safety & Good Habits", emoji:"🦺", color:GK, questions:[
+      {q:"What should you do before eating food?",options:[{t:"Wash your hands",d:"🧼"},{t:"Play in mud",d:"🪨"}],correct:0},
+      {q:"When crossing the road, you should look...?",options:[{t:"Both ways",d:"↔️"},{t:"Only up",d:"⬆️"}],correct:0},
+      {q:"Which light means STOP?",big:"🚦",options:[{t:"Red",d:"🔴"},{t:"Green",d:"🟢"}],correct:0},
+      {q:"What do you wear on a bicycle to stay safe?",options:[{t:"Helmet",d:"🪖"},{t:"Hat",d:"🎩"}],correct:0},
+      {q:"How many times a day should you brush your teeth?",options:[{t:"Twice",d:"2"},{t:"Never",d:"0"}],correct:0},
+      {q:"Which is a healthy snack?",options:[{t:"Fruit",d:"🍎"},{t:"Sweets",d:"🍬"}],correct:0}
+    ]},
+    { level:3, group:"🧠 Reasoning", id:"lg-code", title:"Secret Codes", emoji:"🔐", color:RE, questions:[
+      {q:"If 🍎 means 1 and 🍌 means 2, what is 🍎 + 🍌?",options:[{t:"3",d:"3"},{t:"2",d:"2"},{t:"1",d:"1"}],correct:0},
+      {q:"If ⭐ = 5, what do two stars make?  ⭐⭐",options:[{t:"10",d:"10"},{t:"5",d:"5"},{t:"7",d:"7"}],correct:0},
+      {q:"A = 1, B = 2. What is C?",options:[{t:"3",d:"3"},{t:"4",d:"4"}],correct:0},
+      {q:"If 🔴 means GO and 🟢 means STOP (opposite day!), what does 🔴 mean?",options:[{t:"Go",d:"➡️"},{t:"Stop",d:"🛑"}],correct:0},
+      {q:"If today is opposite day, 'big' means...?",options:[{t:"Small",d:"🐜"},{t:"Big",d:"🐘"}],correct:0}
+    ]},
+    { level:3, group:"🧠 Reasoning", id:"lg-blocks", title:"Count the Blocks", emoji:"🧱", color:RE, questions:[
+      {q:"How many blocks?  🧱🧱 on top of 🧱🧱",options:[{t:"4",d:"4"},{t:"2",d:"2"},{t:"3",d:"3"}],correct:0},
+      {q:"A tower has 3 blocks. You add 2 more. How many blocks?",options:[{t:"5",d:"5"},{t:"4",d:"4"},{t:"6",d:"6"}],correct:0},
+      {q:"How many corners does a square have?",big:"⬜",options:[{t:"4",d:"4"},{t:"3",d:"3"}],correct:0},
+      {q:"How many sides does a triangle have?",big:"🔺",options:[{t:"3",d:"3"},{t:"4",d:"4"}],correct:0},
+      {q:"How many corners does a circle have?",big:"⭕",options:[{t:"None",d:"0"},{t:"Four",d:"4"}],correct:0}
+    ]},
+    { level:2, group:"🔤 English", id:"en-rhyme2", title:"Rhyme Time", emoji:"🎵", color:EN, questions:[
+      {q:"Which word rhymes with CAT?",options:[{t:"Hat",d:"🎩"},{t:"Dog",d:"🐶"}],correct:0},
+      {q:"Which word rhymes with SUN?",options:[{t:"Fun",d:"🎉"},{t:"Cat",d:"🐱"}],correct:0},
+      {q:"Which word rhymes with STAR?",options:[{t:"Car",d:"🚗"},{t:"Bird",d:"🐦"}],correct:0},
+      {q:"Which word rhymes with BALL?",options:[{t:"Tall",d:"📏"},{t:"Cup",d:"☕"}],correct:0},
+      {q:"Which word rhymes with TREE?",options:[{t:"Bee",d:"🐝"},{t:"Dog",d:"🐶"}],correct:0},
+      {q:"Which word rhymes with BOOK?",options:[{t:"Look",d:"👀"},{t:"Milk",d:"🥛"}],correct:0}
+    ]}
+  );
+})();
+</script>
+
+<script>
 (function(){
   var C = window.__CONTENT__; if(!C) return;
   function findTopic(sec,id){ return (C[sec]?C[sec].topics:[]).find(function(t){return t.id===id;}); }
@@ -3011,6 +3410,149 @@ function fillNext(){ if(G.ri+1<G.topic.rounds.length){ G.ri++; setupFill(); } el
     q.scene='sizes'; q.sceneData={items:items.map(function(e){return {e:e,s:SIZEMAP[e]||3};})};
     q.options.forEach(function(o){ if(items.indexOf(o.d)>=0) o.hi=o.d; });
   });})();
+})();
+</script>
+
+<script>
+(function(){
+  var C=window.__CONTENT__; if(!C) return;
+
+  /* Names for emoji so we can turn every pictured item into a real option */
+  var NAME={'🍎':'Apple','🍏':'Green apple','🍌':'Banana','🍊':'Orange','🍇':'Grapes','🍉':'Watermelon','🍒':'Cherry','🍓':'Strawberry','🥭':'Mango','🍕':'Pizza','🍰':'Cake','🍦':'Ice cream','🥕':'Carrot','🥛':'Milk','🍯':'Honey','☕':'Tea',
+  '🐶':'Dog','🐕':'Dog','🐱':'Cat','🐈':'Cat','🐭':'Mouse','🐰':'Rabbit','🐇':'Rabbit','🦁':'Lion','🐘':'Elephant','🐄':'Cow','🐐':'Goat','🐴':'Horse','🐷':'Pig','🐸':'Frog','🐢':'Turtle','🐍':'Snake','🐦':'Bird','🐝':'Bee','🐜':'Ant','🕷️':'Spider','🦋':'Butterfly','🐞':'Ladybird','🐟':'Fish','🐠':'Fish','🐳':'Whale','🦈':'Shark','🐔':'Hen','🐤':'Chick','🦒':'Giraffe','🐒':'Monkey','🐵':'Monkey','🦊':'Fox','🐼':'Panda','🐨':'Koala','🐯':'Tiger','🦆':'Duck','🐛':'Caterpillar','🐌':'Snail','🦅':'Eagle','🦉':'Owl',
+  '🚗':'Car','🚙':'Car','🚌':'Bus','🚕':'Taxi','🚚':'Truck','🚲':'Bicycle','✈️':'Aeroplane','🚂':'Train','⛵':'Boat','🚢':'Ship','🚀':'Rocket','🏍️':'Motorbike',
+  '⚽':'Football','🏀':'Basketball','🎾':'Tennis ball','🏈':'Rugby ball','🧸':'Teddy','📚':'Books','📖':'Book','✏️':'Pencil','🖍️':'Crayon','📏':'Ruler','🎒':'Bag','🪑':'Chair','🛏️':'Bed','🪞':'Mirror','🎩':'Hat','👟':'Shoe','🧦':'Sock','👕':'Shirt','👖':'Trousers','🧤':'Glove','🧥':'Jacket','👜':'Bag','☂️':'Umbrella','🕶️':'Sunglasses',
+  '🌳':'Tree','🌷':'Flower','🌹':'Rose','🌻':'Sunflower','🌱':'Plant','🍄':'Mushroom','🌿':'Leaf','🪨':'Stone','🪶':'Feather','⭐':'Star','🌙':'Moon','☀️':'Sun','☁️':'Cloud','🌧️':'Rain','❄️':'Snow','🔥':'Fire','💧':'Water','🌊':'Sea',
+  '🔴':'Red circle','🔵':'Blue circle','🟢':'Green circle','🟡':'Yellow circle','🟠':'Orange circle','🟣':'Purple circle','⚫':'Black circle','⚪':'White circle','🔺':'Triangle','🟦':'Blue square','🟥':'Red square','🟩':'Green square','⬛':'Black square','⬜':'White square','🔶':'Diamond',
+  '👁️':'Eye','👂':'Ear','👃':'Nose','🖐️':'Hand','🦶':'Foot','👍':'Thumb','👏':'Clap','🦵':'Leg',
+  '🎈':'Balloon','🥁':'Drum','🎻':'Violin','🎺':'Trumpet','🪁':'Kite','🧊':'Ice','🥅':'Net','🪮':'Comb','🥄':'Spoon','🍽️':'Plate','🛁':'Bathtub','🧼':'Soap','🛝':'Slide','🏫':'School','🏠':'House','🏞️':'Park',
+  '🍔':'Burger','🌭':'Hot dog','🍟':'Chips','🥪':'Sandwich','🧁':'Cupcake','🍩':'Doughnut','🍪':'Biscuit','🥤':'Drink','🍫':'Chocolate','🥚':'Egg','🍞':'Bread','🧀':'Cheese','🍬':'Sweet','🥗':'Salad','🍚':'Rice','🍲':'Soup','🥦':'Broccoli','🌽':'Corn','🥔':'Potato','🍅':'Tomato','🍑':'Peach','🍐':'Pear','🥥':'Coconut','🍍':'Pineapple','🥝':'Kiwi',
+  '🌞':'Sun','🌟':'Star','✨':'Sparkles','⛅':'Cloud','🌈':'Rainbow','⚡':'Lightning','🌪️':'Storm','🏔️':'Mountain','⛰️':'Mountain','🏖️':'Beach','🌵':'Cactus','🍂':'Leaf','🌾':'Wheat','🌍':'Earth','🪐':'Planet',
+  '🦌':'Deer','🐊':'Crocodile','🦓':'Zebra','🦏':'Rhino','🦛':'Hippo','🐪':'Camel','🐑':'Sheep','🐈‍⬛':'Cat','🦜':'Parrot','🕊️':'Dove','🐧':'Penguin','🦢':'Swan','🐬':'Dolphin','🦀':'Crab','🐙':'Octopus','🦋':'Butterfly','🐝':'Bee','🪰':'Fly','🦗':'Cricket','🐢':'Turtle',
+  '🚐':'Van','🛺':'Auto','🚁':'Helicopter','🛴':'Scooter','🛹':'Skateboard','🚒':'Fire engine','🚓':'Police car','🚑':'Ambulance','🛵':'Scooter',
+  '🪑':'Chair','🛋️':'Sofa','🚪':'Door','🪟':'Window','💡':'Lamp','⌚':'Watch','⏰':'Clock','📱':'Phone','💻':'Laptop','🔑':'Key','🧹':'Broom','🪣':'Bucket','🍶':'Bottle','🥣':'Bowl','🍴':'Fork','✂️':'Scissors','📐':'Set square','🧮':'Abacus','🎨':'Paint','🖌️':'Brush','📝':'Note','📎':'Clip',
+  '👗':'Dress','🧣':'Scarf','🧢':'Cap','👑':'Crown','👞':'Shoe','🩴':'Slipper','🧴':'Bottle','🪥':'Toothbrush','🛒':'Trolley',
+  '1️⃣':'One','2️⃣':'Two','3️⃣':'Three','4️⃣':'Four','5️⃣':'Five','6️⃣':'Six','7️⃣':'Seven','8️⃣':'Eight','9️⃣':'Nine','🔟':'Ten',
+  '🅰️':'Letter A','🅱️':'Letter B','🔠':'Letters','🔤':'Letters',
+  '🐖':'Pig','🐁':'Mouse','🐆':'Cheetah','🫐':'Blueberry','🍋':'Lemon','🌫️':'Fog','⭕':'Circle','🧱':'Brick','🚤':'Speedboat','🌅':'Morning','🌆':'Evening','👶':'Baby','🧒':'Child','👵':'Grandma','👴':'Grandpa','🧃':'Juice','🏎️':'Race car','🪙':'Coin','🗼':'Tower','🏢':'Building','🐇':'Rabbit','🥁':'Drum'};
+
+  function tokens(big){ if(!big) return [];
+    return String(big).split(/\s+/).map(function(t){return t.trim();}).filter(function(t){
+      return t && NAME[t]; }); }
+
+  var stats={optAdded:0, dupFixed:0, qFixed:0, scened:0};
+
+  for(var sec in C){ C[sec].topics.forEach(function(t){
+    if(!t.questions || t.type) return;
+    t.questions.forEach(function(q){
+
+      /* ---- FIX 1: every item pictured in the question becomes an answer option ---- */
+      var isPattern = /comes next|missing|pattern|continue/i.test(q.q||'');
+      var raw=tokens(q.big), shown=[];
+      raw.forEach(function(e){ if(shown.indexOf(e)<0) shown.push(e); });   /* distinct only */
+      var hasRepeat = raw.length!==shown.length;
+      if(!isPattern && !hasRepeat && shown.length>=3 && q.options && q.options.length<shown.length){
+        var haveD={}; q.options.forEach(function(o){ haveD[o.d]=1; });
+        var correctD=q.options[q.correct] && q.options[q.correct].d;
+        /* expand whenever the marked-correct answer is one of the pictured items */
+        if(correctD && shown.indexOf(correctD)>=0){
+          shown.forEach(function(e){
+            if(!haveD[e]){ q.options.push({t:NAME[e], d:e}); haveD[e]=1; stats.optAdded++; }
+          });
+          var ni=q.options.findIndex(function(o){return o.d===correctD;}); if(ni>=0) q.correct=ni;
+        }
+      }
+
+          /* ---- FIX 1b: numeric questions (e.g. "6 · 2 · 8") must offer every number shown ---- */
+      if(!isPattern && q.options && q.options.length>=2){
+        var nums=String(q.big||'').split(/[\s\u00b7]+/).filter(function(x){ return /^\d{1,3}$/.test(x); });
+        var dnums=[]; nums.forEach(function(x){ if(dnums.indexOf(x)<0) dnums.push(x); });
+        if(dnums.length>=3 && q.options.length<dnums.length){
+          var cD=q.options[q.correct] && String(q.options[q.correct].d);
+          var optD={}; q.options.forEach(function(o){ optD[String(o.d)]=1; });
+          if(cD && dnums.indexOf(cD)>=0){
+            dnums.forEach(function(x){ if(!optD[x]){ q.options.push({t:x, d:x}); optD[x]=1; stats.optAdded++; } });
+            var k=q.options.findIndex(function(o){ return String(o.d)===cD; }); if(k>=0) q.correct=k;
+          }
+        }
+      }
+
+  /* ---- FIX 2: no duplicate labels (option showed "B  B") ---- */
+      if(q.options) q.options.forEach(function(o){
+        if(o.d!=null && o.t!=null && String(o.d).trim()===String(o.t).trim()){ o.d=''; stats.dupFixed++; }
+      });
+    });
+  }); }
+
+  /* ---- FIX 3: first-letter questions must not spell the answer in the question ---- */
+  for(var sec2 in C){ C[sec2].topics.forEach(function(t){
+    if(!t.questions||t.type) return;
+    t.questions.forEach(function(q){
+      var m=/^([A-Za-z]+)\s+starts with\?$/.exec(q.q||'');
+      if(m){ q.q="What letter does this start with?"; stats.qFixed++;
+        if(q.big && !/[A-Za-z]/.test(q.big)===false){ /* keep picture as-is */ } }
+      var m2=/^Which word starts with the '(\w+)' sound\?$/.exec(q.q||'');
+      if(m2){ /* fine: no answer given away */ }
+    });
+  }); }
+
+  /* ---- FIX 4: real animated scenes instead of a lone emoji ---- */
+  function tagScene(pred, scene, hiMap){
+    for(var sec3 in C){ C[sec3].topics.forEach(function(t){
+      if(!t.questions||t.type) return;
+      t.questions.forEach(function(q){
+        if(q.scene) return;
+        if(pred(q)){ q.scene=scene; stats.scened++;
+          if(hiMap) q.options.forEach(function(o){ var h=hiMap(o); if(h) o.hi=h; }); }
+      });
+    }); }
+  }
+  tagScene(function(q){ return /hungry/i.test(q.q); }, 'hungry');
+  tagScene(function(q){ return /sleepy|go to bed/i.test(q.q); }, 'sleepy');
+  tagScene(function(q){ return /it rains|raining/i.test(q.q); }, 'rain');
+  tagScene(function(q){ return /light is green|light is red|traffic/i.test(q.q); }, 'traffic',
+    function(o){ return /go/i.test(o.t)?'go':(/stop/i.test(o.t)?'stop':''); });
+
+  /* ---- FIX 5: queue scene shows CARS when the question is about cars ---- */
+  for(var sec4 in C){ C[sec4].topics.forEach(function(t){
+    if(!t.questions||t.type) return;
+    t.questions.forEach(function(q){
+      if(q.scene==='queue'){
+        if(/\bcars?\b|toll|traffic/i.test(q.q)) q.sceneData=Object.assign({},q.sceneData||{},{actors:'cars'});
+      }
+    });
+  }); }
+
+  /* ---- FIX 6: pattern questions show a LONGER sequence, with ? clearly at the end ---- */
+  function seqOf(big){ return String(big||'').split(/\s+/).filter(function(t){ return t && t!=='\u2753' && t!=='___' && t!=='?' && t!=='\u00b7'; }); }
+  function cycleOf(s){ for(var L=1;L<=4;L++){ if(s.length>=L+1){ var ok=true; for(var i=0;i<s.length;i++) if(s[i]!==s[i%L]){ ok=false; break; } if(ok) return L; } } return 0; }
+  for(var s5 in C){ C[s5].topics.forEach(function(t){
+    if(!t.questions||t.type) return;
+    t.questions.forEach(function(q){
+      if(q.scene) return;
+      if(!/comes next/i.test(q.q||'')) return;
+      var seq=seqOf(q.big); if(seq.length<3) return;
+      var L=cycleOf(seq); if(!L) return;
+      /* extend to show at least 2 full repeats + the start of the next -> easier to SEE the rule */
+      var want=Math.max(seq.length, L*2+ (L>1?L-1:1));
+      var shownSeq=[]; for(var i=0;i<want;i++) shownSeq.push(seq[i%L]);
+      /* clap/stomp -> real animation; everything else -> pattern strip */
+      if(seq.every(function(e){ return e==='\ud83d\udc4f' || e==='\ud83e\uddb6'; })){
+        q.scene='clapstomp';
+        q.sceneData={seq:shownSeq.map(function(e){ return e==='\ud83d\udc4f'?'clap':'stomp'; })};
+      } else {
+        q.scene='patstrip'; q.sceneData={items:shownSeq};
+      }
+      /* the answer must still be the true next item of the extended sequence */
+      var nxt=shownSeq[shownSeq.length % L === 0 ? 0 : shownSeq.length % L];
+      nxt=shownSeq[shownSeq.length % L];
+      var ni=q.options.findIndex(function(o){ return o.d===nxt; });
+      if(ni>=0) q.correct=ni;
+      stats.scened++;
+    });
+  }); }
+
+  if(window.console&&console.log) console.log('[AlgoKid fixes]', JSON.stringify(stats));
 })();
 </script>
 
