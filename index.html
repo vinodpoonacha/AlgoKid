@@ -52,7 +52,7 @@
     .badges-grid{ grid-template-columns:repeat(4,1fr)!important; }
   }
   @media (min-width:1000px){ .app,.nav{ max-width:1000px; } }
-  .kbtn{ transition:transform .09s ease, box-shadow .09s ease, background .2s; cursor:pointer; border:none; font-family:inherit; }
+  .kbtn{ transition:transform .09s ease, box-shadow .09s ease, background .2s; cursor:pointer; border:none; font-family:inherit; touch-action:manipulation; }
   .kbtn:active{ transform:translateY(3px) scale(.99); }
   .screen{ padding:14px 16px 108px; animation:fade .28s ease; }
   @keyframes fade{ from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none} }
@@ -266,6 +266,9 @@
   .npcell.hintcell{ box-shadow:0 0 0 4px #FCD34D inset; }
   .fscell{ background:#E5E7EB; border-radius:10px; display:flex; align-items:center; justify-content:center; font-family:var(--head); font-weight:800; }
   .fscell.fill{ background:#3B82F6; }
+  .fscell.goal:not(.fill){ border:3px dashed rgba(124,92,252,.55); background:#F1ECFD; }
+  .fscell.badcell{ animation:fsbad .32s ease; }
+  @keyframes fsbad{ 0%,100%{transform:none} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
   .fscell.seed span{ width:74%; height:74%; border-radius:10px; background:#241C3B; color:#fff; display:flex; align-items:center; justify-content:center; font-size:20px; }
   .fscell.fill.seed span{ background:#1E3A8A; }
   .puzcount{ text-align:center; font-family:var(--head); font-weight:800; font-size:18px; margin:4px 0 2px; color:var(--purple); }
@@ -456,9 +459,10 @@ function chime(notes,type){ if(muted) return;
       g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.25,t+.02); g.gain.exponentialRampToValueAtTime(.0001,t+d);
       o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+d); t+=d*.9; });
   }catch(e){} }
-const happy=()=>chime((typeof THEMES!=='undefined'&&THEMES[curTheme]&&THEMES[curTheme].win)||[[523,.12],[659,.12],[784,.12],[1047,.22]]);
-const oops =()=>chime([[300,.18],[220,.22]],'triangle');
-const pop  =()=>chime([[660,.07]]);
+function haptic(p){ try{ if(navigator&&navigator.vibrate) navigator.vibrate(p); }catch(e){} }
+const happy=()=>{ chime((typeof THEMES!=='undefined'&&THEMES[curTheme]&&THEMES[curTheme].win)||[[523,.12],[659,.12],[784,.12],[1047,.22]]); haptic([0,28,45,28]); };
+const oops =()=>{ chime([[300,.18],[220,.22]],'triangle'); haptic(55); };
+const pop  =()=>{ chime([[660,.07]]); haptic(11); };
 const ding =()=>chime([[880,.09],[1175,.14]]);
 const flip =()=>chime([[520,.06]]);
 
@@ -608,11 +612,13 @@ function renderSection(key){ setTab('home'); showNav(true); window.scrollTo(0,0)
     topics.forEach(t=>{
       if(!subjMeta && t.group&&t.group!==lastGroup){ html+=`<div class="grouphdr">${t.group}<span class="line"></span></div>`; lastGroup=t.group; }
       const pr=prog[t.id]||{plays:0,best:0}; const c=conf(pr.best,pr.plays);
+      const ms = pr.best>=0.95?3:pr.best>=0.8?2:pr.best>=0.5?1:0;
       const gt = t.type==='numpath'||t.type==='fillsquares'?'🧩 Puzzle': t.type==='order'?'🎮 Order game': t.type==='memory'?'🧠 Memory game': t.type==='tapcount'?'👆 Tap game': t.type==='truefalse'?'✅ True or False':'❓ '+topicCount(t)+' questions';
       html+=`<button class="kbtn topic" onclick="startTopic('${key}','${t.id}')">
         <span class="ic" style="background:${t.color}22">${t.emoji}</span>
         <span class="mid"><span class="t">${t.title}</span>
-          <span class="meta">${gt} <span class="badge" style="background:${c.color}">${c.label}</span></span></span>
+          <span class="meta">${gt} <span class="badge" style="background:${c.color}">${c.label}</span></span>
+          <span class="mstars" style="display:inline-flex;gap:2px;margin-top:3px;font-size:12px;line-height:1">${[0,1,2].map(k=>`<span style="opacity:${k<ms?1:.22};filter:${k<ms?'none':'grayscale(1)'}">⭐</span>`).join('')}</span></span>
         ${ring(c.pct,c.color)}</button>`;
     });
     html+=`</div>`;
@@ -686,7 +692,7 @@ function renderReport(){ setTab('report'); showNav(true); window.scrollTo(0,0);
 
 /* ---------------- GAME DISPATCH ---------------- */
 let G=null;
-function shuffledTopic(t){ const c=Object.assign({}, t); const noShuf=(t.type==='numpath'||t.type==='fillsquares');
+function shuffledTopic(t){ const c=Object.assign({}, t); const noShuf=(t.type==='numpath'||t.type==='fillsquares'||t.type==='oddgrid');
   if(!noShuf){ if(Array.isArray(c.questions)) c.questions=shuffle(c.questions);
     if(Array.isArray(c.rounds)) c.rounds=shuffle(c.rounds); }
   return c; }
@@ -694,6 +700,7 @@ function startTopic(key,topicId){ const s=CONTENT[key]; const t0=s.topics.find(x
   showNav(false); window.scrollTo(0,0);
   if(t.type==='numpath') return startNumPath(key,t);
   if(t.type==='fillsquares') return startFill(key,t);
+  if(t.type==='oddgrid') return startOddGrid(key,t);
   if(t.type==='order') return startOrder(key,t);
   if(t.type==='memory') return startMemory(key,t);
   if(t.type==='tapcount') return startTap(key,t);
@@ -701,6 +708,7 @@ function startTopic(key,topicId){ const s=CONTENT[key]; const t0=s.topics.find(x
   return startQuiz(key,t);
 }
 function gameHead(t,accent,cur,total,stars){
+  if(typeof G!=='undefined' && G && G.endless && typeof endlessHead==='function') return endlessHead(t,accent);
   const tm = (typeof G!=='undefined' && G && G.timed) ? `<span id="timer" class="timerchip">⏱️ ${G.timeLeft}s</span>` : '';
   return `<div class="qhead"><button class="kbtn readbtn" style="background:${accent}" onclick="exitGame()">‹</button>
     <span class="ttl" style="color:${accent}">${t.emoji} ${t.title}</span>${tm}</div>
@@ -725,7 +733,7 @@ function renderQuiz(){ const {topic,accent,idx,stars}=G; const q=topic.questions
       <button class="kbtn readbtn" style="background:${accent}" onclick="replayRead()">🔊</button></div>
       ${visual}</div>
     <div class="bwrap" id="bw"></div><div id="opts">${opts}</div></div>`;
-  G.wrongThis=false; readQuestionAndOptions(q, G.disp);
+  G.wrongThis=false; G.qMiss=0; readQuestionAndOptions(q, G.disp);
 }
 function answer(i){ if(G.solved) return; stopReading(); pop();
   const opt=G.disp[i]; if(opt&&opt.hi&&typeof setSceneHighlight==='function') setSceneHighlight(opt.hi);
@@ -733,11 +741,13 @@ function answer(i){ if(G.solved) return; stopReading(); pop();
   if(i===G.correctDisp){ G.solved=true; G.stars++; if(!G.wrongThis) G.firstTry++;
     const pr=PRAISES[Math.floor(Math.random()*PRAISES.length)];
     btns[i].classList.remove('reading'); btns[i].style.borderColor='#22C55E'; btns[i].style.background='#DCFCE7'; btns[i].innerHTML+='<span style="font-size:26px">✅</span>';
-    bw.innerHTML=`<div class="banner" style="background:#DCFCE7">${pr}</div>`; confetti(); partyCharacters(); happy(); speakThen(opt.t+". "+pr, nextQ, {pitch:1.3});
-  } else { G.wrongThis=true; recordMiss(G.topic.id, G.idx); const ch=CHEERS[Math.floor(Math.random()*CHEERS.length)];
+    bw.innerHTML=`<div class="banner" style="background:#DCFCE7">${pr}</div>`; confetti(); partyCharacters(); happy(); if(typeof akComboHit==='function') akComboHit(); speakThen(opt.t+". "+pr, nextQ, {pitch:1.3});
+  } else { G.wrongThis=true; recordMiss(G.topic.id, G.idx); if(typeof akComboBreak==='function') akComboBreak(); G.qMiss=(G.qMiss||0)+1; const ch=CHEERS[Math.floor(Math.random()*CHEERS.length)];
     btns[i].style.borderColor='#EF4444'; btns[i].style.background='#FEE2E2';
-    bw.innerHTML=`<div class="banner" style="background:#FEF3C7">${ch}</div>`; oops(); speak(opt.t+". "+ch);
-    setTimeout(()=>{ btns[i].style.borderColor='transparent'; btns[i].style.background='#fff'; bw.innerHTML=''; },1300);
+    const q=G.topic.questions[G.idx]; let why=(typeof akWhy==='function')?akWhy(q):'';
+    if(G.qMiss>=2){ const cOpt=G.disp[G.correctDisp], cbtn=btns[G.correctDisp]; if(cbtn){ cbtn.style.borderColor='#22C55E'; cbtn.style.background='#DCFCE7'; cbtn.classList.add('reveal'); } why=(why?why+' ':'')+'Here it is — '+((cOpt&&cOpt.t)?cOpt.t:'this one')+'.'; }
+    bw.innerHTML=`<div class="banner" style="background:#FEF3C7">${ch}${why?(' '+why):''}</div>`; oops(); speak(opt.t+". "+ch+(why?(' '+why):''));
+    setTimeout(()=>{ btns[i].style.borderColor='transparent'; btns[i].style.background='#fff'; bw.innerHTML=''; },why?2400:1300);
   }
 }
 function nextQ(){ if(G.idx+1<G.topic.questions.length){ G.idx++; G.solved=false; renderQuiz(); }
@@ -797,9 +807,16 @@ function tapMem(i){ const c=G.cards[i]; if(c.matched||G.flip.includes(i)||G.flip
 /* ---------------- TAP-COUNT ---------------- */
 function startTap(key,topic){ G={key,topic,accent:topic.color,ri:0,stars:0,firstTry:0}; setupTap(); }
 function setupTap(){ const r=G.topic.rounds[G.ri]; G.target=r.n; G.tapped=0; G.err=false;
-  const total=r.total||(r.n+ (r.extra||2)); G.field=shuffle(Array.from({length:total},(_,i)=>({i, on:i<r.n?false:false}))); renderTap(); }
+  const POOL=['🍎','⭐','🐶','🌸','🎈','🚗','🐱','🍌','⚽','🦋','🌙','🐢','🍓','🐟','🌼'];
+  const pool=(r.distractors||POOL).filter(e=>e!==r.emoji);
+  const dN = (r.distract!=null) ? r.distract : Math.max(3, Math.min(6, r.n));
+  const dpool=shuffle(pool).slice(0,dN);
+  let field=[];
+  for(let i=0;i<r.n;i++) field.push({e:r.emoji, target:true});
+  dpool.forEach(e=>field.push({e:e, target:false}));
+  G.field=shuffle(field); renderTap(); }
 function renderTap(){ const {topic,accent,ri}=G; const r=topic.rounds[ri];
-  const items=G.field.map((f,i)=>`<button class="kbtn tile" id="f${i}" onclick="tapItem(${i})">${r.emoji}</button>`).join("");
+  const items=G.field.map((f,i)=>`<button class="kbtn tile" id="f${i}" onclick="tapItem(${i})">${f.e}</button>`).join("");
   view.innerHTML=`<div class="screen">${gameHead(topic,accent,ri,topic.rounds.length,G.stars)}
     <div class="qcard"><div class="qrow"><p class="qtext">${r.q}</p>
       <button class="kbtn readbtn" style="background:${accent}" onclick="speak(${JSON.stringify(r.q).replace(/"/g,'&quot;')})">🔊</button></div>
@@ -808,12 +825,13 @@ function renderTap(){ const {topic,accent,ri}=G; const r=topic.rounds[ri];
   setTimeout(()=>speak(r.q),300);
 }
 function tapItem(i){ const btn=document.getElementById('f'+i); if(!btn||btn.dataset.on) return; const bw=document.getElementById('bw');
+  const cell=G.field[i];
+  if(cell && !cell.target){ G.err=true; btn.style.borderColor='#EF4444'; btn.style.background='#FEE2E2'; oops(); speak("Not that one! Find the right picture.");
+    setTimeout(()=>{ if(btn){ btn.style.borderColor='transparent'; btn.style.background='#fff'; } },700); return; }
   btn.dataset.on="1"; btn.style.borderColor=G.accent; btn.style.background=G.accent+'22'; pop(); G.tapped++;
   document.getElementById('cnt').textContent=G.tapped; speak(String(G.tapped));
   if(G.tapped===G.target){ G.stars++; if(!G.err) G.firstTry++; const pr=PRAISES[Math.floor(Math.random()*PRAISES.length)];
     bw.innerHTML=`<div class="banner" style="background:#DCFCE7">${pr}</div>`; confetti(); happy(); setTimeout(()=>speak(pr,{pitch:1.3}),350); setTimeout(nextTap,1750);
-  } else if(G.tapped>G.target){ G.err=true; const ch="Oops, too many! Let's try again."; bw.innerHTML=`<div class="banner" style="background:#FEF3C7">${ch}</div>`; oops(); speak(ch);
-    setTimeout(setupTap,1300);
   }
 }
 function nextTap(){ if(G.ri+1<G.topic.rounds.length){ G.ri++; setupTap(); } else finish(G.topic.rounds.length,G.firstTry); }
@@ -828,6 +846,7 @@ function finishCustom(count,firstTryScore,msg){ clearGTimer(); const {topic,acce
   const pr=getProg()[topic.id]||{plays:0,best: (count?firstTryScore/count:0)}; const c=conf(pr.best,pr.plays||1);
   confetti(); happy(); partyCharacters(6);
   const newBadges = checkNewBadges();
+  const xpRes = (typeof akAwardGameXP==='function') ? akAwardGameXP(G.stars, firstTryScore, count) : null;
   const againBtn = synthetic
     ? `<button class="kbtn fbtn fbtn-accent" onclick="${G.replay||'renderHome()'}"><span class="shine"></span><span class="fic">🔁</span> Play Again</button>`
     : `<button class="kbtn fbtn fbtn-accent" onclick="startTopic('${G.key}','${topic.id}')"><span class="shine"></span><span class="fic">🔁</span> Play Again</button>`;
@@ -842,6 +861,7 @@ function finishCustom(count,firstTryScore,msg){ clearGTimer(); const {topic,acce
     ${robot(150,'celebrate')}
     <h2 style="font-family:var(--head);font-size:32px;color:${accent};margin:8px 0">You did it! 🎉</h2>
     <div style="font-size:36px;margin:4px 0 10px">${"⭐".repeat(Math.min(count,8))}</div>
+    ${xpRes&&xpRes.html?xpRes.html:''}
     <p style="color:var(--muted);font-weight:800;margin-bottom:6px">${msg}</p>
     <div style="display:inline-flex;align-items:center;gap:10px;background:#fff;border-radius:18px;padding:12px 18px;box-shadow:var(--shadow);margin-top:6px">
       ${ring(c.pct,c.color,54)}<div style="text-align:left"><div style="font-family:var(--head);font-weight:800">${topic.title}</div>
@@ -853,7 +873,7 @@ function finishCustom(count,firstTryScore,msg){ clearGTimer(); const {topic,acce
       <button class="kbtn fbtn fbtn-ghost" onclick="renderHome()"><span class="fic">🏠</span> Home</button>
     </div>
   </div>`;
-  setTimeout(()=>speak(`Hooray! ${msg} You earned ${G.stars} stars.`,{pitch:1.3}),300);
+  setTimeout(()=>speak(`Hooray! ${msg} You earned ${G.stars} stars${xpRes&&xpRes.xp?(' and '+xpRes.xp+' X P'):''}.`+(xpRes&&xpRes.leveledUp?(' You reached level '+xpRes.newLevel+'!'):''),{pitch:1.3}),300);
 }
 
 /* ---------------- SPLASH / DIAGNOSTIC ---------------- */
@@ -2731,19 +2751,19 @@ window.__CONTENT__ = {
     ]},
     /* -------- FILL SQUARES: colour exactly N connected squares -------- */
     { level:1, id:'fs-1', title:'Fill the Squares', emoji:'⬛', color:'#EC4899', type:'fillsquares', rounds:[
-      {rows:3,cols:3,seed:{r:1,c:1,n:3}},
-      {rows:3,cols:3,seed:{r:0,c:0,n:4}},
-      {rows:3,cols:4,seed:{r:1,c:1,n:5}}
+      {rows:3,cols:3,seed:{r:0,c:0}, shape:{w:2,h:2,name:'square'}},
+      {rows:3,cols:3,seed:{r:1,c:0}, shape:{w:3,h:1,name:'rectangle'}},
+      {rows:3,cols:3,seed:{r:0,c:0}, shape:{w:2,h:3,name:'rectangle'}}
     ]},
     { level:2, id:'fs-2', title:'Fill It · 2', emoji:'🟦', color:'#EC4899', type:'fillsquares', rounds:[
-      {rows:4,cols:4,seed:{r:1,c:1,n:5}},
-      {rows:4,cols:4,seed:{r:0,c:0,n:6}},
-      {rows:4,cols:4,seed:{r:2,c:2,n:7}}
+      {rows:4,cols:4,seed:{r:0,c:0}, shape:{w:3,h:3,name:'square'}},
+      {rows:4,cols:4,seed:{r:0,c:0}, shape:{w:4,h:2,name:'rectangle'}},
+      {rows:4,cols:4,seed:{r:0,c:1}, shape:{w:2,h:4,name:'rectangle'}}
     ]},
     { level:3, id:'fs-3', title:'Fill It Pro', emoji:'🎯', color:'#EC4899', type:'fillsquares', rounds:[
-      {rows:5,cols:5,seed:{r:2,c:2,n:8}},
-      {rows:5,cols:5,seed:{r:0,c:0,n:9}},
-      {rows:5,cols:5,seed:{r:2,c:2,n:10}}
+      {rows:5,cols:5,seed:{r:1,c:1}, shape:{w:3,h:3,name:'square'}},
+      {rows:5,cols:5,seed:{r:0,c:0}, shape:{w:5,h:2,name:'rectangle'}},
+      {rows:5,cols:5,seed:{r:0,c:0}, shape:{w:2,h:4,name:'rectangle'}}
     ]}
   ]};
 })();
@@ -2847,15 +2867,25 @@ function npNext(){ if(G.ri+1<G.topic.rounds.length){ G.ri++; setupNumPath(); } e
 
 /* ================= FILL SQUARES ENGINE ================= */
 function startFill(key,topic){ G={key:key,topic:topic,accent:topic.color,ri:0,stars:0}; setupFill(); }
-function setupFill(){ const r=G.topic.rounds[G.ri]; G.fs={rows:r.rows,cols:r.cols,seed:r.seed,target:r.seed.n,filled:{},order:[]}; G.fs.filled[r.seed.r+'_'+r.seed.c]=true; renderFill();
-  setTimeout(function(){ speak("Colour exactly "+r.seed.n+" squares. Tap squares next to the dark one."); },300); }
+function fsGoal(r){ if(!r.shape) return null; const g={}, s=r.seed, sh=r.shape;
+  for(let dr=0;dr<sh.h;dr++){ for(let dc=0;dc<sh.w;dc++){ g[(s.r+dr)+'_'+(s.c+dc)]=true; } }
+  return g; }
+function fsPrompt(f){ const sh=f.shape; if(!sh) return 'Swipe to colour exactly '+f.target+' squares, joined to the dark one!';
+  const word=sh.name==='square'?'SQUARE':'RECTANGLE';
+  return 'Colour a '+word+' — '+sh.w+' across and '+sh.h+' down. Follow the dashed shape!'; }
+function fsShake(rr,cc){ const el=document.querySelector('#puzgrid .fscell[data-r="'+rr+'"][data-c="'+cc+'"]'); if(el){ el.classList.add('badcell'); setTimeout(function(){ el.classList.remove('badcell'); },320); } }
+function setupFill(){ const r=G.topic.rounds[G.ri]; const goal=fsGoal(r);
+  const target = r.shape ? (r.shape.w*r.shape.h) : r.seed.n;
+  G.fs={rows:r.rows,cols:r.cols,seed:r.seed,shape:r.shape||null,goal:goal,target:target,filled:{},order:[]};
+  G.fs.filled[r.seed.r+'_'+r.seed.c]=true; renderFill();
+  setTimeout(function(){ if(r.shape){ speak("Let's make a "+r.shape.name+"! Colour the squares inside the dashed shape, "+r.shape.w+" across and "+r.shape.h+" down."); } else { speak("Colour exactly "+r.seed.n+" squares. Tap squares next to the dark one."); } },300); }
 function fsAdj(f,r,c){ return [[1,0],[-1,0],[0,1],[0,-1]].some(function(d){ return f.filled[(r+d[0])+'_'+(c+d[1])]; }); }
 function renderFill(){ const f=G.fs; const cell=Math.min(64,Math.floor(300/f.cols)); const count=Object.keys(f.filled).length;
   let cells='';
-  for(let rr=0;rr<f.rows;rr++){ for(let cc=0;cc<f.cols;cc++){ const key=rr+'_'+cc; const isSeed=(f.seed.r===rr&&f.seed.c===cc); const fill=f.filled[key];
-    cells+='<div class="fscell '+(fill?'fill':'')+' '+(isSeed?'seed':'')+'" data-r="'+rr+'" data-c="'+cc+'" style="width:'+cell+'px;height:'+cell+'px">'+(isSeed?('<span>'+f.target+'</span>'):'')+'</div>'; } }
+  for(let rr=0;rr<f.rows;rr++){ for(let cc=0;cc<f.cols;cc++){ const key=rr+'_'+cc; const isSeed=(f.seed.r===rr&&f.seed.c===cc); const fill=f.filled[key]; const isGoal=f.goal&&f.goal[key];
+    cells+='<div class="fscell '+(fill?'fill':'')+' '+(isSeed?'seed':'')+(isGoal?' goal':'')+'" data-r="'+rr+'" data-c="'+cc+'" style="width:'+cell+'px;height:'+cell+'px">'+(isSeed?('<span>'+f.target+'</span>'):'')+'</div>'; } }
   view.innerHTML='<div class="screen">'+gameHead(G.topic,G.accent,G.ri,G.topic.rounds.length,G.stars)+
-    '<div class="qcard"><p class="qtext">Swipe to colour exactly '+f.target+' squares, joined to the dark one!</p></div>'+
+    '<div class="qcard"><p class="qtext">'+fsPrompt(f)+'</p></div>'+
     '<div class="puzcount" id="puzcount">Filled: '+count+' / '+f.target+'</div>'+
     '<div class="puzwrap" id="puzwrap"><div class="puzgrid" id="puzgrid" style="grid-template-columns:repeat('+f.cols+','+cell+'px)">'+cells+'</div></div>'+
     '<div class="puzbtns"><button class="kbtn puzbtn" onclick="fsUndo()">↶ Undo</button><button class="kbtn puzbtn" onclick="fsHint()">💡 Hint</button><button class="kbtn puzbtn" onclick="setupFill()">↺ Restart</button></div>'+
@@ -2876,18 +2906,22 @@ function fsPaint(){ const f=G.fs; const grid=document.getElementById('puzgrid');
 function swipeFill(rr,cc){ const f=G.fs; const key=rr+'_'+cc;
   if(f.seed.r===rr&&f.seed.c===cc) return;
   if(f.filled[key]) return;                       /* already coloured: leave it */
-  if(!fsAdj(f,rr,cc)){ oops(); speak("Colour a square touching the coloured ones."); return; }
+  if(f.goal){ if(!f.goal[key]){ oops(); fsShake(rr,cc); speak("Colour inside the dashed shape!"); return; } }
+  else if(!fsAdj(f,rr,cc)){ oops(); speak("Colour a square touching the coloured ones."); return; }
+  if(Object.keys(f.filled).length>=f.target){ oops(); speak("That's enough! The shape is full."); return; }
   f.filled[key]=true; f.order.push(key); pop(); fsPaint(); fsTryWin();
 }
-function fsTryWin(){ const f=G.fs; if(Object.keys(f.filled).length===f.target){ G.stars++; happy(); confetti(); if(typeof partyCharacters==='function') partyCharacters(); speakThen("Perfect! You filled "+f.target+" squares!", fillNext); return true; } return false; }
+function fsTryWin(){ const f=G.fs; if(Object.keys(f.filled).length===f.target){ G.stars++; happy(); confetti(); if(typeof partyCharacters==='function') partyCharacters(); const msg=f.shape?("Perfect! You made a "+f.shape.name+"!"):("Perfect! You filled "+f.target+" squares!"); speakThen(msg, fillNext); return true; } return false; }
 function tapFill(rr,cc){ const f=G.fs; const key=rr+'_'+cc; if(f.seed.r===rr&&f.seed.c===cc) return;
   if(f.filled[key]){ delete f.filled[key]; const oi=f.order.indexOf(key); if(oi>=0) f.order.splice(oi,1); pop(); }
-  else { if(!fsAdj(f,rr,cc)){ oops(); return; } f.filled[key]=true; f.order.push(key); pop(); }
+  else { if(f.goal){ if(!f.goal[key]){ oops(); fsShake(rr,cc); speak("Colour inside the dashed shape!"); return; } } else if(!fsAdj(f,rr,cc)){ oops(); return; }
+    if(Object.keys(f.filled).length>=f.target){ oops(); speak("That's enough! The shape is full."); return; } f.filled[key]=true; f.order.push(key); pop(); }
   fsPaint(); fsTryWin();
 }
 function fsUndo(){ const f=G.fs; const k=f.order.pop(); if(k){ delete f.filled[k]; pop(); fsPaint(); } }
 function fsHint(){ const f=G.fs; const count=Object.keys(f.filled).length;
-  if(count<f.target){ let placed=false;
+  if(f.goal){ if(count<f.target){ for(const gk in f.goal){ if(!f.filled[gk]){ f.filled[gk]=true; f.order.push(gk); break; } } pop(); } }
+  else if(count<f.target){ let placed=false;
     for(let rr=0;rr<f.rows&&!placed;rr++){ for(let cc=0;cc<f.cols&&!placed;cc++){ const key=rr+'_'+cc; if(!f.filled[key] && fsAdj(f,rr,cc)){ f.filled[key]=true; f.order.push(key); placed=true; } } }
     pop();
   } else if(count>f.target){ const k=f.order.pop(); if(k) delete f.filled[k]; pop(); }
@@ -3557,8 +3591,1263 @@ function fillNext(){ if(G.ri+1<G.topic.rounds.length){ G.ri++; setupFill(); } el
 </script>
 
 <script>
+/* ============ ALGO KID — ANIMATION + LEARNING UPGRADE (feedback batch 2) ============ */
+(function(){
+  if(typeof SCENES==='undefined' || typeof ICONS==='undefined') return;
+
+  /* ---------- shared little helpers ---------- */
+  function ffKid(cx,cy,r,skin,shirt){ skin=skin||'#FFD9B3';
+    return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+skin+'"/>'
+     +'<path d="M'+(cx-r)+' '+(cy-r*0.45)+' q'+r+' -'+(r*0.95)+' '+(2*r)+' 0 l0 '+(r*0.3)+' q-'+r+' -'+(r*0.6)+' -'+(2*r)+' 0 Z" fill="#5A3B22"/>'
+     +'<circle cx="'+(cx-6)+'" cy="'+(cy-2)+'" r="2.6" fill="#3A2B4A"/><circle cx="'+(cx+6)+'" cy="'+(cy-2)+'" r="2.6" fill="#3A2B4A"/>'
+     +'<path d="M'+(cx-7)+' '+(cy+7)+' q7 6 14 0" stroke="#B14A66" stroke-width="2.4" fill="none" stroke-linecap="round"/>'
+     +'<ellipse cx="'+(cx-r*0.62)+'" cy="'+(cy+4)+'" rx="4" ry="2.6" fill="#FF8FB0" opacity=".5"/>'
+     +'<ellipse cx="'+(cx+r*0.62)+'" cy="'+(cy+4)+'" rx="4" ry="2.6" fill="#FF8FB0" opacity=".5"/>'; }
+  function lbl(x,y,txt,col,sz){ return '<text x="'+x+'" y="'+y+'" text-anchor="middle" font-family="Baloo 2,sans-serif" font-weight="800" font-size="'+(sz||14)+'" fill="'+(col||'#E59400')+'">'+txt+'</text>'; }
+  function firstEmoji(s){ if(!s) return ''; var m=String(s).match(/([\u2190-\u2BFF\u2600-\u27BF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|\uD83E[\uDD00-\uDFFF])(\uFE0F|\u200D)?/); return m?m[0]:''; }
+  function emojiList(s){ var out=[],re=/([\u2600-\u27BF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|\uD83E[\uDD00-\uDFFF])(\uFE0F)?/g,m; while((m=re.exec(String(s||'')))) out.push(m[0]); return out; }
+
+  /* ================= SCENES ================= */
+
+  /* SUN — rays + heat shimmer reaching a happy plant: "light & heat" (Img 1) */
+  SCENES.sunrays=function(){
+    var rays='';
+    for(var a=0;a<12;a++){ var ang=a*30; rays+='<line x1="60" y1="10" x2="60" y2="-2" stroke="#F5A623" stroke-width="5" stroke-linecap="round" transform="rotate('+ang+' 60 46)"/>'; }
+    return '<svg viewBox="0 0 224 132">'
+      +'<g transform="translate(0 36)"><g><animateTransform attributeName="transform" type="rotate" from="0 60 46" to="360 60 46" dur="14s" repeatCount="indefinite"/>'+rays+'</g>'
+      +'<circle cx="60" cy="46" r="26" fill="#FFD23E"/><circle cx="60" cy="46" r="26" fill="#FFB800" opacity=".25"><animate attributeName="r" values="26;29;26" dur="2.2s" repeatCount="indefinite"/></circle>'
+      +'<circle cx="53" cy="44" r="2.6" fill="#7A5A10"/><circle cx="67" cy="44" r="2.6" fill="#7A5A10"/><path d="M52 52 q8 7 16 0" stroke="#7A5A10" stroke-width="2.2" fill="none" stroke-linecap="round"/></g>'
+      /* warm beams to plant */
+      +'<g opacity=".55"><line x1="86" y1="70" x2="150" y2="104" stroke="#FFDE7A" stroke-width="8" stroke-linecap="round"><animate attributeName="opacity" values=".2;.7;.2" dur="1.8s" repeatCount="indefinite"/></line></g>'
+      +'<ellipse cx="168" cy="120" rx="30" ry="6" fill="#000" opacity=".07"/>'
+      +'<rect x="164" y="96" width="8" height="24" rx="4" fill="#3E9E52"/>'
+      +'<path d="M168 104 q-16 -4 -20 -16 q16 0 20 12 Z" fill="#4CC062"><animate attributeName="opacity" values=".85;1;.85" dur="2s" repeatCount="indefinite"/></path>'
+      +'<path d="M168 100 q16 -6 22 -18 q-16 -2 -22 12 Z" fill="#57D06E"/>'
+      +lbl(150,26,'Light & Heat ☀️','#E59400',14)
+      +'</svg>'; };
+
+  /* MOON rising over night sky with twinkling stars (Img 13) */
+  SCENES.moonrise=function(){
+    var stars='';
+    var sx=[30,70,110,150,190,50,130,175], sy=[26,16,30,18,28,44,42,54];
+    for(var i=0;i<sx.length;i++){ stars+='<circle cx="'+sx[i]+'" cy="'+sy[i]+'" r="1.8" fill="#FFF7C2"><animate attributeName="opacity" values="0.2;1;0.2" dur="'+(1.4+i*0.2)+'s" repeatCount="indefinite"/></circle>'; }
+    return '<svg viewBox="0 0 224 132">'
+      +'<rect x="0" y="0" width="224" height="132" rx="14" fill="#1E1B3A"/>'
+      +'<rect x="0" y="0" width="224" height="132" rx="14" fill="#33306a" opacity=".5"/>'
+      +stars
+      +'<g><animateTransform attributeName="transform" type="translate" values="0 60;0 0;0 0" keyTimes="0;0.55;1" dur="4.5s" repeatCount="indefinite"/>'
+      +'<circle cx="120" cy="52" r="24" fill="#FFE08A"/><path d="M132 40 a20 20 0 1 0 0 30 a15 15 0 0 1 0 -30 Z" fill="#FFD23E"/>'
+      +'<circle cx="112" cy="46" r="3" fill="#EAC96A"/><circle cx="126" cy="58" r="2.2" fill="#EAC96A"/><circle cx="118" cy="62" r="1.8" fill="#EAC96A"/>'
+      +'</g>'
+      +'<path d="M0 118 q60 -14 120 0 q60 14 104 -4 v18 H0 Z" fill="#141230"/>'
+      +lbl(120,124,'Night 🌙','#C9BEE0',13)
+      +'</svg>'; };
+
+  /* RAINBOW forming after rain (Img 11) */
+  SCENES.rainbowform=function(){
+    var cols=['#EF4444','#F5A623','#FFE23E','#22C55E','#3B82F6','#7C5CFC'];
+    var arcs='';
+    for(var i=0;i<cols.length;i++){ var r=90-i*9; var len=Math.PI*r;
+      arcs+='<path d="M'+(112-r)+' 116 A'+r+' '+r+' 0 0 1 '+(112+r)+' 116" fill="none" stroke="'+cols[i]+'" stroke-width="8" stroke-linecap="round" stroke-dasharray="'+len.toFixed(0)+'" stroke-dashoffset="'+len.toFixed(0)+'"><animate attributeName="stroke-dashoffset" values="'+len.toFixed(0)+';0" dur="1.6s" begin="'+(i*0.12)+'s" fill="freeze" repeatCount="1"/><animate attributeName="stroke-dashoffset" values="0;0;'+len.toFixed(0)+'" keyTimes="0;0.8;1" dur="4s" begin="3.4s" repeatCount="indefinite"/></path>'; }
+    return '<svg viewBox="0 0 224 132">'
+      +arcs
+      +'<ellipse cx="44" cy="116" rx="30" ry="14" fill="#E7ECF5"/><ellipse cx="180" cy="116" rx="30" ry="14" fill="#E7ECF5"/>'
+      +'<circle cx="196" cy="30" r="14" fill="#FFD23E"><animate attributeName="opacity" values=".7;1;.7" dur="2s" repeatCount="indefinite"/></circle>'
+      +lbl(112,128,'Rainbow 🌈','#7C5CFC',13)
+      +'</svg>'; };
+
+  /* SEED growing into a plant with ROOTS below the soil (Img 10 & 18) */
+  SCENES.seedgrow=function(hl){
+    var soil='<rect x="0" y="92" width="224" height="40" fill="#C79154"/><rect x="0" y="92" width="224" height="7" fill="#8B5A2B"/>';
+    var roots='<g stroke="#B9793B" stroke-width="3" fill="none" stroke-linecap="round">'
+      +'<path d="M112 96 q-2 12 -12 20"><animate attributeName="d" values="M112 96 q0 2 0 2;M112 96 q-2 12 -12 20" dur="2.4s" repeatCount="indefinite"/></path>'
+      +'<path d="M112 96 q2 14 12 18"><animate attributeName="d" values="M112 96 q0 2 0 2;M112 96 q2 14 12 18" dur="2.4s" begin=".2s" repeatCount="indefinite"/></path>'
+      +'<path d="M112 96 q0 16 0 22"><animate attributeName="d" values="M112 96 q0 2 0 2;M112 96 q0 16 0 22" dur="2.4s" begin=".1s" repeatCount="indefinite"/></path></g>';
+    var stem='<g><rect x="109" y="52" width="6" height="42" rx="3" fill="#3E9E52"><animate attributeName="y" values="90;52" dur="2.4s" fill="freeze" repeatCount="indefinite"/><animate attributeName="height" values="4;42" dur="2.4s" fill="freeze" repeatCount="indefinite"/></rect>'
+      +'<path d="M112 60 q-18 -6 -24 -20 q18 -2 24 14 Z" fill="#4CC062"><animate attributeName="opacity" values="0;0;1" keyTimes="0;0.5;1" dur="2.4s" fill="freeze" repeatCount="indefinite"/></path>'
+      +'<path d="M112 56 q18 -8 26 -22 q-18 -2 -26 16 Z" fill="#57D06E"><animate attributeName="opacity" values="0;0;1" keyTimes="0;0.55;1" dur="2.4s" fill="freeze" repeatCount="indefinite"/></path></g>';
+    var seed='<ellipse cx="112" cy="100" rx="7" ry="9" fill="#7A4A22"/>';
+    var mark='';
+    if(hl==='roots') mark='<ellipse cx="112" cy="112" rx="34" ry="20" fill="none" stroke="#FF8A3D" stroke-width="4"><animate attributeName="opacity" values="1;.35;1" dur=".9s" repeatCount="indefinite"/></ellipse>'+lbl(112,60,'UNDER ground','#E59400',12);
+    if(hl==='flower'||hl==='leaf'||hl==='stem') mark='<ellipse cx="112" cy="58" rx="34" ry="26" fill="none" stroke="#FF8A3D" stroke-width="4"><animate attributeName="opacity" values="1;.35;1" dur=".9s" repeatCount="indefinite"/></ellipse>'+lbl(112,124,'above ground','#E59400',12);
+    return '<svg viewBox="0 0 224 132">'+soil+seed+roots+stem+mark+'</svg>'; };
+  /* plant-parts (root question) uses the same illustration */
+  SCENES.rootunder=SCENES.seedgrow;
+
+  /* BEE visiting a flower & taking nectar -> honey (Img 16) */
+  SCENES.beeflower=function(){
+    return '<svg viewBox="0 0 224 132">'
+      +'<ellipse cx="70" cy="122" rx="26" ry="5" fill="#000" opacity=".07"/>'
+      +'<rect x="66" y="86" width="6" height="34" rx="3" fill="#3E9E52"/>'
+      +'<path d="M69 100 q-16 -2 -20 -14 q15 0 20 10 Z" fill="#4CC062"/>'
+      +'<g transform="translate(69 74)"><circle r="18" fill="#F6A8CE"/>'
+      +'<g fill="#EC6FB0"><ellipse cx="0" cy="-16" rx="7" ry="12"/><ellipse cx="15" cy="-5" rx="7" ry="12" transform="rotate(72)"/><ellipse cx="9" cy="13" rx="7" ry="12" transform="rotate(144)"/><ellipse cx="-9" cy="13" rx="7" ry="12" transform="rotate(216)"/><ellipse cx="-15" cy="-5" rx="7" ry="12" transform="rotate(288)"/></g>'
+      +'<circle r="9" fill="#FFD23E"/></g>'
+      /* bee flies in, lands, sips (droplet rises), flies to honey pot */
+      +'<g><animateMotion path="M150 30 L86 60 L86 60 L150 30" dur="4s" repeatCount="indefinite" keyPoints="0;0.4;0.7;1" keyTimes="0;0.35;0.7;1" calcMode="linear"/>'
+      +'<ellipse cx="0" cy="0" rx="11" ry="8" fill="#F5C518"/><path d="M-5 -8 A11 8 0 0 1 -5 8" fill="#3A2B1A"/><path d="M2 -8 A11 8 0 0 1 2 8" fill="#3A2B1A" opacity=".7"/>'
+      +'<ellipse cx="-6" cy="-8" rx="8" ry="5" fill="#EAF3FF" opacity=".85"><animateTransform attributeName="transform" type="rotate" values="-18 -6 -8;-32 -6 -8;-18 -6 -8" dur=".18s" repeatCount="indefinite"/></ellipse>'
+      +'<ellipse cx="6" cy="-8" rx="8" ry="5" fill="#EAF3FF" opacity=".85"><animateTransform attributeName="transform" type="rotate" values="18 6 -8;32 6 -8;18 6 -8" dur=".18s" repeatCount="indefinite"/></ellipse>'
+      +'<circle cx="-11" cy="0" r="1.6" fill="#3A2B4A"/></g>'
+      /* nectar droplet rising near flower centre */
+      +'<circle cx="69" cy="66" r="3" fill="#FFC94D"><animate attributeName="cy" values="70;40" dur="1.6s" begin="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;0" dur="1.6s" begin="1.4s" repeatCount="indefinite"/></circle>'
+      +'<text x="176" y="118" font-size="26" text-anchor="middle">🍯</text>'
+      +lbl(176,132,'Honey','#E59400',12)
+      +'</svg>'; };
+
+  /* RACE — fast vs slow animal (Img 12), data {fast, slow} */
+  SCENES.race=function(hl,data){
+    var fast=(data&&data.fast)||'🐆', slow=(data&&data.slow)||'🐢';
+    return '<svg viewBox="0 0 224 132">'
+      +'<line x1="8" y1="52" x2="216" y2="52" stroke="#E4DAF3" stroke-width="2" stroke-dasharray="8 8"/>'
+      +'<line x1="8" y1="98" x2="216" y2="98" stroke="#E4DAF3" stroke-width="2" stroke-dasharray="8 8"/>'
+      +'<line x1="206" y1="20" x2="206" y2="120" stroke="#22C55E" stroke-width="3" stroke-dasharray="6 5"/>'
+      +'<text x="210" y="18" font-size="13">🏁</text>'
+      /* fast lane */
+      +'<g><animateTransform attributeName="transform" type="translate" values="-30 0;180 0" dur="1.3s" repeatCount="indefinite"/>'
+      +'<g opacity=".5" stroke="#8FA0C8" stroke-width="3" stroke-linecap="round"><line x1="-14" y1="34" x2="-2" y2="34"/><line x1="-16" y1="42" x2="-4" y2="42"/></g>'
+      +'<text x="12" y="46" font-size="30" text-anchor="middle">'+fast+'</text></g>'
+      /* slow lane */
+      +'<g><animateTransform attributeName="transform" type="translate" values="-20 0;60 0;-20 0" dur="9s" repeatCount="indefinite"/>'
+      +'<text x="24" y="94" font-size="28" text-anchor="middle">'+slow+'</text></g>'
+      +lbl(40,24,'fast!','#EF4444',13)+lbl(40,120,'slow…','#3B82F6',12)
+      +'</svg>'; };
+
+  /* TAKE AWAY — start items, some pop/fly off, result (Imgs 5 & 14). data {start, remove, emoji} */
+  SCENES.takeaway=function(hl,data){
+    var start=(data&&data.start)||3, remove=(data&&data.remove)||1, e=(data&&data.emoji)||'🔵';
+    start=Math.max(1,Math.min(10,start)); remove=Math.max(0,Math.min(start,remove));
+    var per=Math.min(30, Math.floor(200/start)), gap=Math.min(30, 200/start), x0=(224-(start-1)*gap)/2;
+    var items='';
+    for(var i=0;i<start;i++){ var x=x0+i*gap; var goes=(i>=start-remove);
+      if(goes){ items+='<text x="'+x.toFixed(0)+'" y="66" font-size="'+per+'" text-anchor="middle">'+e
+        +'<animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.45;0.6;0.95;1" dur="3.4s" repeatCount="indefinite"/>'
+        +'<animateTransform attributeName="transform" type="translate" additive="sum" values="0 0;0 0;0 -34;0 -34;0 0" keyTimes="0;0.45;0.62;0.95;1" dur="3.4s" repeatCount="indefinite"/></text>';
+        items+='<text x="'+x.toFixed(0)+'" y="60" font-size="14" text-anchor="middle" opacity="0">💨<animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.5;0.62;0.8;1" dur="3.4s" repeatCount="indefinite"/></text>'; }
+      else items+='<text x="'+x.toFixed(0)+'" y="66" font-size="'+per+'" text-anchor="middle">'+e+'</text>';
+    }
+    var eq=lbl(112,104,start+' − '+remove+' = '+(start-remove),'#7C5CFC',20);
+    var eq2='<text x="112" y="104" text-anchor="middle" font-family="Baloo 2,sans-serif" font-weight="800" font-size="20" fill="#22C55E" opacity="0">'+start+' − '+remove+' = '+(start-remove)+'<animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.6;0.65;0.95;1" dur="3.4s" repeatCount="indefinite"/></text>';
+    return '<svg viewBox="0 0 224 120">'+items
+      +'<text x="112" y="104" text-anchor="middle" font-family="Baloo 2,sans-serif" font-weight="800" font-size="20" fill="#7C5CFC">'+start+' − '+remove+' = ?<animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.6;0.63;0.95;1" dur="3.4s" repeatCount="indefinite"/></text>'
+      +eq2+'</svg>'; };
+
+  /* PLACE VALUE — tens rod(s) + ones combine into the number (Img 19). data {tens, ones, n} */
+  SCENES.placevalue=function(hl,data){
+    var tens=(data&&data.tens)||1, ones=(data&&data.ones)||5, n=(data&&data.n)||(tens*10+ones);
+    var g='';
+    /* ten-rods on the left */
+    for(var t=0;t<tens;t++){ var bx=20+t*30; g+='<rect x="'+bx+'" y="30" width="22" height="70" rx="5" fill="#3B82F6" opacity=".9"/>';
+      for(var k=0;k<10;k++){ g+='<line x1="'+bx+'" y1="'+(37+k*7)+'" x2="'+(bx+22)+'" y2="'+(37+k*7)+'" stroke="#fff" stroke-width="1" opacity=".5"/>'; }
+      g+=lbl(bx+11,116,'10','#3B82F6',13); }
+    /* ones on the right */
+    var ox=20+tens*30+18;
+    for(var o=0;o<ones;o++){ var oxx=ox+(o%5)*16, oyy=34+Math.floor(o/5)*16; g+='<rect x="'+oxx+'" y="'+oyy+'" width="12" height="12" rx="3" fill="#F5A623"/>'; }
+    g+=lbl(ox+ (Math.min(ones,5)*16)/2 , 116, ones+' ones','#F5A623',12);
+    return '<svg viewBox="0 0 224 132">'+g
+      +'<text x="200" y="70" font-size="14" text-anchor="middle" font-family="Baloo 2,sans-serif" font-weight="800" fill="#241C3B">=</text>'
+      +lbl(112,20,tens+' ten + '+ones+' ones = '+n,'#7C5CFC',14)+'</svg>'; };
+
+  /* PAPER FOLD — square folds along a dotted line into a rectangle (Img 4) */
+  SCENES.paperfold=function(){
+    return '<svg viewBox="0 0 224 132">'
+      +'<rect x="72" y="34" width="80" height="80" rx="4" fill="#EEF2FB" stroke="#C9BEE0" stroke-width="2"/>'
+      +'<line x1="72" y1="74" x2="152" y2="74" stroke="#7C5CFC" stroke-width="2.5" stroke-dasharray="6 5"/>'
+      +'<text x="160" y="78" font-size="11" font-family="Baloo 2,sans-serif" font-weight="800" fill="#7C5CFC">fold</text>'
+      /* top flap folds down */
+      +'<g style="transform-box:fill-box;transform-origin:50% 100%">'
+      +'<rect x="72" y="34" width="80" height="40" rx="4" fill="#D7DEF3" stroke="#B9AEDA" stroke-width="2"/>'
+      +'<animateTransform attributeName="transform" type="scale" values="1 1;1 -1;1 -1;1 1;1 1" keyTimes="0;0.4;0.6;0.75;1" dur="3.6s" repeatCount="indefinite" additive="sum"/>'
+      +'<animateTransform attributeName="transform" type="translate" values="0 0;0 80;0 80;0 0;0 0" keyTimes="0;0.4;0.6;0.75;1" dur="3.6s" repeatCount="indefinite" additive="sum"/></g>'
+      +'<text x="112" y="126" font-size="12" text-anchor="middle" font-family="Baloo 2,sans-serif" font-weight="800" fill="#8B84A3">square → rectangle</text>'
+      +'</svg>'; };
+
+  /* STORM — cloud with rain, lightning flash, then thunder sound waves (Img 6) */
+  SCENES.stormcloud=function(){
+    return '<svg viewBox="0 0 224 132">'
+      +'<ellipse cx="80" cy="40" rx="40" ry="22" fill="#6E7796"/><ellipse cx="130" cy="36" rx="44" ry="24" fill="#5B6486"/><ellipse cx="150" cy="48" rx="34" ry="18" fill="#6E7796"/>'
+      +'<ellipse cx="112" cy="52" rx="70" ry="16" fill="#7A83A2"/>'
+      /* rain */
+      +'<g stroke="#5BA9F0" stroke-width="3" stroke-linecap="round">'
+      +'<line x1="70" y1="70" x2="66" y2="84"><animate attributeName="y1" values="66;96" dur=".8s" repeatCount="indefinite"/><animate attributeName="y2" values="80;110" dur=".8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;0" dur=".8s" repeatCount="indefinite"/></line>'
+      +'<line x1="150" y1="70" x2="146" y2="84"><animate attributeName="y1" values="66;96" dur=".8s" begin=".3s" repeatCount="indefinite"/><animate attributeName="y2" values="80;110" dur=".8s" begin=".3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;0" dur=".8s" begin=".3s" repeatCount="indefinite"/></line></g>'
+      /* lightning */
+      +'<path d="M112 60 L100 90 H112 L104 118 L128 82 H114 L124 60 Z" fill="#FFD23E" stroke="#F5A623" stroke-width="1.5"><animate attributeName="opacity" values="0;0;1;0;0;0" keyTimes="0;0.28;0.34;0.42;0.9;1" dur="2.4s" repeatCount="indefinite"/></path>'
+      /* thunder waves after the flash */
+      +'<g stroke="#EF4444" stroke-width="2.5" fill="none" opacity="0"><animate attributeName="opacity" values="0;0;0;1;0;0" keyTimes="0;0.34;0.42;0.5;0.8;1" dur="2.4s" repeatCount="indefinite"/>'
+      +'<path d="M150 96 q10 6 0 16"/><path d="M158 90 q18 12 0 28"/></g>'
+      +lbl(112,20,'Lightning ⚡ then Thunder 🔊','#5B6486',12)
+      +'</svg>'; };
+
+  /* DIRTY HANDS — a hand with dirt; wash -> clean bubbles; eat -> germs sad (Img 8) */
+  SCENES.dirtyhands=function(hl){
+    var base='<svg viewBox="0 0 224 132"><ellipse cx="112" cy="122" rx="40" ry="6" fill="#000" opacity=".07"/>'
+      +'<g transform="translate(112 70)"><path d="M-24 34 q-6 -40 6 -46 q3 12 4 20 q1 -30 8 -30 q3 0 3 30 q2 -34 9 -34 q4 0 3 34 q3 -26 9 -24 q4 2 -1 28 q6 -10 10 -6 q4 4 -6 22 q-4 20 -22 22 q-24 2 -28 -14 Z" fill="#FFCF9E" stroke="#E9B37E" stroke-width="2"/></g>';
+    var dirt='<g fill="#8B5A2B" opacity=".8"><circle cx="100" cy="66" r="4"/><circle cx="118" cy="60" r="3"/><circle cx="112" cy="78" r="3.5"/><circle cx="126" cy="74" r="2.6"/><circle cx="94" cy="80" r="2.6"/></g>';
+    if(hl==='wash'){ return base
+      +'<g fill="#BFE3FF" opacity=".9"><circle cx="98" cy="60" r="6"><animate attributeName="cy" values="60;36" dur="1.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="1.6s" repeatCount="indefinite"/></circle><circle cx="118" cy="64" r="5"><animate attributeName="cy" values="64;40" dur="1.6s" begin=".4s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="1.6s" begin=".4s" repeatCount="indefinite"/></circle><circle cx="108" cy="70" r="4"><animate attributeName="cy" values="70;46" dur="1.6s" begin=".8s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="1.6s" begin=".8s" repeatCount="indefinite"/></circle></g>'
+      +lbl(112,24,'Clean! ✨','#22C55E',15)+'</svg>'; }
+    if(hl==='eat'){ return base+dirt
+      +'<text x="150" y="52" font-size="18">🦠<animate attributeName="opacity" values=".5;1;.5" dur="1s" repeatCount="indefinite"/></text>'
+      +lbl(112,24,'Yuck! germs 😟','#EF4444',14)+'</svg>'; }
+    return base+dirt+lbl(112,24,'Dirty hands','#8B5A2B',14)+'</svg>'; };
+
+  /* ============ OVERRIDES of existing scenes ============ */
+
+  /* TRAFFIC — self-looping: red→green while the car waits→drives FORWARD (Img 15).
+     Car faces right and drives right, away from the signal on the left. */
+  SCENES.traffic=function(hl){
+    var DUR='4s';
+    return '<svg viewBox="0 0 224 132">'
+      +'<rect x="26" y="14" width="34" height="80" rx="12" fill="#3A3A4A"/>'
+      /* red on for first 40%, then off */
+      +'<circle cx="43" cy="34" r="10" fill="#EF4444"><animate attributeName="opacity" values="1;1;0.2;0.2;1" keyTimes="0;0.38;0.42;0.98;1" dur="'+DUR+'" repeatCount="indefinite"/></circle>'
+      +'<circle cx="43" cy="54" r="10" fill="#F5C518" opacity="0.22"/>'
+      /* green off then on */
+      +'<circle cx="43" cy="74" r="10" fill="#22C55E"><animate attributeName="opacity" values="0.2;0.2;1;1;0.2" keyTimes="0;0.38;0.42;0.98;1" dur="'+DUR+'" repeatCount="indefinite"/></circle>'
+      +'<rect x="38" y="94" width="10" height="22" fill="#5A5A6A"/>'
+      +'<line x1="70" y1="118" x2="220" y2="118" stroke="#9AA3B2" stroke-width="3" stroke-dasharray="10 8"/>'
+      /* car: waits during red (slight idle), then drives forward to the right; loops back for next car */
+      +'<g><animateTransform attributeName="transform" type="translate" values="0 0;0 0;150 0;150 0" keyTimes="0;0.4;0.95;1" dur="'+DUR+'" repeatCount="indefinite"/>'
+      +'<g><animateTransform attributeName="transform" type="translate" values="0 0;1 0;0 0" dur="0.5s" repeatCount="indefinite"/>'
+      +'<rect x="80" y="86" width="62" height="22" rx="8" fill="#3B82F6"/>'
+      +'<path d="M92 86 l7 -13 h26 l9 13 Z" fill="#9CC3FF"/>'
+      +'<rect x="120" y="76" width="18" height="12" rx="3" fill="#Bcd7ff" opacity=".9"/>' /* front windscreen -> faces right */
+      +'<circle cx="96" cy="110" r="8" fill="#241C3B"/><circle cx="130" cy="110" r="8" fill="#241C3B"/>'
+      +'<circle cx="96" cy="110" r="3" fill="#9AA3B2"/><circle cx="130" cy="110" r="3" fill="#9AA3B2"/>'
+      +'<circle cx="142" cy="98" r="3" fill="#FFE08A"/>' /* headlight on the leading (right) side */
+      +'</g></g>'
+      +'<text x="150" y="46" font-family="Baloo 2,sans-serif" font-weight="800" font-size="14" fill="#EF4444"><animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.38;0.42;0.98;1" dur="'+DUR+'" repeatCount="indefinite"/>WAIT</text>'
+      +'<text x="150" y="46" font-family="Baloo 2,sans-serif" font-weight="800" font-size="14" fill="#22C55E"><animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.38;0.42;0.98;1" dur="'+DUR+'" repeatCount="indefinite"/>GO!</text>'
+      +'</svg>'; };
+
+  /* RAIN — now reacts to the chosen option: umbrella (dry) or sunglasses (still wet) (Img 9) */
+  SCENES.rain=function(hl){
+    var drops='';
+    for(var i=0;i<9;i++){ var x=24+i*21, d=(i%4)*0.25;
+      var hide=(hl==='umbrella' && x>78 && x<150);
+      drops+='<line x1="'+x+'" y1="30" x2="'+(x-3)+'" y2="42" stroke="#5BA9F0" stroke-width="3" stroke-linecap="round" opacity="'+(hide?0:1)+'"><animate attributeName="y1" values="26;96" dur="0.9s" begin="'+d+'s" repeatCount="indefinite"/><animate attributeName="y2" values="38;108" dur="0.9s" begin="'+d+'s" repeatCount="indefinite"/><animate attributeName="opacity" values="'+(hide?'0;0;0;0':'0;1;1;0')+'" dur="0.9s" begin="'+d+'s" repeatCount="indefinite"/></line>'; }
+    var umbrella = (hl==='umbrella')
+      ? '<g><path d="M84 52 a28 20 0 0 1 56 0 Z" fill="#7C5CFC"/><path d="M84 52 q7 -8 14 0 q7 -8 14 0 q7 -8 14 0 q7 -8 14 0" fill="none" stroke="#fff" stroke-width="1.6" opacity=".6"/><line x1="112" y1="52" x2="112" y2="72" stroke="#5A3B22" stroke-width="3"/></g>' : '';
+    var shades = (hl==='sunglasses')
+      ? '<g transform="translate(112 60)"><rect x="-13" y="-4" width="11" height="8" rx="2" fill="#241C3B"/><rect x="2" y="-4" width="11" height="8" rx="2" fill="#241C3B"/><line x1="-2" y1="0" x2="2" y2="0" stroke="#241C3B" stroke-width="2"/></g>' : '';
+    var head=(hl==='umbrella')?'<text x="112" y="20" font-family="Baloo 2,sans-serif" font-weight="800" font-size="13" fill="#22C55E" text-anchor="middle">Dry & happy! ☔</text>'
+            :(hl==='sunglasses')?'<text x="112" y="20" font-family="Baloo 2,sans-serif" font-weight="800" font-size="13" fill="#EF4444" text-anchor="middle">Still getting wet! 🕶️</text>'
+            :'<text x="112" y="24" font-family="Baloo 2,sans-serif" font-weight="800" font-size="13" fill="#2C3E66" text-anchor="middle">Rain!</text>';
+    return '<svg viewBox="0 0 224 132">'
+      +'<ellipse cx="52" cy="24" rx="30" ry="15" fill="#B7C4E8"/><ellipse cx="88" cy="20" rx="34" ry="17" fill="#9FB0D8"/><ellipse cx="140" cy="24" rx="36" ry="16" fill="#B7C4E8"/><ellipse cx="184" cy="26" rx="28" ry="13" fill="#9FB0D8"/>'
+      +drops
+      +'<ellipse cx="112" cy="124" rx="28" ry="6" fill="#000" opacity=".07"/>'
+      +'<g><animateTransform attributeName="transform" type="translate" values="0 0;0 -2;0 0" dur="1.6s" repeatCount="indefinite"/>'
+      +'<rect x="92" y="76" width="40" height="42" rx="16" fill="#EC4899"/>'
+      +'<rect x="80" y="82" width="11" height="26" rx="5" fill="#EC4899"/><rect x="133" y="82" width="11" height="26" rx="5" fill="#EC4899"/>'
+      +ffKid(112,60,19)
+      +shades+'</g>'+umbrella+head
+      +'</svg>'; };
+
+  /* NUMLINE — friendlier: a frog hops along to the highlighted number, start/finish flags (Img 7) */
+  SCENES.numline=function(hl,data){
+    var min=(data&&data.min!=null)?data.min:0, max=(data&&data.max!=null)?data.max:10, span=(max-min)||1;
+    var x0=16,x1=208, px=function(v){return x0+((v-min)/span)*(x1-x0);};
+    var ticks=''; for(var v=min;v<=max;v++){ var x=px(v); var big=(v===min||v===max);
+      ticks+='<line x1="'+x.toFixed(1)+'" y1="'+(big?42:46)+'" x2="'+x.toFixed(1)+'" y2="'+(big?60:54)+'" stroke="'+(big?'#7C5CFC':'#B7AEC9')+'" stroke-width="'+(big?3:2)+'"/>'
+        +'<text x="'+x.toFixed(1)+'" y="74" font-size="11" text-anchor="middle" font-family="Baloo 2,sans-serif" font-weight="800" fill="'+(big?'#7C5CFC':'#8B84A3')+'">'+v+'</text>'; }
+    var hv=Number(hl), mark='';
+    if(hl!==''&&hl!=null&&!isNaN(hv)&&hv>=min&&hv<=max){ var hx=px(hv);
+      /* frog hops onto the highlighted number */
+      mark='<g><animateTransform attributeName="transform" type="translate" values="'+(px(min)-hx).toFixed(1)+' 0;0 0" dur="1s" fill="freeze" repeatCount="indefinite"/>'
+        +'<g><animateTransform attributeName="transform" type="translate" values="0 0;0 -10;0 0" dur=".5s" repeatCount="3"/>'
+        +'<ellipse cx="'+hx.toFixed(1)+'" cy="34" rx="11" ry="9" fill="#4CC062"/><circle cx="'+(hx-4).toFixed(1)+'" cy="27" r="3.5" fill="#4CC062"/><circle cx="'+(hx+4).toFixed(1)+'" cy="27" r="3.5" fill="#4CC062"/><circle cx="'+(hx-4).toFixed(1)+'" cy="27" r="1.6" fill="#241C3B"/><circle cx="'+(hx+4).toFixed(1)+'" cy="27" r="1.6" fill="#241C3B"/></g>'
+        +'<text x="'+hx.toFixed(1)+'" y="94" font-size="11" text-anchor="middle" font-family="Baloo 2,sans-serif" font-weight="800" fill="#FF8A3D">'+hv+'</text></g>'; }
+    return '<svg viewBox="0 0 224 100">'
+      +'<line x1="'+x0+'" y1="50" x2="'+x1+'" y2="50" stroke="#C9BEE0" stroke-width="3" stroke-linecap="round"/>'
+      +'<text x="'+x0+'" y="30" font-size="13" text-anchor="middle">🚩</text><text x="'+x1+'" y="30" font-size="13" text-anchor="middle">🏁</text>'
+      +ticks+mark+'</svg>'; };
+
+  /* ============ OPTION ICONS ============ */
+  ICONS.roots=function(){ return '<svg viewBox="0 0 40 40"><rect x="0" y="22" width="40" height="18" fill="#C79154"/><rect x="0" y="22" width="40" height="4" fill="#8B5A2B"/>'
+    +'<rect x="18" y="6" width="4" height="18" rx="2" fill="#3E9E52"/><path d="M20 12 q-9 -3 -12 -10 q9 0 12 7 Z" fill="#4CC062"/><path d="M20 10 q9 -4 13 -11 q-9 -1 -13 8 Z" fill="#57D06E"/>'
+    +'<g stroke="#8B5A2B" stroke-width="2" fill="none" stroke-linecap="round"><path d="M20 24 q-2 8 -7 12"/><path d="M20 24 q2 9 7 11"/><path d="M20 24 v13"/></g></svg>'; };
+  ICONS.wash=function(){ return '<svg viewBox="0 0 40 40"><ellipse cx="20" cy="20" rx="9" ry="12" fill="#FFCF9E" stroke="#E9B37E" stroke-width="1.5"/>'
+    +'<g fill="#BFE3FF"><circle cx="14" cy="14" r="4"><animate attributeName="cy" values="14;6" dur="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="1.4s" repeatCount="indefinite"/></circle><circle cx="26" cy="16" r="3.4"><animate attributeName="cy" values="16;8" dur="1.4s" begin=".5s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="1.4s" begin=".5s" repeatCount="indefinite"/></circle></g></svg>'; };
+  ICONS.eatdirty=function(){ return '<svg viewBox="0 0 40 40"><path d="M8 26 l12 -20 l12 20 Z" fill="#F6C86A" stroke="#E0A83C" stroke-width="1.5"/><circle cx="16" cy="22" r="2" fill="#EF4444"/><circle cx="24" cy="20" r="2" fill="#EF4444"/><circle cx="20" cy="25" r="2" fill="#EF4444"/><text x="30" y="14" font-size="10">🦠</text></svg>'; };
+
+  /* ================= CONTENT FIXES + BROAD SCENE TAGGING ================= */
+  var C=window.__CONTENT__; if(!C) return;
+  var st={fixed:0, tagged:0};
+
+  function eachQ(fn){ for(var s in C){ C[s].topics.forEach(function(t){ if(!t.questions||t.type) return; t.questions.forEach(function(q){ fn(q,t,s); }); }); } }
+  function setScene(q, name, data, force){ if(q.scene && !force) return; q.scene=name; if(data) q.sceneData=Object.assign({}, q.sceneData||{}, data); st.tagged++; }
+  function optHi(q, test, key){ (q.options||[]).forEach(function(o){ if(test(o)) o.hi=key; }); }
+
+  /* ---- FIX: money question that didn't match its options (Img 17) ---- */
+  eachQ(function(q){
+    if(/which coin is worth more/i.test(q.q||'') && (q.options||[]).some(function(o){return /we use/i.test(o.t||'');})){
+      q.q="Which coin is worth more?"; q.big="🪙10 · 🪙5";
+      q.options=[{t:"Ten coin",d:"🪙10"},{t:"Five coin",d:"🪙5"}]; q.correct=0; st.fixed++;
+    }
+  });
+
+  /* ---- FIX: thunder/lightning was backwards; lightning comes first (Img 6) ---- */
+  eachQ(function(q){
+    if(/thunder comes with/i.test(q.q||'')){
+      q.q="Lightning comes with...?"; q.big="⛈️";
+      q.options=[{t:"Thunder",d:"🔊"},{t:"Rainbows only",d:"🌈"}]; q.correct=0;
+      setScene(q,'stormcloud',null,true); st.fixed++;
+    }
+  });
+
+  /* ---- FIX: "which shape is a ___" gave the answer away in words (Img 20) ----
+     Show only the shapes; the child must recognise it by sight. ---- */
+  eachQ(function(q){
+    if(/which shape is (a |an )?(circle|square|triangle|rectangle|star|oval|diamond|heart)/i.test(q.q||'') && q.options){
+      q.options.forEach(function(o){ if(o.d) o.t=''; });   /* keep the shape picture, drop the naming word */
+      st.fixed++;
+    }
+  });
+
+  /* ---- FIX: roots option showed a potted plant, not roots (Img 18) ---- */
+  eachQ(function(q){
+    if(/under the ground/i.test(q.q||'') && q.options){
+      q.options.forEach(function(o){ if(/root/i.test(o.t||'')){ o.d=''; o.ic='roots'; } });
+    }
+  });
+
+  /* ---- FIX: rainbow option emoji removed (too easy — same picture in Q & option) (Img 11) ---- */
+  eachQ(function(q){
+    if(/rainbow|colou?rful arch/i.test(q.q||'') && q.options){
+      q.options.forEach(function(o){ if(o.d==='🌈'){ o.d=''; } });
+    }
+  });
+
+  /* ---- SCENES: sun gives light & heat (Img 1) ---- */
+  eachQ(function(q){ if(/sun give|sun gives|does the sun|the sun\b.*(give|light|heat|day)/i.test(q.q||'')) setScene(q,'sunrays'); });
+  /* ---- moon at night (Img 13) ---- */
+  eachQ(function(q){ if(/moon comes out|the moon\b.*(night|out|at)/i.test(q.q||'')) setScene(q,'moonrise'); });
+  /* ---- rainbow forming (Img 11) ---- */
+  eachQ(function(q){ if(/rainbow|colou?rful arch/i.test(q.q||'')) setScene(q,'rainbowform'); });
+  /* ---- seed -> plant with roots (Img 10) ---- */
+  eachQ(function(q){ if(/grows? from a tiny|from (a )?seed|plant grows|seed grow/i.test(q.q||'')) setScene(q,'seedgrow'); });
+  /* ---- plant parts / under the ground (Img 18) ---- */
+  eachQ(function(q){ if(/under the ground|which part.*(ground|plant)|part.*under/i.test(q.q||'')){ setScene(q,'rootunder'); optHi(q,function(o){return /root/i.test(o.t||'');},'roots'); optHi(q,function(o){return /flower|leaf|stem|petal/i.test(o.t||'');},'flower'); } });
+  /* ---- bees make honey (Img 16) ---- */
+  eachQ(function(q){ if(/bees? (help|make)|nectar|make.*honey/i.test(q.q||'')) setScene(q,'beeflower'); });
+  /* ---- which is faster: fast vs slow animal (Img 12) ---- */
+  eachQ(function(q){ if(/which is faster|which.*faster\??$/i.test(q.q||'') && q.options && q.options.length>=2){
+      var fast=firstEmoji(q.big)|| (q.options[q.correct]&&q.options[q.correct].d);
+      var other=null; q.options.forEach(function(o){ if(o!==q.options[q.correct]) other=o.d; });
+      setScene(q,'race',{fast:(q.options[q.correct]&&q.options[q.correct].d)||fast, slow:other||'🐢'});
+  } });
+  /* ---- subtraction: take away / how many left / pops (Imgs 5 & 14) ---- */
+  var OPS={'➖':1,'➕':1,'✖️':1,'➗':1,'❓':1,'❔':1,'⁉️':1,'‼️':1,'✅':1,'❌':1,'🟰':1,'🔢':1};
+  eachQ(function(q){ if(/take away|how many left|pops|fly away|flew away|minus|are left/i.test(q.q||'')){
+      var qs=(q.q||'')+' '+(q.big||'');
+      var es=emojiList(q.big).filter(function(e){ return !OPS[e]; });   /* real picture items only */
+      var nums=(qs.match(/\d+/g)||[]).map(Number);
+      var start=null, remove=null;
+      if(es.length>=2){ start=es.length; }                              /* pictured items -> count them */
+      var mm=(String(q.big||'').match(/(\d+)\s*(?:−|-|➖|minus)\s*(\d+)/i)); /* "8 − 2" style */
+      if(mm){ if(start==null) start=+mm[1]; remove=+mm[2]; }
+      if(start==null && nums.length) start=nums[0];
+      if(remove==null) remove=(nums.length>=2)?nums[1]:1;
+      if(start==null) start=3;
+      var emoji = es.length? es[0] : '🔵';
+      setScene(q,'takeaway',{start:start, remove:remove, emoji:emoji});
+  } });
+  /* ---- place value: tens & ones (Img 19) ---- */
+  eachQ(function(q){ if(/how many tens|tens and ones|has how many ten|number of ten/i.test(q.q||'')){
+      var n=parseInt((String(q.big||q.q).match(/\d+/)||[])[0],10); if(isNaN(n)) n=15;
+      setScene(q,'placevalue',{tens:Math.floor(n/10), ones:n%10, n:n});
+  } });
+  /* ---- paper fold (Img 4) ---- */
+  eachQ(function(q){ if(/fold.*paper|paper.*fold|fold (a|the).*in half|fold.*square/i.test(q.q||'')) setScene(q,'paperfold'); });
+  /* ---- dirty hands -> wash (Img 8) ---- */
+  eachQ(function(q){ if(/hands are dirty|dirty hands|hands.*dirty/i.test(q.q||'')){ setScene(q,'dirtyhands'); optHi(q,function(o){return /wash/i.test(o.t||'');},'wash'); optHi(q,function(o){return /eat/i.test(o.t||'');},'eat');
+      (q.options||[]).forEach(function(o){ if(/wash/i.test(o.t||'')) o.ic='wash'; if(/eat/i.test(o.t||'')) o.ic='eatdirty'; }); } });
+  /* ---- rain -> umbrella/sunglasses outcome (Img 9): add hi so picking shows the result ---- */
+  eachQ(function(q){ if(q.scene==='rain'){ optHi(q,function(o){return /umbrella/i.test(o.t||'');},'umbrella'); optHi(q,function(o){return /sunglass|shades/i.test(o.t||'');},'sunglasses'); } });
+
+  if(window.console&&console.log) console.log('[AlgoKid upgrade]', JSON.stringify(st));
+})();
+</script>
+
+<script>
+/* ===================== ALGO KID · REWARDS ECONOMY + BRAIN PUZZLES (v17) ===================== */
+(function(){
+  if(typeof lsGet!=='function') return;
+
+  /* ---------- styles ---------- */
+  var st=document.createElement('style');
+  st.textContent=[
+    '.akchip{background:#fff;border-radius:999px;padding:4px 9px;font-family:var(--head);font-weight:800;font-size:13px;color:#F59E0B;box-shadow:var(--shadow);display:inline-flex;align-items:center;gap:3px}',
+    '#akCombo{position:fixed;left:50%;top:20%;transform:translateX(-50%) scale(.6);z-index:200;font-family:var(--head);font-weight:800;font-size:40px;color:#fff;text-shadow:0 3px 10px rgba(245,130,42,.6);pointer-events:none;opacity:0;transition:all .25s cubic-bezier(.2,1.4,.4,1)}',
+    '#akCombo.show{opacity:1;transform:translateX(-50%) scale(1)}',
+    '.akbar{height:12px;border-radius:999px;background:rgba(255,255,255,.35);overflow:hidden;margin-top:5px}',
+    '.akbar>i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#FDE68A,#F59E0B);transition:width .5s ease}',
+    '.aknudge{background:linear-gradient(135deg,#FFF3D6,#FFE3EC);border-radius:18px;padding:13px 15px;margin:0 0 14px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px}',
+    '.aknudge .e{font-size:30px}',
+    '.aklvlcard{background:linear-gradient(135deg,#7C5CFC,#9B6DFF);color:#fff;border-radius:20px;padding:16px 18px;box-shadow:var(--shadow);margin:4px 0 14px}',
+    '.toygrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}',
+    '@media(min-width:520px){.toygrid{grid-template-columns:repeat(4,1fr)}}',
+    '.toy{position:relative;background:#fff;border-radius:18px;padding:12px 6px 10px;box-shadow:var(--shadow);text-align:center;border:3px solid transparent;overflow:hidden}',
+    '.toy .te{font-size:38px;line-height:1;filter:grayscale(1);opacity:.45;transition:.2s}',
+    '.toy.owned .te{filter:none;opacity:1}',
+    '.toy .tn{font-family:var(--head);font-weight:800;font-size:12px;margin-top:5px;color:var(--ink)}',
+    '.toy .tc{font-weight:800;font-size:12px;margin-top:3px}',
+    '.toy .rar{position:absolute;top:6px;left:6px;font-size:9px;font-weight:800;padding:2px 6px;border-radius:999px;color:#fff}',
+    '.toy.owned{border-color:#22C55E}',
+    '.toy.canbuy{cursor:pointer}',
+    '.catchip{border:none;background:#F3EEFF;color:var(--purple);font-family:var(--head);font-weight:800;font-size:13px;padding:8px 13px;border-radius:999px;cursor:pointer}',
+    '.catchip.on{background:var(--purple);color:#fff}',
+    '.oddgrid{display:grid;gap:12px;width:max-content;margin:14px auto;grid-template-columns:repeat(3,1fr)}',
+    '.oddcell{width:86px;height:86px;border-radius:18px;background:#fff;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-size:44px;border:3px solid transparent;cursor:pointer}',
+    '.oddcell.bad{animation:fsbad .32s ease}',
+    '.oddcell.good{border-color:#22C55E;background:#DCFCE7}'
+  ].join('');
+  document.head.appendChild(st);
+
+  var combo=document.createElement('div'); combo.id='akCombo'; document.body.appendChild(combo);
+
+  /* ---------- state ---------- */
+  function num(k){ return parseInt(lsGet(k)||'0',10)||0; }
+  function xpLife(){ return num('ak_xp_life'); }
+  function xpBal(){ return num('ak_xp_bal'); }
+  function ownedToys(){ try{ return JSON.parse(lsGet('ak_toys')||'[]'); }catch(e){ return []; } }
+  function saveToys(a){ lsSet('ak_toys',JSON.stringify(a)); }
+
+  var LEVELS=[0,100,250,500,900,1500,2400,3600,5200,7200];
+  var TITLES=['Rookie','Explorer','Adventurer','Star','Super Star','Champion','Master','Genius','Hero','Legend'];
+  function levelInfo(life){
+    var lv=1, base=0, next=LEVELS[1];
+    for(var i=1;i<LEVELS.length;i++){ if(life>=LEVELS[i]){ lv=i+1; base=LEVELS[i]; next=(LEVELS[i+1]!=null)?LEVELS[i+1]:(LEVELS[i]+2500); } }
+    if(life<LEVELS[1]){ lv=1; base=0; next=LEVELS[1]; }
+    if(lv>=LEVELS.length){ base=LEVELS[LEVELS.length-1]+(lv-LEVELS.length)*2500; next=base+2500; }
+    var span=next-base, into=life-base, pct=span>0?Math.max(0,Math.min(100,Math.round(into/span*100))):100;
+    var title=TITLES[Math.min(lv-1,TITLES.length-1)];
+    return {level:lv,title:title,base:base,next:next,into:into,span:span,pct:pct};
+  }
+  function curLevel(){ return levelInfo(xpLife()).level; }
+
+  /* ---------- app-bar XP chip ---------- */
+  function ensureChip(){
+    var bar=document.querySelector('.appbar'); if(!bar) return;
+    if(document.getElementById('akXpChip')) return;
+    var star=document.getElementById('starChip');
+    var chip=document.createElement('span'); chip.className='akchip'; chip.id='akXpChip';
+    chip.innerHTML='⚡ <span id="akXpBal">'+xpBal()+'</span>';
+    chip.style.cursor='pointer'; chip.title='My XP — tap for Toy Box';
+    chip.onclick=function(){ renderToybox(); };
+    if(star&&star.parentNode){ star.parentNode.insertBefore(chip, star); } else { bar.appendChild(chip); }
+  }
+  function refreshChip(){ var el=document.getElementById('akXpBal'); if(el) el.textContent=xpBal(); }
+
+  /* ---------- earning ---------- */
+  function streakMult(){ var s=(typeof getStreak==='function')?getStreak().count:0; return 1 + Math.min(s,7)*0.08; }
+  function addXP(n){ if(n<=0) return 0; lsSet('ak_xp_life',String(xpLife()+n)); lsSet('ak_xp_bal',String(xpBal()+n)); refreshChip(); return n; }
+
+  var sess={combo:0,max:0};
+  window.akComboHit=function(){ sess.combo++; if(sess.combo>sess.max) sess.max=sess.combo;
+    if(sess.combo>=3){ var m=Math.min(5,Math.floor(sess.combo/3)+1); combo.textContent='🔥 x'+m+'  ('+sess.combo+' in a row!)';
+      combo.classList.add('show'); setTimeout(function(){ combo.classList.remove('show'); },850); }
+  };
+  window.akComboBreak=function(){ sess.combo=0; };
+
+  /* called once per finished game from finishCustom */
+  window.akAwardGameXP=function(stars,firstTry,count){
+    stars=stars||0; firstTry=firstTry||0; count=count||0;
+    var base=stars*12 + firstTry*4;
+    var perfect=(count>0 && firstTry>=count)?25:0;
+    var comboBonus=sess.max>=3?sess.max*3:0;
+    var before=levelInfo(xpLife());
+    var gained=Math.round((base+perfect+comboBonus)*streakMult());
+    if(gained<5) gained=5;
+    addXP(gained);
+    var after=levelInfo(xpLife());
+    var leveledUp=after.level>before.level;
+    if(leveledUp){ addXP(0); setTimeout(function(){ if(typeof confetti==='function') confetti(); },200); }
+    sess.combo=0; sess.max=0;
+    var mult=streakMult();
+    var html='<div class="aklvlcard" style="text-align:center">'+
+      '<div style="font-family:var(--head);font-weight:800;font-size:22px">+'+gained+' XP ⚡</div>'+
+      (mult>1.001?('<div style="font-size:12px;font-weight:800;opacity:.9">🔥 '+Math.round((mult-1)*100)+'% streak bonus applied</div>'):'')+
+      (comboBonus?('<div style="font-size:12px;font-weight:800;opacity:.9">⚡ combo bonus +'+comboBonus+'</div>'):'')+
+      (leveledUp?('<div style="margin-top:8px;font-family:var(--head);font-weight:800;font-size:18px">🎉 Level '+after.level+' — '+after.title+'!</div>'):
+        ('<div style="margin-top:8px;font-size:12px;font-weight:800;opacity:.95">Level '+after.level+' · '+after.title+'</div>'+
+         '<div class="akbar"><i style="width:'+after.pct+'%"></i></div>'+
+         '<div style="font-size:11px;font-weight:700;opacity:.9;margin-top:4px">'+after.into+' / '+after.span+' XP to Level '+(after.level+1)+'</div>'))+
+      '<div style="font-size:12px;font-weight:800;opacity:.95;margin-top:8px">💰 '+xpBal()+' XP to spend in the Toy Box 🧸</div></div>';
+    return {html:html, xp:gained, leveledUp:leveledUp, newLevel:after.level};
+  };
+
+  /* ---------- spoken "why" ---------- */
+  window.akWhy=function(q){ return (q&&q.ex)?q.ex:''; };
+
+  /* ================= COLLECTIBLES / TOY BOX ================= */
+  var RAR={ common:{n:'Common',c:'#22C55E',cost:50}, rare:{n:'Rare',c:'#3B82F6',cost:150}, epic:{n:'Epic',c:'#8B5CF6',cost:400}, legend:{n:'Legendary',c:'#F59E0B',cost:900} };
+  var TOYS=[
+    {id:'pup',e:'🐶',n:'Puppy',cat:'Pets',r:'common'},{id:'kit',e:'🐱',n:'Kitten',cat:'Pets',r:'common'},
+    {id:'bun',e:'🐰',n:'Bunny',cat:'Pets',r:'common'},{id:'pan',e:'🐼',n:'Panda',cat:'Pets',r:'rare'},
+    {id:'fox',e:'🦊',n:'Fox',cat:'Pets',r:'rare'},{id:'uni',e:'🦄',n:'Unicorn',cat:'Pets',r:'epic'},
+    {id:'dra',e:'🐉',n:'Dragon',cat:'Pets',r:'legend'},
+    {id:'ted',e:'🧸',n:'Teddy',cat:'Toys',r:'common'},{id:'bal',e:'🎈',n:'Balloon',cat:'Toys',r:'common'},
+    {id:'kite',e:'🪁',n:'Kite',cat:'Toys',r:'common'},{id:'trn',e:'🚂',n:'Toy Train',cat:'Toys',r:'rare'},
+    {id:'rob',e:'🤖',n:'Robot',cat:'Toys',r:'rare'},{id:'gam',e:'🎮',n:'Game Pad',cat:'Toys',r:'epic'},
+    {id:'sta',e:'🌟',n:'Star',cat:'Space',r:'common'},{id:'roc',e:'🚀',n:'Rocket',cat:'Space',r:'rare'},
+    {id:'com',e:'☄️',n:'Comet',cat:'Space',r:'rare'},{id:'ufo',e:'🛸',n:'UFO',cat:'Space',r:'epic'},
+    {id:'pla',e:'🪐',n:'Planet',cat:'Space',r:'epic'},{id:'ali',e:'👽',n:'Alien',cat:'Space',r:'epic'},
+    {id:'coin',e:'🪙',n:'Gold Coin',cat:'Treasure',r:'common'},{id:'key',e:'🗝️',n:'Magic Key',cat:'Treasure',r:'rare'},
+    {id:'tro',e:'🏆',n:'Trophy',cat:'Treasure',r:'epic'},{id:'gem',e:'💎',n:'Diamond',cat:'Treasure',r:'epic'},
+    {id:'crn',e:'👑',n:'Crown',cat:'Treasure',r:'legend'},
+    {id:'rbw',e:'🌈',n:'Rainbow',cat:'Fun',r:'rare'},{id:'lol',e:'🍭',n:'Lollipop',cat:'Fun',r:'common'},
+    {id:'gift',e:'🎁',n:'Gift',cat:'Fun',r:'common'},{id:'cir',e:'🎪',n:'Big Top',cat:'Fun',r:'epic'}
+  ];
+  var CATS=['Pets','Toys','Space','Treasure','Fun'];
+  var curCat=lsGet('ak_toycat')||'Pets';
+  function toyCost(t){ return RAR[t.r].cost; }
+
+  window.renderToybox=function(cat){
+    if(typeof setTab==='function') setTab('rewards'); if(typeof showNav==='function') showNav(true); window.scrollTo(0,0);
+    if(cat){ curCat=cat; lsSet('ak_toycat',cat); }
+    var owned=ownedToys(); var li=levelInfo(xpLife());
+    var chips=CATS.map(function(c){ return '<button class="catchip '+(c===curCat?'on':'')+'" onclick="renderToybox(\''+c+'\')">'+c+'</button>'; }).join('');
+    var items=TOYS.filter(function(t){ return t.cat===curCat; }).map(function(t){
+      var have=owned.indexOf(t.id)>=0; var cost=toyCost(t); var can=!have && xpBal()>=cost; var rr=RAR[t.r];
+      var costHtml=have?'<span style="color:#22C55E">Owned ✓</span>':('<span style="color:'+(can?'#F59E0B':'#B9B4C7')+'">⚡'+cost+'</span>');
+      return '<div class="toy '+(have?'owned':'')+' '+(can?'canbuy':'')+'"'+(can?(' onclick="akBuy(\''+t.id+'\')"'):'')+'>'+
+        '<span class="rar" style="background:'+rr.c+'">'+rr.n+'</span>'+
+        '<div class="te">'+t.e+'</div><div class="tn">'+t.n+'</div><div class="tc">'+costHtml+'</div></div>';
+    }).join('');
+    view.innerHTML='<div class="screen">'+
+      '<div class="hero" style="background:linear-gradient(135deg,#F59E0B,#EC4899)"><h2>🧸 Toy Box</h2><p>Spend your XP on toys, pets & treasures!</p></div>'+
+      '<div class="aklvlcard" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center">'+
+        '<div><div style="font-family:var(--head);font-weight:800;font-size:18px">Level '+li.level+' · '+li.title+'</div>'+
+        '<div style="font-size:12px;font-weight:700;opacity:.9">'+xpLife()+' XP earned</div></div>'+
+        '<div style="text-align:right"><div style="font-family:var(--head);font-weight:800;font-size:24px">⚡ '+xpBal()+'</div>'+
+        '<div style="font-size:11px;font-weight:700;opacity:.9">to spend</div></div></div>'+
+        '<div class="akbar"><i style="width:'+li.pct+'%"></i></div></div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin:2px 0 10px">'+
+        '<div class="sec-title" style="margin:0">My Collection</div>'+
+        '<div style="font-family:var(--head);font-weight:800;color:var(--purple)">'+owned.length+' / '+TOYS.length+'</div></div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+chips+'</div>'+
+      '<div class="toygrid">'+items+'</div>'+
+      '<button class="kbtn backbtn" onclick="renderRewards()">‹ Back to rewards</button></div>';
+    setTimeout(function(){ speak("Welcome to your Toy Box! You have "+xpBal()+" X P to spend."); },250);
+  };
+  window.akBuy=function(id){
+    var t=TOYS.find(function(x){return x.id===id;}); if(!t) return; var owned=ownedToys(); if(owned.indexOf(id)>=0) return;
+    var cost=toyCost(t); if(xpBal()<cost){ if(typeof oops==='function') oops(); speak("You need more XP for the "+t.n+". Keep playing, champion!"); return; }
+    lsSet('ak_xp_bal',String(xpBal()-cost)); owned.push(id); saveToys(owned); refreshChip();
+    if(typeof happy==='function') happy(); if(typeof confetti==='function') confetti(); if(typeof partyCharacters==='function') partyCharacters(4);
+    speak("Yay! You got a "+t.n+"! "+t.e); renderToybox();
+  };
+
+  /* ================= HOME INJECTIONS (level bar + comeback nudge + toy tile) ================= */
+  function injectHome(){
+    var scr=document.querySelector('#view .screen'); if(!scr) return;
+    var hero=scr.querySelector('.hero'); var li=levelInfo(xpLife());
+    if(hero && !hero.querySelector('.akbar')){
+      var lb=document.createElement('div'); lb.style.marginTop='12px';
+      lb.innerHTML='<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;opacity:.95"><span>⚡ Level '+li.level+' · '+li.title+'</span><span>'+li.into+' / '+li.span+' XP</span></div><div class="akbar"><i style="width:'+li.pct+'%"></i></div>';
+      hero.appendChild(lb);
+    }
+    /* comeback nudge */
+    var s=(typeof getStreak==='function')?getStreak():{count:0,last:''};
+    var today=(typeof todayStr==='function')?todayStr():'';
+    var playedToday=(s.last===today);
+    var hasHistory=false; try{ var pg=getProg(); for(var k in pg){ if(pg[k]&&pg[k].plays){ hasHistory=true; break; } } }catch(e){}
+    if(hasHistory && !playedToday && !scr.querySelector('.aknudge')){
+      var y=new Date(); y.setDate(y.getDate()-1); var ys=y.getFullYear()+'-'+(y.getMonth()+1)+'-'+y.getDate();
+      var broke=(s.last && s.last!==ys && s.count<=1);
+      var msg = broke ? "Let's start a fresh streak today! One game and you're back. 💪"
+                      : ("Play one game today to keep your 🔥 "+(s.count||0)+"-day streak alive!");
+      var nud=document.createElement('div'); nud.className='aknudge';
+      nud.innerHTML='<div class="e">👋</div><div style="font-weight:800;font-size:14px;color:#8A5A00">Welcome back, '+((typeof playerName!=='undefined'&&playerName)||'champion')+'! '+msg+'</div>';
+      var quick=scr.querySelector('.quick'); if(quick&&quick.parentNode){ quick.parentNode.insertBefore(nud, quick); } else { scr.insertBefore(nud, scr.firstChild); }
+    }
+    /* toy box quick tile */
+    var quick=scr.querySelector('.quick');
+    if(quick && !quick.querySelector('.aktoytile')){
+      var b=document.createElement('button'); b.className='kbtn qtile aktoytile';
+      b.style.background='linear-gradient(135deg,#F59E0B,#EC4899)';
+      b.setAttribute('onclick','renderToybox()');
+      b.innerHTML='<span class="qe">🧸</span>Toy<br>Box';
+      quick.appendChild(b);
+    }
+  }
+
+  /* ================= wrap renderHome / renderRewards ================= */
+  if(typeof renderHome==='function'){ var _rh=renderHome; renderHome=function(){ _rh.apply(this,arguments); try{ injectHome(); }catch(e){} }; }
+  if(typeof renderRewards==='function'){ var _rr=renderRewards; renderRewards=function(){ _rr.apply(this,arguments); try{
+      var scr=document.querySelector('#view .screen'); if(!scr) return; var li=levelInfo(xpLife());
+      var card=document.createElement('div'); card.className='aklvlcard';
+      card.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center">'+
+        '<div><div style="font-family:var(--head);font-weight:800;font-size:19px">Level '+li.level+' · '+li.title+'</div>'+
+        '<div style="font-size:12px;font-weight:700;opacity:.9">'+xpLife()+' XP earned · ⚡'+xpBal()+' to spend</div></div>'+
+        '<div style="font-size:34px">⚡</div></div><div class="akbar"><i style="width:'+li.pct+'%"></i></div>'+
+        '<div style="font-size:11px;font-weight:700;opacity:.9;margin-top:4px">'+li.into+' / '+li.span+' XP to Level '+(li.level+1)+'</div>'+
+        '<button class="kbtn" style="width:100%;margin-top:12px;background:#fff;color:#B45309;border-radius:14px;padding:12px;font-family:var(--head);font-weight:800" onclick="renderToybox()">🧸 Open Toy Box ('+ownedToys().length+'/'+TOYS.length+')</button>';
+      var hero=scr.querySelector('.hero'); if(hero&&hero.nextSibling){ hero.parentNode.insertBefore(card, hero.nextSibling.nextSibling||hero.nextSibling); } else { scr.insertBefore(card, scr.children[1]||null); }
+    }catch(e){} }; }
+
+  ensureChip();
+
+  /* ================= ODD-ONE-OUT PUZZLE ENGINE ================= */
+  window.startOddGrid=function(key,topic){ G={key:key,topic:topic,accent:topic.color,ri:0,stars:0,firstTry:0}; setupOdd(); };
+  function setupOdd(){ G.err=false; G.oddDone=false; renderOdd();
+    setTimeout(function(){ var r=G.topic.rounds[G.ri]; speak(r.q||"Tap the one that does not belong."); },300); }
+  function renderOdd(){ var r=G.topic.rounds[G.ri]; var acc=G.accent;
+    var order=shuffle(r.items.map(function(_,i){return i;})); G.oddOrder=order;
+    var cells=order.map(function(oi,i){ var it=r.items[oi];
+      return '<button class="kbtn oddcell" id="oc'+i+'" onclick="tapOdd('+i+')">'+it+'</button>'; }).join('');
+    view.innerHTML='<div class="screen">'+gameHead(G.topic,acc,G.ri,G.topic.rounds.length,G.stars)+
+      '<div class="qcard"><div class="qrow"><p class="qtext">'+(r.q||'Which one does NOT belong?')+'</p>'+
+      '<button class="kbtn readbtn" style="background:'+acc+'" onclick="speak('+JSON.stringify(r.q||'Which one does not belong?').replace(/"/g,'&quot;')+')">🔊</button></div></div>'+
+      '<div class="bwrap" id="bw"></div><div class="oddgrid">'+cells+'</div></div>';
+  }
+  window.tapOdd=function(i){ if(G.oddDone) return; var r=G.topic.rounds[G.ri]; var oi=G.oddOrder[i]; var bw=document.getElementById('bw'); var btn=document.getElementById('oc'+i);
+    if(oi===r.odd){ G.oddDone=true; if(btn){ btn.classList.add('good'); } if(typeof ding==='function') ding(); G.stars++; if(!G.err) G.firstTry++;
+      var pr=(typeof PRAISES!=='undefined')?PRAISES[Math.floor(Math.random()*PRAISES.length)]:'Great!';
+      var why=r.why?(' '+r.why):''; bw.innerHTML='<div class="banner" style="background:#DCFCE7">'+pr+why+'</div>';
+      if(typeof confetti==='function') confetti(); if(typeof happy==='function') happy();
+      speakThen(pr+why, function(){ if(G.ri+1<G.topic.rounds.length){ G.ri++; setupOdd(); } else finish(G.topic.rounds.length, G.firstTry); }, {pitch:1.3});
+    } else { G.err=true; if(btn){ btn.classList.add('bad'); setTimeout(function(){ btn&&btn.classList.remove('bad'); },340); }
+      var ch=(typeof CHEERS!=='undefined')?CHEERS[Math.floor(Math.random()*CHEERS.length)]:'Try again!';
+      bw.innerHTML='<div class="banner" style="background:#FEF3C7">'+ch+'</div>'; if(typeof oops==='function') oops(); speak(ch);
+      setTimeout(function(){ if(bw) bw.innerHTML=''; },1200);
+    }
+  };
+
+  /* ================= CONTENT WAVE 1 — reasoning & critical thinking ================= */
+  var C=window.__CONTENT__; if(!C) return;
+  function topic(id){ for(var k in C){ var ts=C[k].topics; for(var i=0;i<ts.length;i++){ if(ts[i].id===id) return ts[i]; } } return null; }
+  function addQ(id, arr){ var t=topic(id); if(t&&Array.isArray(t.questions)) t.questions=t.questions.concat(arr); }
+
+  addQ('oddoneout',[
+    {q:"Find the odd one out.",big:"🍏 🍇 🥦 🍓",options:[{t:"Broccoli (a vegetable)",d:"🥦"},{t:"Grapes",d:"🍇"}],correct:0,ex:"Broccoli is a vegetable — the rest are fruits."},
+    {q:"Find the odd one out.",big:"⚽ 🏀 🎾 🍩",options:[{t:"Donut",d:"🍩"},{t:"Tennis ball",d:"🎾"}],correct:0,ex:"A donut is food — the others are balls."},
+    {q:"Find the odd one out.",big:"🐟 🐬 🐢 🐦",options:[{t:"Bird",d:"🐦"},{t:"Turtle",d:"🐢"}],correct:0,ex:"The bird flies in the sky — the rest live in water."},
+    {q:"Find the odd one out.",big:"🔵 🟦 🔷 🔴",options:[{t:"Red circle",d:"🔴"},{t:"Blue square",d:"🟦"}],correct:0,ex:"Only the red one is a different colour."}
+  ]);
+  addQ('series',[
+    {q:"What comes next?",big:"🔴 🟡 🔴 🟡 ❓",options:[{t:"Red",d:"🔴"},{t:"Green",d:"🟢"}],correct:0,ex:"Red, yellow, red, yellow — so red is next."},
+    {q:"What number is next?",big:"10 · 20 · 30 · ❓",options:[{t:"Forty",d:"40"},{t:"Fifty",d:"50"}],correct:0,ex:"We add ten each time."},
+    {q:"What comes next?",big:"🐣 🐤 🐔 ❓",options:[{t:"Another chicken",d:"🐔"},{t:"Egg",d:"🥚"}],correct:0,ex:"The chick grows up into a chicken."},
+    {q:"What number is next?",big:"1 · 3 · 5 · ❓",options:[{t:"Seven",d:"7"},{t:"Eight",d:"8"}],correct:0,ex:"We skip one each time — these are odd numbers."}
+  ]);
+  addQ('analogy',[
+    {q:"Duck is to water as bird is to...?",big:"🦆→💧 , 🐦→❓",options:[{t:"Sky",d:"☁️"},{t:"Fire",d:"🔥"}],correct:0,ex:"Ducks swim in water; birds fly in the sky."},
+    {q:"Cook is to kitchen as teacher is to...?",big:"👩‍🍳→🍳 , 👩‍🏫→❓",options:[{t:"School",d:"🏫"},{t:"Farm",d:"🚜"}],correct:0,ex:"A teacher works in a school."},
+    {q:"Big is to small as tall is to...?",big:"🐘→🐭 , 🦒→❓",options:[{t:"Short",d:"🐁"},{t:"Fast",d:"💨"}],correct:0,ex:"Tall and short are opposites, like big and small."}
+  ]);
+  addQ('samediff',[
+    {q:"Which is DIFFERENT?",big:"🚗 🚙 🚲",options:[{t:"Bicycle",d:"🚲"},{t:"Car",d:"🚗"}],correct:0,ex:"A bicycle has two wheels; the cars have four."},
+    {q:"Which two are the SAME?",big:"⭐ 🌟 🌙",options:[{t:"The two stars",d:"⭐🌟"},{t:"Star & moon",d:"⭐🌙"}],correct:0,ex:"Both stars match; the moon is different."}
+  ]);
+  addQ('ranking',[
+    {q:"Which is the HEAVIEST?",big:"🐘 🐕 🐁",options:[{t:"Elephant",d:"🐘"},{t:"Mouse",d:"🐁"}],correct:0,ex:"The elephant is the biggest and heaviest."},
+    {q:"Which is the SMALLEST?",big:"🍉 🍎 🫐",options:[{t:"Blueberry",d:"🫐"},{t:"Watermelon",d:"🍉"}],correct:0,ex:"A blueberry is tiny compared to the others."}
+  ]);
+  addQ('l2-logic',[
+    {q:"All cats say meow. Tom is a cat. What does Tom say?",big:"🐱❓",options:[{t:"Meow",d:"🔊"},{t:"Moo",d:"🐄"}],correct:0,ex:"If all cats say meow, then Tom the cat says meow."},
+    {q:"If it is raining, we take an umbrella. It is raining. What do we take?",big:"🌧️❓",options:[{t:"Umbrella",d:"☂️"},{t:"Kite",d:"🪁"}],correct:0,ex:"The rule says rain means umbrella."}
+  ]);
+  addQ('l2-partwhole',[
+    {q:"Which part completes the car? 🚗",big:"🚗 needs...",options:[{t:"Wheels",d:"🛞"},{t:"Leaf",d:"🍃"}],correct:0,ex:"A car needs wheels to roll."},
+    {q:"A face needs these to see:",big:"🙂 needs...",options:[{t:"Eyes",d:"👀"},{t:"Shoes",d:"👟"}],correct:0,ex:"We see with our eyes."}
+  ]);
+
+  /* new Odd-One-Out puzzle topics (critical thinking) */
+  if(C.puzzles && Array.isArray(C.puzzles.topics)){
+    C.puzzles.topics.push(
+      {level:1,id:'odd-1',title:'Odd One Out',emoji:'🔍',color:'#8B5CF6',type:'oddgrid',rounds:[
+        {q:"Tap the one that is NOT a fruit.",items:['🍎','🍌','🍇','🥕','🍓','🍊'],odd:3,why:"A carrot is a vegetable."},
+        {q:"Tap the animal that can FLY.",items:['🐕','🐈','🐦','🐢','🐷','🐄'],odd:2,why:"Only the bird can fly."},
+        {q:"Tap the one that is NOT round.",items:['⚽','🏀','🔶','🍊','🟠','🔵'],odd:2,why:"The diamond has straight sides."},
+        {q:"Tap the one you can EAT.",items:['🚗','📚','🍕','👟','⏰','✏️'],odd:2,why:"Pizza is food."},
+        {q:"Tap the one that is NOT a colour.",items:['🔴','🟢','🔵','🐶','🟡','🟣'],odd:3,why:"A puppy is an animal, not a colour."}
+      ]},
+      {level:2,id:'odd-2',title:'Odd One Out · 2',emoji:'🧠',color:'#8B5CF6',type:'oddgrid',rounds:[
+        {q:"Tap the one that does NOT live in water.",items:['🐟','🐬','🦀','🦁','🐠','🐙'],odd:3,why:"A lion lives on land."},
+        {q:"Tap the one that is NOT a vehicle.",items:['🚗','✈️','🚢','🌳','🚂','🚁'],odd:3,why:"A tree is not a vehicle."},
+        {q:"Tap the one that does NOT belong in the sky.",items:['☁️','⭐','🌙','☀️','🍄','🌈'],odd:4,why:"A mushroom grows on the ground."},
+        {q:"Tap the shape with the MOST sides.",items:['🔺','⬛','🔵','⬜','🔻','🟠'],odd:1,why:"A square has four sides — more than a triangle or circle."},
+        {q:"Tap the one that is NOT hot.",items:['🔥','☀️','🌶️','🧊','🍲','☕'],odd:3,why:"Ice is cold."}
+      ]}
+    );
+  }
+
+  if(window.console&&console.log) console.log('[AlgoKid econ+brain v17] ready');
+})();
+</script>
+<script>
+/* ===================== ALGO KID · GENERATOR ENGINE + ENDLESS PRACTICE (v18) ===================== */
+(function(){
+  if(typeof lsGet!=='function' || typeof renderQuiz!=='function') return;
+
+  /* ---------- helpers ---------- */
+  function ri(a,b){ return a+Math.floor(Math.random()*(b-a+1)); }
+  function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+  function shuf(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
+  function distinct(a){ var s={},o=[]; a.forEach(function(x){ var k=String(x); if(!(k in s)){ s[k]=1; o.push(x); } }); return o; }
+  /* pick n valid distractors (numeric, >=0, != ans, distinct) */
+  function distract(ans, cands, n, minV){
+    minV=(minV==null)?0:minV;
+    var pool=distinct(cands.filter(function(v){ return v!==ans && v>=minV && v!==null && !isNaN(v); }));
+    pool=shuf(pool); var out=pool.slice(0,n);
+    var bump=1; while(out.length<n){ var c=ans+bump; if(c>=minV && c!==ans && distinct(out.concat([c])).length>out.length) out.push(c); var c2=ans-bump; if(out.length<n && c2>=minV && c2!==ans && distinct(out.concat([c2])).length>out.length) out.push(c2); bump++; if(bump>50) break; }
+    return distinct(out).slice(0,n);
+  }
+  /* build an MCQ from a correct value + distractor values (numbers or strings) */
+  function mcqNum(qtext, big, ans, dis, ex){
+    var opts=[{t:String(ans),d:String(ans),_c:1}];
+    dis.forEach(function(v){ opts.push({t:String(v),d:String(v)}); });
+    opts=shuf(opts); var ci=0; for(var i=0;i<opts.length;i++){ if(opts[i]._c){ ci=i; } delete opts[i]._c; }
+    return {q:qtext, big:big, options:opts, correct:ci, ex:ex, _gen:1};
+  }
+  function mcqChoice(qtext, big, correct, others, ex){
+    var opts=[Object.assign({_c:1},correct)].concat(others);
+    opts=shuf(opts); var ci=0; for(var i=0;i<opts.length;i++){ if(opts[i]._c){ ci=i; } delete opts[i]._c; }
+    return {q:qtext, big:big, options:opts, correct:ci, ex:ex, _gen:1};
+  }
+
+  var KIDEMO=['🍎','🍌','⭐','🐶','🌸','🚗','🎈','🐟','🦋','🍓','🐤','🌟'];
+
+  /* ================= GENERATORS ================= */
+  var AKGEN={
+    series:function(lv){
+      var step,dir,start;
+      if(lv<=1){ step=pick([1,2]); dir=1; start=ri(1,5); }
+      else if(lv===2){ step=pick([2,3,5]); dir=pick([1,1,-1]); start=dir>0?ri(1,6):ri(step*3+2,18); }
+      else { step=pick([2,3,4,5,10]); dir=pick([1,-1]); start=dir>0?ri(2,12):ri(step*3+3,40); }
+      var s0=start, s1=start+dir*step, s2=start+dir*step*2, ans=start+dir*step*3;
+      var big=s0+' · '+s1+' · '+s2+' · ❓';
+      var dis=distract(ans, [ans+step, ans-step, ans+dir, ans-dir, ans+1, ans-1], 2, 0);
+      return mcqNum("What number comes next?", big, ans, dis, "The numbers change by "+step+" each time.");
+    },
+    add:function(lv){
+      var max=lv<=1?5:(lv===2?10:20); var a=ri(1,max), b=ri(1,max); var ans=a+b;
+      var dis=distract(ans,[ans+1,ans-1,ans+2,a,b,ans+10],2,0);
+      return mcqNum(a+" + "+b+" = ?", "➕ "+a+" + "+b, ans, dis, a+" and "+b+" together make "+ans+".");
+    },
+    sub:function(lv){
+      var max=lv<=1?6:(lv===2?12:20); var a=ri(2,max), b=ri(1,a); var ans=a-b;
+      var dis=distract(ans,[ans+1,ans-1,ans+2,a,b],2,0);
+      return mcqNum(a+" − "+b+" = ?", "➖ "+a+" take away "+b, ans, dis, "Take "+b+" away from "+a+" to get "+ans+".");
+    },
+    compare:function(lv){
+      var max=lv<=1?9:(lv===2?20:99); var x=ri(0,max), y=ri(0,max); while(y===x){ y=ri(0,max); }
+      var askBig=Math.random()<0.5; var ans=askBig?Math.max(x,y):Math.min(x,y);
+      return mcqNum("Which number is "+(askBig?"BIGGER":"SMALLER")+"?", "🔢 "+x+"   vs   "+y, ans, [x===ans?y:x], (askBig?Math.max(x,y)+" is bigger.":Math.min(x,y)+" is smaller."));
+    },
+    count:function(lv){
+      var max=lv<=1?5:(lv===2?8:12); var n=ri(2,max); var e=pick(KIDEMO);
+      var row=''; for(var i=0;i<n;i++) row+=e; var dis=distract(n,[n+1,n-1,n+2,n-2],2,1);
+      return mcqNum("How many do you see?", row, n, dis, "Count them one by one: "+n+".");
+    },
+    oddout:function(lv){
+      var CATS={ fruit:['🍎','🍌','🍇','🍊','🍓','🍉'], animal:['🐶','🐱','🐰','🦊','🐼','🐷'],
+        vehicle:['🚗','🚌','🚲','✈️','🚂','🚀'], shape:['🔴','🟦','🔺','⭐','🟣','⬛'],
+        food:['🍕','🍔','🍩','🍪','🍎','🥕'] };
+      var keys=Object.keys(CATS); var ck=pick(keys); var ok=pick(keys.filter(function(k){return k!==ck;}));
+      var members=shuf(CATS[ck]).slice(0,3); var outsider=pick(CATS[ok]);
+      // ensure outsider not visually in members
+      while(members.indexOf(outsider)>=0){ outsider=pick(CATS[ok]); }
+      var big=shuf(members.concat([outsider])).join(' ');
+      var others=members.slice(0,2).map(function(m){ return {t:m,d:m}; });
+      return mcqChoice("Tap the one that does NOT belong.", big, {t:outsider,d:outsider}, others, "The others are all the same kind.");
+    },
+    pattern:function(lv){
+      var A=pick(['🔴','🟢','🔵','⭐','🟡','🟣']); var B=pick(['🔴','🟢','🔵','⭐','🟡','🟣']); while(B===A){ B=pick(['🔴','🟢','🔵','⭐','🟡','🟣']); }
+      var rule, seq, ans;
+      if(lv<=1){ rule=[A,B,A,B,A,B]; }         /* ABABAB -> next A */
+      else if(lv===2){ rule=[A,A,B,A,A,B]; }   /* AABAAB -> next A */
+      else { rule=[A,B,B,A,B,B]; }             /* ABBABB -> next A */
+      var shown=rule.slice(0,5); ans=rule[5];
+      var big=shown.join(' ')+' ❓';
+      var other= ans===A?B:A;
+      return mcqChoice("What comes next in the pattern?", big, {t:ans,d:ans}, [{t:other,d:other}], "Follow the repeating pattern.");
+    },
+    analogy:function(lv){
+      var Q=[ {a:'🐦',b:'☁️',c:'🐟',d:'🌊',w:'🌳',ex:'Birds fly in the sky; fish swim in water.'},
+        {a:'🐄',b:'🥛',c:'🐝',d:'🍯',w:'💧',ex:'Cows give milk; bees give honey.'},
+        {a:'☀️',b:'🌞',c:'🌙',d:'🌛',w:'⛅',ex:'Sun in the day; moon at night.'},
+        {a:'🧤',b:'✋',c:'🧦',d:'🦶',w:'👂',ex:'Gloves go on hands; socks go on feet.'},
+        {a:'🐕',b:'🐶',c:'🐈',d:'🐱',w:'🐤',ex:'A dog and puppy; a cat and kitten.'},
+        {a:'🔥',b:'🥵',c:'🧊',d:'🥶',w:'😀',ex:'Fire is hot; ice is cold.'} ];
+      var it=pick(Q);
+      return mcqChoice(it.a+" goes with "+it.b+" , so "+it.c+" goes with...?", it.a+"→"+it.b+" , "+it.c+"→❓",
+        {t:it.d,d:it.d}, [{t:it.w,d:it.w}], it.ex);
+    }
+  };
+  window.AKGEN=AKGEN;
+
+  var GENSET={ math:['series','add','sub','compare','count'],
+    reason:['oddout','pattern','analogy','series','compare'],
+    mixed:['series','add','sub','compare','count','oddout','pattern','analogy'] };
+  var CATNAME={ math:'Endless Math', reason:'Endless Reasoning', mixed:'Endless Mix' };
+  var CATEMO={ math:'🔢', reason:'🧠', mixed:'🎲' };
+
+  function genOne(cat, lv){
+    var set=GENSET[cat]||GENSET.mixed; var id=pick(set); var q;
+    try{ q=AKGEN[id](lv); }catch(e){ q=AKGEN.add(lv); id='add'; }
+    q._gid=id; q._sig=id+'|'+q.q+'|'+(q.big||''); return q;
+  }
+
+  /* ================= SPACED REPETITION (persistent) ================= */
+  function srsLoad(){ try{ return JSON.parse(lsGet('ak_srs')||'{"step":0,"items":[]}'); }catch(e){ return {step:0,items:[]}; } }
+  function srsSave(s){ try{ lsSet('ak_srs',JSON.stringify(s)); }catch(e){} }
+  function srsDue(){ var s=srsLoad(); s.step=(s.step||0)+1;
+    var due=s.items.filter(function(it){ return it.dueAt<=s.step; });
+    srsSave(s);
+    if(due.length && Math.random()<0.35){ due.sort(function(a,b){ return a.dueAt-b.dueAt; });
+      var it=due[0]; var q=Object.assign({}, it.q); q.options=shuf(q.options.map(function(o){return Object.assign({},o);}));
+      /* recompute correct index after shuffle by matching original correct option text */
+      var correctText=it.q.options[it.q.correct].t; q.correct=q.options.findIndex(function(o){return o.t===correctText;});
+      q._sig=it.sig; q._review=1; return q; }
+    return null;
+  }
+  function srsUpdate(q, ok){ if(!q||!q._sig) return; var s=srsLoad(); var idx=-1;
+    for(var i=0;i<s.items.length;i++){ if(s.items[i].sig===q._sig){ idx=i; break; } }
+    var step=s.step||0;
+    if(idx<0){ if(ok) return; /* only start tracking on a miss */
+      s.items.push({sig:q._sig, q:{q:q.q,big:q.big,options:q.options,correct:q.correct,ex:q.ex}, ease:2.1, interval:2, dueAt:step+2, lapses:1});
+    } else { var it=s.items[idx];
+      if(ok){ it.interval=Math.min(60, Math.max(2, Math.round(it.interval*it.ease))); it.dueAt=step+it.interval;
+        if(it.interval>=40){ s.items.splice(idx,1); } /* graduated */ }
+      else { it.interval=2; it.dueAt=step+2; it.lapses=(it.lapses||0)+1; it.ease=Math.max(1.6,it.ease-0.1); }
+    }
+    /* cap memory */ if(s.items.length>40){ s.items.sort(function(a,b){return a.dueAt-b.dueAt;}); s.items=s.items.slice(0,40); }
+    srsSave(s);
+  }
+
+  /* ================= ENDLESS HEADER ================= */
+  window.endlessHead=function(t,accent){
+    return '<div class="qhead"><button class="kbtn readbtn" style="background:'+accent+'" onclick="exitGame()">‹</button>'+
+      '<span class="ttl" style="color:'+accent+'">♾️ '+t.title+'</span></div>'+
+      '<div style="display:flex;gap:8px;margin-bottom:12px">'+
+        '<div class="statcard" style="flex:1;padding:8px"><div class="sv">'+(G.answered||0)+'</div><div class="sl">answered</div></div>'+
+        '<div class="statcard" style="flex:1;padding:8px"><div class="sv">🔥 '+(G.correctRun||0)+'</div><div class="sl">best '+(G.bestRun||0)+'</div></div>'+
+        '<div class="statcard" style="flex:1;padding:8px"><div class="sv">L'+(G.endLevel||1)+'</div><div class="sl">level</div></div>'+
+      '</div>';
+  };
+
+  /* ================= ENDLESS RUNNER ================= */
+  window.startEndless=function(cat){ if(typeof showNav==='function') showNav(false); window.scrollTo(0,0);
+    var lv=parseInt(lsGet('ak_endlvl_'+cat)||'1',10)||1; if(lv<1)lv=1; if(lv>3)lv=3;
+    var first=genOne(cat, lv);
+    G={ key:'__endless__', endless:true, cat:cat, endLevel:lv, accent:'#7C5CFC',
+        topic:{id:'endless', title:CATNAME[cat]||'Endless', emoji:'♾️', color:'#7C5CFC', questions:[first]},
+        idx:0, stars:0, solved:false, wrongThis:false, firstTry:0,
+        answered:0, correctRun:0, bestRun:0, recent:[], curQ:first };
+    renderQuiz();
+  };
+  function endlessRecord(){
+    var firstTry = !(G.qMiss>0);
+    G.answered++;
+    if(firstTry){ G.correctRun=(G.correctRun||0)+1; if(G.correctRun>(G.bestRun||0)) G.bestRun=G.correctRun; }
+    else { G.correctRun=0; }
+    G.recent=G.recent||[]; G.recent.push(firstTry); if(G.recent.length>6) G.recent.shift();
+    if(G.recent.length>=6){ var acc=G.recent.filter(Boolean).length/G.recent.length;
+      if(acc>=0.85 && G.endLevel<3){ G.endLevel++; G.recent=[]; if(typeof speak==='function') setTimeout(function(){ speak("Level up! Trickier ones now."); },900); }
+      else if(acc<0.4 && G.endLevel>1){ G.endLevel--; G.recent=[]; }
+    }
+    if(G.curQ) srsUpdate(G.curQ, firstTry);
+  }
+  function endlessServeNext(){
+    var nx = srsDue() || genOne(G.cat, G.endLevel);
+    G.curQ=nx; G.idx++; G.topic.questions[G.idx]=nx; G.solved=false; renderQuiz();
+  }
+  /* wrap nextQ so endless never ends */
+  if(typeof nextQ==='function'){ var _nextQ=nextQ; nextQ=function(){ if(G && G.endless){ try{ endlessRecord(); }catch(e){} endlessServeNext(); return; } return _nextQ.apply(this,arguments); }; }
+
+  /* wrap exitGame to show an endless summary */
+  if(typeof exitGame==='function'){ var _exit=exitGame; exitGame=function(){ if(G && G.endless){ return endlessSummary(); } return _exit.apply(this,arguments); }; }
+  function endlessSummary(){ if(typeof clearGTimer==='function') clearGTimer();
+    lsSet('ak_endlvl_'+G.cat, String(G.endLevel||1));
+    var xpRes=(typeof akAwardGameXP==='function')? akAwardGameXP(G.stars||0, G.firstTry||0, G.answered||0) : null;
+    var answered=G.answered||0, best=G.bestRun||0, cat=G.cat, acc=answered?Math.round((G.firstTry||0)/answered*100):0;
+    if(typeof showNav==='function') showNav(true);
+    view.innerHTML='<div class="screen" style="text-align:center;padding-top:24px">'+
+      (typeof robot==='function'?robot(140,'celebrate'):'')+
+      '<h2 style="font-family:var(--head);font-size:30px;color:#7C5CFC;margin:8px 0">Great practice! ♾️</h2>'+
+      '<div style="display:flex;gap:10px;justify-content:center;margin:10px 0">'+
+        '<div class="statcard" style="flex:1;max-width:110px"><div class="sv">'+answered+'</div><div class="sl">answered</div></div>'+
+        '<div class="statcard" style="flex:1;max-width:110px"><div class="sv">'+acc+'%</div><div class="sl">first try</div></div>'+
+        '<div class="statcard" style="flex:1;max-width:110px"><div class="sv">🔥 '+best+'</div><div class="sl">best streak</div></div>'+
+      '</div>'+
+      (xpRes&&xpRes.html?xpRes.html:'')+
+      '<div class="fbtns">'+
+        '<button class="kbtn fbtn fbtn-accent" onclick="startEndless(\''+cat+'\')"><span class="shine"></span><span class="fic">♾️</span> Keep Practising</button>'+
+        '<button class="kbtn fbtn fbtn-ghost" onclick="renderHome()"><span class="fic">🏠</span> Home</button>'+
+      '</div></div>';
+    if(typeof speak==='function') setTimeout(function(){ speak("Awesome! You answered "+answered+" questions. Best streak "+best+"!"); },300);
+  }
+
+  /* ================= ENDLESS PICKER + HOME TILE ================= */
+  window.renderEndlessPicker=function(){ if(typeof setTab==='function') setTab('home'); if(typeof showNav==='function') showNav(true); window.scrollTo(0,0);
+    function card(cat,sub,grad){ var lv=parseInt(lsGet('ak_endlvl_'+cat)||'1',10)||1;
+      return '<button class="kbtn world" onclick="startEndless(\''+cat+'\')">'+
+        '<span class="ic" style="background:'+grad+'">'+CATEMO[cat]+'</span>'+
+        '<span><span class="t" style="color:#7C5CFC">'+CATNAME[cat]+'</span><span class="s">'+sub+'</span>'+
+        '<span class="s" style="color:#7C5CFC;margin-top:2px">Currently at Level '+lv+'</span></span><span class="go">›</span></button>'; }
+    view.innerHTML='<div class="screen">'+
+      '<div class="hero" style="background:linear-gradient(135deg,#7C5CFC,#9B6DFF)"><h2>♾️ Endless Practice</h2><p>Never-ending questions that grow with you!</p></div>'+
+      '<div class="sec-title">Pick a track</div><div class="worlds-grid">'+
+        card('math','Add, subtract, count, compare','#EEF')+
+        card('reason','Patterns, odd-one-out, analogies','#EEF')+
+        card('mixed','A little bit of everything','#EEF')+
+      '</div>'+
+      '<div style="background:#F3EEFF;border-radius:16px;padding:12px 14px;margin-top:14px;font-weight:700;color:#5B3FD6;font-size:13px">✨ It gets harder when you do well, easier if you need it, and quietly brings back the ones you missed.</div>'+
+      '<button class="kbtn backbtn" onclick="renderHome()">‹ Back home</button></div>';
+  };
+
+  /* add an Endless tile to the Home quick row */
+  if(typeof renderHome==='function'){ var _rh2=renderHome; renderHome=function(){ _rh2.apply(this,arguments); try{
+    var q=document.querySelector('#view .quick'); if(q && !q.querySelector('.akendtile')){
+      var b=document.createElement('button'); b.className='kbtn qtile akendtile';
+      b.style.background='linear-gradient(135deg,#7C5CFC,#6D9CFF)'; b.setAttribute('onclick','renderEndlessPicker()');
+      b.innerHTML='<span class="qe">♾️</span>Endless<br>Practice'; q.appendChild(b);
+    }
+  }catch(e){} }; }
+
+  window._akgenTest={ genOne:genOne, srsLoad:srsLoad, srsUpdate:srsUpdate, srsDue:srsDue };
+  if(window.console&&console.log) console.log('[AlgoKid generators+endless v18] ready');
+})();
+</script>
+<script>
+/* ============ ALGO KID · WAVES 2-4 (profiles, backup, screen-time, a11y, syllabus, buddy, animated emojis) v19 ============ */
+(function(){
+  if(typeof lsGet!=='function' || typeof enterApp!=='function') return;
+  var _lsGet=lsGet, _lsSet=lsSet;
+
+  /* ---------------- styles ---------------- */
+  var css=[
+    /* accessibility */
+    'html.ak-dys, html.ak-dys *{ font-family:"Trebuchet MS","Comic Sans MS",Verdana,sans-serif !important; letter-spacing:.4px; word-spacing:1px; }',
+    'html.ak-big{ font-size:118%; }',
+    'html.ak-contrast .qtext,html.ak-contrast .t,html.ak-contrast .s{ color:#111 !important; }',
+    'html.ak-contrast .kbtn.opt,html.ak-contrast .topic,html.ak-contrast .world{ border:2px solid #333 !important; }',
+    'html.ak-reduce *{ animation:none !important; transition:none !important; }',
+    /* profiles */
+    '.ak-plist{display:flex;flex-direction:column;gap:10px}',
+    '.ak-prow{display:flex;align-items:center;gap:12px;background:#fff;border-radius:16px;padding:12px 14px;box-shadow:var(--shadow);border:3px solid transparent}',
+    '.ak-prow.on{border-color:var(--purple)}',
+    '.ak-prow .av{font-size:34px}',
+    '.ak-prow .nm{font-family:var(--head);font-weight:800;font-size:16px;flex:1;text-align:left}',
+    '.ak-toggle{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:14px;padding:12px 14px;box-shadow:var(--shadow);margin-bottom:10px;font-family:var(--head);font-weight:800}',
+    '.ak-sw{width:52px;height:30px;border-radius:999px;background:#D8D2E6;position:relative;transition:.2s;border:none;cursor:pointer;flex:0 0 auto}',
+    '.ak-sw.on{background:#22C55E}',
+    '.ak-sw i{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.2s}',
+    '.ak-sw.on i{left:25px}',
+    /* break overlay */
+    '#ak-break{position:fixed;inset:0;z-index:500;background:linear-gradient(135deg,#7C5CFC,#EC4899);color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}',
+    '#ak-break h2{font-family:var(--head);font-size:30px;margin:10px 0}',
+    /* buddy idle */
+    '@keyframes ak-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}',
+    'html:not(.ak-reduce) #splashRobot svg,html:not(.ak-reduce) .robotbob{animation:ak-bob 3.2s ease-in-out infinite}',
+    /* animated emojis */
+    '.anemo{display:inline-block;will-change:transform}',
+    '@keyframes ak-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}',
+    '@keyframes ak-hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-30%)}60%{transform:translateY(0)}}',
+    '@keyframes ak-float{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-22%) rotate(4deg)}}',
+    '@keyframes ak-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}',
+    '@keyframes ak-twinkle{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.25);opacity:.7}}',
+    '@keyframes ak-flutter{0%,100%{transform:translateX(0) rotate(-8deg)}50%{transform:translateX(18%) rotate(8deg)}}',
+    '@keyframes ak-drive{0%{transform:translateX(-12%)}50%{transform:translateX(12%)}100%{transform:translateX(-12%)}}',
+    '@keyframes ak-fall{0%{transform:translateY(-18%)}100%{transform:translateY(18%)}}',
+    '@keyframes ak-beat{0%,100%{transform:scale(1)}25%{transform:scale(1.18)}40%{transform:scale(1)}}',
+    '@keyframes ak-wobble{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}',
+    '.an-breathe{animation:ak-breathe 2.6s ease-in-out infinite}',
+    '.an-hop{animation:ak-hop 1.4s ease-in-out infinite}',
+    '.an-float{animation:ak-float 3s ease-in-out infinite}',
+    '.an-spin{animation:ak-spin 8s linear infinite}',
+    '.an-twinkle{animation:ak-twinkle 1.6s ease-in-out infinite}',
+    '.an-flutter{animation:ak-flutter 1.4s ease-in-out infinite}',
+    '.an-drive{animation:ak-drive 2.4s ease-in-out infinite}',
+    '.an-fall{animation:ak-fall 1.1s ease-in-out infinite alternate}',
+    '.an-beat{animation:ak-beat 1.3s ease-in-out infinite}',
+    '.an-wobble{animation:ak-wobble 2s ease-in-out infinite}',
+    'html.ak-reduce .anemo{animation:none !important}'
+  ].join('\n');
+  var stEl=document.createElement('style'); stEl.textContent=css; document.head.appendChild(stEl);
+
+  /* =========================================================
+     WAVE 2A — PROFILES (transparent per-profile storage)
+     ========================================================= */
+  function activeId(){ return parseInt(_lsGet('ak_active')||'1',10)||1; }
+  function prefixFor(id){ return id===1?'':('p'+id+':'); }
+  function pfx(k){ if(k==='ak_profiles'||k==='ak_active') return k; var p=prefixFor(activeId()); if(!p) return k; return (k.indexOf('ak_')===0)?('ak_'+p+k.slice(3)):k; }
+  lsGet=function(k){ return _lsGet(pfx(k)); };
+  lsSet=function(k,v){ return _lsSet(pfx(k),v); };
+
+  function profiles(){ try{ return JSON.parse(_lsGet('ak_profiles')||'null'); }catch(e){ return null; } }
+  function saveProfiles(a){ _lsSet('ak_profiles',JSON.stringify(a)); }
+  function ensureRegistry(){ var p=profiles(); if(!p){ p=[{id:1,name:_lsGet('ak_name')||'',avatar:_lsGet('ak_avatar')||'🦄'}]; saveProfiles(p); if(!_lsGet('ak_active')) _lsSet('ak_active','1'); } return p; }
+  ensureRegistry();
+
+  function reloadCached(){ try{ totalStars=parseInt(lsGet('ak_stars')||'0',10)||0; }catch(e){}
+    var el=document.getElementById('totalStars'); if(el) el.textContent=(typeof totalStars!=='undefined'?totalStars:0);
+    var xb=document.getElementById('akXpBal'); if(xb) xb.textContent=lsGet('ak_xp_bal')||0; }
+
+  window.akSwitchProfile=function(id){ _lsSet('ak_active',String(id)); reloadCached(); applyA11y(); var s=document.getElementById('settings'); if(s) s.style.display='none'; enterApp(); };
+  window.akAddProfile=function(){ var ps=ensureRegistry(); var nid=1; ps.forEach(function(p){ if(p.id>=nid) nid=p.id+1; }); ps.push({id:nid,name:'',avatar:'🦄'}); saveProfiles(ps); akSwitchProfile(nid); };
+  window.akDeleteProfile=function(id){ if(id===1){ speak("The first player can't be removed."); return; }
+    if(!confirm('Remove this child and all their progress?')) return;
+    var ps=ensureRegistry().filter(function(p){ return p.id!==id; }); saveProfiles(ps);
+    /* clear that profile's keys */ var p='p'+id+':'; try{ var rm=[]; for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k&&k.indexOf('ak_'+p)===0) rm.push(k); } rm.forEach(function(k){ localStorage.removeItem(k); }); }catch(e){}
+    if(activeId()===id){ akSwitchProfile(1); } else { renderProfiles(); } };
+
+  window.renderProfiles=function(){ if(typeof showNav==='function') showNav(true); window.scrollTo(0,0);
+    var ps=ensureRegistry(); var aid=activeId();
+    var rows=ps.map(function(p){ var nm=p.name||'New player'; var on=p.id===aid;
+      return '<div class="ak-prow '+(on?'on':'')+'"><span class="av">'+(p.avatar||'🦄')+'</span>'+
+        '<span class="nm">'+nm+(on?' <span style="color:var(--purple)">• playing</span>':'')+'</span>'+
+        (on?'':'<button class="kbtn" style="background:var(--purple);color:#fff;border-radius:10px;padding:8px 12px;font-weight:800" onclick="akSwitchProfile('+p.id+')">Play</button>')+
+        (p.id!==1?'<button class="kbtn" style="background:#FEECEC;color:#EF4444;border-radius:10px;padding:8px 10px;font-weight:800" onclick="akDeleteProfile('+p.id+')">✕</button>':'')+
+        '</div>'; }).join('');
+    view.innerHTML='<div class="screen"><div class="hero" style="background:linear-gradient(135deg,#7C5CFC,#6D9CFF)"><h2>👥 Who\'s playing?</h2><p>Each child gets their own stars, XP & toys</p></div>'+
+      '<div class="ak-plist" style="margin-top:14px">'+rows+'</div>'+
+      '<button class="kbtn fbtn fbtn-primary" style="margin-top:14px" onclick="akAddProfile()"><span class="shine"></span>➕ Add a child</button>'+
+      '<button class="kbtn backbtn" onclick="renderHome()">‹ Back home</button></div>'; };
+
+  /* keep registry name/avatar in sync with onboarding */
+  if(typeof finishOnboarding==='function'){ var _fo=finishOnboarding; finishOnboarding=function(){ _fo.apply(this,arguments);
+    try{ var ps=ensureRegistry(); var id=activeId(); var e=ps.find(function(x){return x.id===id;}); if(e){ e.name=playerName; e.avatar=playerAvatar; saveProfiles(ps); } }catch(e){} }; }
+
+  /* profile-aware reset (replace old reset handler cleanly) */
+  function akResetActive(){ var p=prefixFor(activeId()); try{ var rm=[]; for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(!k||k.indexOf('ak_')!==0) continue; if(k==='ak_profiles'||k==='ak_active') continue;
+    if(!p){ if(!/^ak_p\d+:/.test(k)) rm.push(k); } else { if(k.indexOf('ak_'+p)===0) rm.push(k); } }
+    rm.forEach(function(k){ localStorage.removeItem(k); }); }catch(e){} try{ totalStars=0; }catch(e){} }
+
+  /* =========================================================
+     WAVE 2B — BACKUP / RESTORE
+     ========================================================= */
+  function exportObj(){ var d={}; for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k&&k.indexOf('ak_')===0) d[k]=localStorage.getItem(k); } return d; }
+  function b64enc(s){ try{ return btoa(unescape(encodeURIComponent(s))); }catch(e){ return ''; } }
+  function b64dec(s){ try{ return decodeURIComponent(escape(atob(s))); }catch(e){ return ''; } }
+  function applyImport(obj){ if(!obj||typeof obj!=='object') return false; var n=0; for(var k in obj){ if(k.indexOf('ak_')===0){ localStorage.setItem(k, String(obj[k])); n++; } } return n>0; }
+
+  window.akExportFile=function(){ var json=JSON.stringify(exportObj(),null,2);
+    try{ var blob=new Blob([json],{type:'application/json'}); var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download='algokid-backup.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(url); },1500); speak("Backup saved!"); }catch(e){ alert('Could not save file. Use the copy code instead.'); } };
+  window.akImportFile=function(inp){ var f=inp.files&&inp.files[0]; if(!f) return; var r=new FileReader(); r.onload=function(){ try{ var obj=JSON.parse(r.result); if(applyImport(obj)){ speak("Restored! Reloading."); setTimeout(function(){ location.reload(); },600); } else alert('That file had no Algo Kid data.'); }catch(e){ alert('Could not read that backup file.'); } }; r.readAsText(f); };
+  window.akCopyCode=function(){ var code=b64enc(JSON.stringify(exportObj())); var ta=document.getElementById('ak-code'); if(ta){ ta.value=code; ta.select(); try{ document.execCommand('copy'); }catch(e){} try{ navigator.clipboard&&navigator.clipboard.writeText(code); }catch(e){} speak("Backup code copied!"); } };
+  window.akPasteCode=function(){ var ta=document.getElementById('ak-code'); if(!ta||!ta.value.trim()){ alert('Paste your backup code into the box first.'); return; } var json=b64dec(ta.value.trim()); try{ var obj=JSON.parse(json); if(applyImport(obj)){ speak("Restored! Reloading."); setTimeout(function(){ location.reload(); },600); } else alert('That code did not contain valid data.'); }catch(e){ alert('That backup code was not valid.'); } };
+
+  window.renderBackup=function(){ if(typeof showNav==='function') showNav(true); window.scrollTo(0,0);
+    view.innerHTML='<div class="screen"><div class="hero" style="background:linear-gradient(135deg,#0EA5E9,#22C55E)"><h2>💾 Backup &amp; Restore</h2><p>Keep progress safe or move to a new device</p></div>'+
+      '<div class="qcard"><div style="font-family:var(--head);font-weight:800;margin-bottom:8px">Save a backup</div>'+
+      '<button class="kbtn fbtn fbtn-primary" onclick="akExportFile()"><span class="shine"></span>⬇️ Download backup file</button>'+
+      '<button class="kbtn" style="width:100%;margin-top:8px;background:#EDE7F7;color:var(--purple);border-radius:14px;padding:12px;font-weight:800" onclick="akCopyCode()">📋 Copy backup code</button></div>'+
+      '<div class="qcard" style="margin-top:12px"><div style="font-family:var(--head);font-weight:800;margin-bottom:8px">Restore</div>'+
+      '<label class="kbtn" style="display:block;text-align:center;background:#E8F0FE;color:#2563EB;border-radius:14px;padding:12px;font-weight:800;cursor:pointer">⬆️ Choose backup file<input type="file" accept="application/json,.json" style="display:none" onchange="akImportFile(this)"></label>'+
+      '<textarea id="ak-code" placeholder="…or paste a backup code here" style="width:100%;box-sizing:border-box;margin-top:8px;height:70px;border-radius:12px;border:2px solid #E7D9F2;padding:10px;font-family:monospace;font-size:12px"></textarea>'+
+      '<button class="kbtn" style="width:100%;margin-top:8px;background:#22C55E;color:#fff;border-radius:14px;padding:12px;font-weight:800" onclick="akPasteCode()">Restore from code</button></div>'+
+      '<div style="font-size:12px;color:var(--muted);font-weight:700;margin-top:10px">Backups include every child profile on this device.</div>'+
+      '<button class="kbtn backbtn" onclick="renderHome()">‹ Back home</button></div>'; };
+
+  /* =========================================================
+     WAVE 2C — GENTLE SCREEN-TIME LIMIT
+     ========================================================= */
+  function todaySecs(){ try{ var m=JSON.parse(lsGet('ak_timeday')||'{}'); var d=(typeof todayStr==='function')?todayStr():''; return m[d]||0; }catch(e){ return 0; } }
+  function limitMin(){ return parseInt(lsGet('ak_screenlimit')||'0',10)||0; }
+  window.akSetLimit=function(m){ lsSet('ak_screenlimit',String(m)); lsSet('ak_grace','0'); speak(m?("Break reminder set to "+m+" minutes."):"Break reminder turned off."); if(typeof renderScreenTime==='function') renderScreenTime(); };
+  function graceSecs(){ return parseInt(lsGet('ak_grace')||'0',10)||0; }
+  function showBreak(){ var o=document.getElementById('ak-break'); if(!o||o.style.display==='flex') return; o.style.display='flex';
+    try{ if(typeof stopReading==='function') stopReading(); }catch(e){} try{ speak("Time for a little break! Please rest your eyes. A grown-up can add more time."); }catch(e){} }
+  window.akBreakMore=function(){ var a=Math.floor(Math.random()*4)+3, b=Math.floor(Math.random()*4)+3; var ans=prompt("Grown-up check: what is "+a+" × "+b+" ?"); if(String(parseInt(ans,10))===String(a*b)){ lsSet('ak_grace', String(graceSecs()+10*60)); var o=document.getElementById('ak-break'); if(o) o.style.display='none'; speak("Okay! Ten more minutes."); } else { speak("That wasn't right. Time to rest!"); } };
+  window.akBreakDone=function(){ try{ location.reload(); }catch(e){} };
+  var stInt=setInterval(function(){ try{ var lim=limitMin(); if(!lim) return; var used=todaySecs(); if(used >= lim*60 + graceSecs()){ showBreak(); } }catch(e){} }, 15000);
+
+  window.renderScreenTime=function(){ if(typeof showNav==='function') showNav(true); window.scrollTo(0,0);
+    var cur=limitMin(); var used=Math.round(todaySecs()/60);
+    function opt(m,label){ return '<button class="kbtn" style="flex:1;background:'+(cur===m?'var(--purple)':'#EDE7F7')+';color:'+(cur===m?'#fff':'var(--purple)')+';border-radius:12px;padding:12px;font-weight:800" onclick="akSetLimit('+m+')">'+label+'</button>'; }
+    view.innerHTML='<div class="screen"><div class="hero" style="background:linear-gradient(135deg,#F59E0B,#EF4444)"><h2>⏰ Screen-time</h2><p>A gentle break reminder for healthy habits</p></div>'+
+      '<div class="qcard"><div style="font-family:var(--head);font-weight:800">Played today: '+used+' min</div>'+
+      '<div style="font-weight:700;color:var(--muted);font-size:13px;margin-top:4px">When the limit is reached, a friendly break screen appears. A grown-up can add 10 more minutes.</div>'+
+      '<div style="display:flex;gap:8px;margin-top:12px">'+opt(0,'Off')+opt(20,'20m')+opt(30,'30m')+opt(45,'45m')+opt(60,'60m')+'</div></div>'+
+      '<button class="kbtn backbtn" onclick="renderHome()">‹ Back home</button></div>'; };
+
+  /* =========================================================
+     WAVE 3A — ACCESSIBILITY
+     ========================================================= */
+  function a11y(){ try{ return JSON.parse(lsGet('ak_a11y')||'{}'); }catch(e){ return {}; } }
+  function applyA11y(){ var a=a11y(); var h=document.documentElement;
+    h.classList.toggle('ak-dys',!!a.dys); h.classList.toggle('ak-big',!!a.big); h.classList.toggle('ak-contrast',!!a.contrast); h.classList.toggle('ak-reduce',!!a.reduce); }
+  window.akToggleA11y=function(key){ var a=a11y(); a[key]=!a[key]; lsSet('ak_a11y',JSON.stringify(a)); applyA11y(); renderA11y(); };
+  window.renderA11y=function(){ if(typeof showNav==='function') showNav(true); window.scrollTo(0,0); var a=a11y();
+    function row(key,label,desc){ var on=!!a[key]; return '<div class="ak-toggle"><div><div>'+label+'</div><div style="font-weight:700;color:var(--muted);font-size:12px">'+desc+'</div></div><button class="ak-sw '+(on?'on':'')+'" onclick="akToggleA11y(\''+key+'\')"><i></i></button></div>'; }
+    view.innerHTML='<div class="screen"><div class="hero" style="background:linear-gradient(135deg,#14B8A6,#6D9CFF)"><h2>♿ Accessibility</h2><p>Make Algo Kid comfy for every child</p></div>'+
+      '<div style="margin-top:14px">'+
+      row('dys','🔤 Easy-read font','Rounder letters, more spacing')+
+      row('big','🔎 Larger text','Bigger words everywhere')+
+      row('contrast','🌗 High contrast','Darker text & stronger outlines')+
+      row('reduce','🎐 Reduce motion','Calmer — less animation')+
+      '</div><button class="kbtn backbtn" onclick="renderHome()">‹ Back home</button></div>'; };
+  applyA11y();
+  /* re-apply on entry */
+  if(typeof enterApp==='function'){ var _ea=enterApp; enterApp=function(){ _ea.apply(this,arguments); try{ applyA11y(); }catch(e){} }; }
+
+  /* =========================================================
+     WAVE 3B — OLYMPIAD SYLLABUS COVERAGE
+     ========================================================= */
+  var SYL=[
+    {name:'🔢 Math Olympiad (IMO)', groups:['Math','Numbers','Shapes','Measurement'], sec:['olympiad']},
+    {name:'🔬 Science Olympiad (NSO)', groups:['Science','Nature','Body','EVS'], sec:['olympiad']},
+    {name:'🔤 English (IEO)', groups:['English','Words','Reading'], sec:['olympiad']},
+    {name:'🧠 Logical Reasoning', groups:['Reasoning'], sec:['olympiad']},
+    {name:'🌍 GK & EVS', groups:['GK','EVS','World'], sec:['olympiad']},
+    {name:'💻 Coding & Computational Thinking', groups:[], sec:['algorithms','data','puzzles']}
+  ];
+  window.renderSyllabus=function(){ if(typeof showNav==='function') showNav(true); window.scrollTo(0,0);
+    var prog=(typeof getProg==='function')?getProg():{}; var all=(typeof allTopics==='function')?allTopics():[];
+    var cards=SYL.map(function(s){
+      var ts=all.filter(function(x){ if(s.sec.indexOf(x.sec)<0) return false; if(!s.groups.length) return true; var g=(x.topic.group||''); return s.groups.some(function(k){ return g.indexOf(k)>=0; }); });
+      if(!ts.length) return '';
+      var played=0,sum=0; ts.forEach(function(x){ var pr=prog[x.topic.id]; if(pr&&pr.plays){ played++; sum+=pr.best; } });
+      var cov=Math.round(played/ts.length*100); var mastery=played?Math.round(sum/played*100):0;
+      return '<div class="qcard" style="margin-top:10px"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-family:var(--head);font-weight:800;font-size:15px">'+s.name+'</div><div style="font-weight:800;color:var(--purple)">'+cov+'%</div></div>'+
+        '<div class="meter" style="background:#EDE7F7;margin-top:8px"><div style="width:'+cov+'%"></div></div>'+
+        '<div style="font-weight:700;color:var(--muted);font-size:12px;margin-top:6px">'+played+' / '+ts.length+' topics tried · '+mastery+'% mastered</div></div>';
+    }).join('');
+    view.innerHTML='<div class="screen"><div class="hero" style="background:linear-gradient(135deg,#7C5CFC,#EC4899)"><h2>🎯 Syllabus coverage</h2><p>How much of the Olympiad map you\'ve explored</p></div>'+
+      cards+'<div style="font-size:12px;color:var(--muted);font-weight:700;margin-top:12px">Aligned to common UKG/Class-1 Olympiad patterns (IMO, NSO, IEO) plus coding readiness.</div>'+
+      '<button class="kbtn backbtn" onclick="renderReport()">‹ Back to report</button></div>'; };
+
+  /* =========================================================
+     WAVE 3C — PARENT REPORT INSIGHTS (append to renderReport)
+     ========================================================= */
+  if(typeof renderReport==='function'){ var _rr=renderReport; renderReport=function(){ _rr.apply(this,arguments); try{ injectInsights(); }catch(e){} }; }
+  function injectInsights(){ var scr=document.querySelector('#view .screen'); if(!scr || scr.querySelector('.ak-insights')) return;
+    var prog=(typeof getProg==='function')?getProg():{}; var all=(typeof allTopics==='function')?allTopics():[];
+    var mastered=0, inprog=0, weak=[];
+    all.forEach(function(x){ var pr=prog[x.topic.id]; if(pr&&pr.plays){ if(pr.best>=0.8) mastered++; else { inprog++; if(pr.best<0.6) weak.push(x); } } });
+    weak.sort(function(a,b){ return (prog[a.topic.id].best)-(prog[b.topic.id].best); });
+    var focus = weak[0];
+    var weakHtml = weak.slice(0,3).map(function(x){ return '<button class="kbtn" style="width:100%;text-align:left;background:#FFF3D6;border-radius:12px;padding:10px 12px;font-weight:800;margin-top:6px" onclick="startTopic(\''+x.sec+'\',\''+x.topic.id+'\')">'+x.topic.emoji+' '+x.topic.title+' — let\'s practise ›</button>'; }).join('');
+    var card=document.createElement('div'); card.className='ak-insights'; card.style.marginTop='14px';
+    card.innerHTML='<div class="sec-title">Insights & next steps</div>'+
+      '<div style="display:flex;gap:10px"><div class="statcard" style="flex:1"><div class="sv">'+mastered+'</div><div class="sl">✅ mastered</div></div>'+
+      '<div class="statcard" style="flex:1"><div class="sv">'+inprog+'</div><div class="sl">📈 improving</div></div>'+
+      '<div class="statcard" style="flex:1"><div class="sv">'+weak.length+'</div><div class="sl">🎯 to revisit</div></div></div>'+
+      (focus?('<div class="qcard" style="margin-top:12px"><div style="font-family:var(--head);font-weight:800">Focus next: '+focus.topic.emoji+' '+focus.topic.title+'</div>'+weakHtml+'</div>'):'<div class="qcard" style="margin-top:12px;font-weight:800;color:#16A34A">Great work — nothing needs revisiting right now! 🎉</div>')+
+      '<button class="kbtn" style="width:100%;margin-top:12px;background:#F3EEFF;color:var(--purple);border-radius:14px;padding:12px;font-family:var(--head);font-weight:800" onclick="renderSyllabus()">🎯 Olympiad syllabus coverage ›</button>';
+    scr.appendChild(card);
+  }
+
+  /* =========================================================
+     WAVE 4A — BUDDY PERSONALITY (idle bob + name cheers)
+     ========================================================= */
+  var CHEER_LINES=['You\'re doing great, %n!','I love learning with you, %n!','You\'re so smart, %n!','Keep going, %n — you\'ve got this!','High five, %n! ✋'];
+  window.akBuddyCheer=function(){ try{ var n=(typeof playerName!=='undefined'&&playerName)||'champion'; var line=CHEER_LINES[Math.floor(Math.random()*CHEER_LINES.length)].replace('%n',n); if(typeof speak==='function') speak(line); }catch(e){} };
+  /* occasional cheer when returning home (not every time) */
+  if(typeof renderHome==='function'){ var _rh3=renderHome; renderHome=function(){ _rh3.apply(this,arguments); try{ var r=document.querySelector('#view .hero'); if(r) r.classList.add('robotbob'); if(Math.random()<0.25) setTimeout(akBuddyCheer,1400); }catch(e){} }; }
+
+  /* =========================================================
+     WAVE 4B — ANIMATED EMOJIS (wrap static emojis with motion)
+     ========================================================= */
+  var EMOMAP={ '☀️':'an-spin','🌞':'an-spin','⭐':'an-twinkle','🌟':'an-twinkle','✨':'an-twinkle','💫':'an-twinkle',
+    '🎈':'an-float','🪁':'an-float','🎁':'an-float','🪀':'an-float',
+    '🐰':'an-hop','🐇':'an-hop','🐸':'an-hop','🦘':'an-hop','🐤':'an-hop','🐣':'an-hop',
+    '🦋':'an-flutter','🐝':'an-flutter','🐦':'an-flutter','🕊️':'an-flutter','🐞':'an-flutter',
+    '🚗':'an-drive','🚙':'an-drive','🚌':'an-drive','🚂':'an-drive','🏎️':'an-drive','🚀':'an-drive','✈️':'an-drive','🚲':'an-drive',
+    '🌧️':'an-fall','🌨️':'an-fall','💧':'an-fall','❄️':'an-fall','🍂':'an-fall',
+    '❤️':'an-beat','💗':'an-beat','💖':'an-beat','🫀':'an-beat',
+    '🌈':'an-wobble','🎪':'an-wobble','🎡':'an-spin','🎯':'an-twinkle','🌙':'an-wobble','🌛':'an-wobble' };
+  /* pictographic matcher (with optional VS16) */
+  var EMO_RE=/(\p{Extended_Pictographic}\uFE0F?)/u;
+  var EMO_G=/\p{Extended_Pictographic}\uFE0F?/gu;
+  function animEl(el){ if(!el || el.getAttribute&&el.getAttribute('data-anim')) return;
+    var html=el.innerHTML;
+    /* only process if the element's own text is basically emoji/simple text (avoid nuking rich markup) */
+    var txt=el.textContent||''; if(!EMO_RE.test(txt)) { el.setAttribute&&el.setAttribute('data-anim','1'); return; }
+    if(/<(?!\/?(span|b|i|em|strong)\b)/i.test(html)){ el.setAttribute&&el.setAttribute('data-anim','1'); return; } /* skip complex nodes */
+    var out=html.replace(EMO_G, function(m){ var base=m.replace('\uFE0F',''); var cls=EMOMAP[m]||EMOMAP[base]||'an-breathe'; return '<span class="anemo '+cls+'">'+m+'</span>'; });
+    el.innerHTML=out; el.setAttribute&&el.setAttribute('data-anim','1');
+  }
+  window.animateEmojis=function(root){ root=root||document.getElementById('view'); if(!root||!root.querySelectorAll) return;
+    var sel='.qbig, .oe, .tile, .oddcell, .fscell, .avpick, .qe'; var nodes=root.querySelectorAll(sel);
+    for(var i=0;i<nodes.length;i++){ animEl(nodes[i]); } };
+  /* hook the common renderers */
+  ['renderQuiz','renderOrder','renderMemory','renderTap','renderTF'].forEach(function(fn){
+    if(typeof window[fn]==='function'){ var o=window[fn]; window[fn]=function(){ var r=o.apply(this,arguments); try{ setTimeout(function(){ animateEmojis(document.getElementById('view')); },0); }catch(e){} return r; }; }
+  });
+
+  /* =========================================================
+     SETTINGS PANEL — inject parent tools
+     ========================================================= */
+  function injectSettings(){ var sheet=document.querySelector('#settings .sheet'); if(!sheet || document.getElementById('ak-parenttools')) return;
+    var anchor=document.getElementById('resetBtn');
+    var box=document.createElement('div'); box.id='ak-parenttools';
+    function b(label,fn,bg,col){ return '<button class="kbtn" style="width:100%;margin-top:10px;background:'+bg+';color:'+col+';border-radius:14px;padding:12px;font-family:var(--head);font-weight:800" onclick="(function(){document.getElementById(\'settings\').style.display=\'none\';'+fn+';})()">'+label+'</button>'; }
+    box.innerHTML='<label style="margin-top:14px">Family & tools</label>'+
+      b('👥 Switch / add child','renderProfiles()','#F3EEFF','var(--purple)')+
+      b('💾 Backup & restore','renderBackup()','#E0F2FE','#0369A1')+
+      b('♿ Accessibility','renderA11y()','#DCFCE7','#15803D')+
+      b('⏰ Screen-time','renderScreenTime()','#FEF3C7','#B45309');
+    if(anchor&&anchor.parentNode){ anchor.parentNode.insertBefore(box, anchor); } else { sheet.appendChild(box); }
+  }
+  if(typeof openSettings==='function'){ var _os=openSettings; openSettings=function(){ _os.apply(this,arguments); try{ injectSettings(); }catch(e){} }; }
+
+  /* break overlay element */
+  (function(){ var o=document.createElement('div'); o.id='ak-break';
+    o.innerHTML='<div style="font-size:64px">🌙</div><h2>Time for a break!</h2><p style="font-weight:800;max-width:320px">Great job today! Let\'s rest our eyes and move around a bit.</p>'+
+      '<div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center">'+
+      '<button class="kbtn" style="background:#fff;color:#7C5CFC;border-radius:14px;padding:12px 18px;font-family:var(--head);font-weight:800" onclick="akBreakMore()">Grown-up: +10 min</button>'+
+      '<button class="kbtn" style="background:rgba(255,255,255,.25);color:#fff;border-radius:14px;padding:12px 18px;font-family:var(--head);font-weight:800" onclick="akBreakDone()">All done 👋</button></div>';
+    if(document.body) document.body.appendChild(o); })();
+
+  /* expose reset for the profile-aware handler and rebind reset button */
+  window.akResetActive=akResetActive;
+  (function(){ var rb=document.getElementById('resetBtn'); if(rb){ var clone=rb.cloneNode(true); rb.parentNode.replaceChild(clone,rb);
+    clone.addEventListener('click', function(){ if(confirm('Reset progress for '+((typeof playerName!=='undefined'&&playerName)||'this child')+'? (Other children are not affected.)')){ akResetActive(); var el=document.getElementById('totalStars'); if(el) el.textContent=0; if(typeof closeSettings==='function') closeSettings(); reloadCached(); if(typeof renderHome==='function') renderHome(); } }); } })();
+
+  window._akwtest={ exportObj:exportObj, applyImport:applyImport, limitMin:limitMin, todaySecs:todaySecs, animEl:animEl, pfx:pfx };
+  if(window.console&&console.log) console.log('[AlgoKid waves 2-4 v19] ready');
+})();
+</script>
+<script>
+/* Keep the screen awake while a child is listening/playing (fully guarded). */
+(function(){
+  if(!('wakeLock' in navigator)) return;
+  var lock=null, want=false;
+  function acquire(){ if(!want) return; try{ navigator.wakeLock.request('screen').then(function(l){ lock=l; l.addEventListener('release',function(){ lock=null; }); }).catch(function(){}); }catch(e){} }
+  function arm(){ if(!want){ want=true; acquire(); } }
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') acquire(); });
+  ['pointerdown','touchstart','click'].forEach(function(ev){ document.addEventListener(ev, arm, {once:true, passive:true}); });
+})();
+</script>
+<script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-  window.addEventListener('load', function () { navigator.serviceWorker.register('service-worker.js').catch(function(e){console.log('SW skip:',e&&e.message);}); });
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('service-worker.js').then(function(reg){
+      function showUpdateBanner(worker){
+        if (document.getElementById('akUpdateBar')) return;
+        var bar = document.createElement('div'); bar.id='akUpdateBar';
+        bar.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:9999;background:#7C5CFC;color:#fff;border-radius:16px;padding:12px 16px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;gap:12px;font-family:var(--head,sans-serif);font-weight:800;font-size:14px;max-width:92vw';
+        bar.innerHTML='<span>✨ A new version is ready!</span>';
+        var btn=document.createElement('button');
+        btn.textContent='Update'; btn.style.cssText='border:none;background:#fff;color:#7C5CFC;font-weight:800;border-radius:10px;padding:8px 14px;cursor:pointer;font-family:inherit';
+        btn.onclick=function(){ btn.textContent='Updating…'; if(worker) worker.postMessage('skipWaiting'); setTimeout(function(){ location.reload(); }, 400); };
+        var later=document.createElement('button');
+        later.textContent='Later'; later.style.cssText='border:none;background:transparent;color:#fff;opacity:.85;font-weight:800;cursor:pointer;font-family:inherit';
+        later.onclick=function(){ bar.remove(); };
+        bar.appendChild(btn); bar.appendChild(later); document.body.appendChild(bar);
+        try{ if(typeof speak==='function') speak('A new version of Algo Kid is ready! Ask a grown-up to tap Update.'); }catch(e){}
+      }
+      if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner(reg.waiting);
+      reg.addEventListener('updatefound', function(){
+        var nw = reg.installing; if(!nw) return;
+        nw.addEventListener('statechange', function(){
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) showUpdateBanner(nw);
+        });
+      });
+      var reloaded=false;
+      navigator.serviceWorker.addEventListener('controllerchange', function(){ if(reloaded) return; reloaded=true; location.reload(); });
+      // Check for a fresh deploy periodically and when the app regains focus
+      setInterval(function(){ reg.update().catch(function(){}); }, 60*60*1000);
+      document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') reg.update().catch(function(){}); });
+    }).catch(function(e){console.log('SW skip:',e&&e.message);});
+  });
 }
 </script>
 </body>

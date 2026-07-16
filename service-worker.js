@@ -1,5 +1,5 @@
 /* Algo Kid service worker — offline app shell caching */
-const CACHE = 'algokid-v14';
+const CACHE = 'algokid-v19';
 const ASSETS = [
   './',
   './index.html',
@@ -25,6 +25,11 @@ self.addEventListener('activate', (event) => {
       Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
+});
+
+// Allow the page to trigger an immediate update
+self.addEventListener('message', (event) => {
+  if (event.data === 'skipWaiting') self.skipWaiting();
 });
 
 // Fetch: cache-first for same-origin; network fallback; index.html fallback for navigations
