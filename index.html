@@ -692,7 +692,7 @@ function renderReport(){ setTab('report'); showNav(true); window.scrollTo(0,0);
 
 /* ---------------- GAME DISPATCH ---------------- */
 let G=null;
-function shuffledTopic(t){ const c=Object.assign({}, t); const noShuf=(t.type==='numpath'||t.type==='fillsquares'||t.type==='oddgrid');
+function shuffledTopic(t){ const c=Object.assign({}, t); const noShuf=(t.type==='numpath'||t.type==='fillsquares'||t.type==='oddgrid'||t.type==='tapall');
   if(!noShuf){ if(Array.isArray(c.questions)) c.questions=shuffle(c.questions);
     if(Array.isArray(c.rounds)) c.rounds=shuffle(c.rounds); }
   return c; }
@@ -701,6 +701,7 @@ function startTopic(key,topicId){ const s=CONTENT[key]; const t0=s.topics.find(x
   if(t.type==='numpath') return startNumPath(key,t);
   if(t.type==='fillsquares') return startFill(key,t);
   if(t.type==='oddgrid') return startOddGrid(key,t);
+  if(t.type==='tapall') return startTapAll(key,t);
   if(t.type==='order') return startOrder(key,t);
   if(t.type==='memory') return startMemory(key,t);
   if(t.type==='tapcount') return startTap(key,t);
@@ -724,7 +725,7 @@ function renderQuiz(){ const {topic,accent,idx,stars}=G; const q=topic.questions
   const order=shuffle(q.options.map((o,i)=>i));
   G.disp=order.map(i=>q.options[i]); G.correctDisp=order.indexOf(q.correct); G.scene=q.scene||null; G.sceneData=q.sceneData||null;
   const qw=buildQWords(q.q); G.qwords=qw.words;
-  const opts=G.disp.map((o,i)=>`<button class="kbtn opt" onclick="answer(${i})"><span class="oe">${o.ic&&typeof ICONS!=='undefined'&&ICONS[o.ic]?ICONS[o.ic]():o.d}</span><span class="ot">${o.t}</span></button>`).join("");
+  const opts=G.disp.map((o,i)=>`<button class="kbtn opt" onclick="answer(${i})"><span class="oe">${o.ic&&typeof ICONS!=='undefined'&&ICONS[o.ic]?ICONS[o.ic]():o.d}</span><span class="ot">${o.hideT?'':o.t}</span></button>`).join("");
   const visual = q.scene&&typeof SCENES!=='undefined'&&SCENES[q.scene]
     ? `<div class="qscene" id="qscene">${SCENES[q.scene]('', q.sceneData)}</div>`
     : `<div class="qbig">${q.big||''}</div>`;
@@ -2880,12 +2881,25 @@ function setupFill(){ const r=G.topic.rounds[G.ri]; const goal=fsGoal(r);
   G.fs.filled[r.seed.r+'_'+r.seed.c]=true; renderFill();
   setTimeout(function(){ if(r.shape){ speak("Let's make a "+r.shape.name+"! Colour the squares inside the dashed shape, "+r.shape.w+" across and "+r.shape.h+" down."); } else { speak("Colour exactly "+r.seed.n+" squares. Tap squares next to the dark one."); } },300); }
 function fsAdj(f,r,c){ return [[1,0],[-1,0],[0,1],[0,-1]].some(function(d){ return f.filled[(r+d[0])+'_'+(c+d[1])]; }); }
+function fsShapeChip(f){ if(!f.shape) return '';
+  var sh=f.shape, u=15, gap=3;
+  var W=sh.w*u+(sh.w-1)*gap, H=sh.h*u+(sh.h-1)*gap, rects='';
+  for(var r=0;r<sh.h;r++){ for(var c=0;c<sh.w;c++){ rects+='<rect x="'+(c*(u+gap))+'" y="'+(r*(u+gap))+'" width="'+u+'" height="'+u+'" rx="3" fill="#7C5CFC" opacity="0.22" stroke="#7C5CFC" stroke-width="1.6"/>'; } }
+  var svg='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="display:block">'+rects+
+    '<text x="'+(W/2)+'" y="'+(H/2)+'" text-anchor="middle" dominant-baseline="central" font-family="Nunito,sans-serif" font-weight="900" font-size="'+Math.min(W,H,26)+'" fill="#5B3FD6">'+f.target+'</text></svg>';
+  var word=sh.name==='square'?'SQUARE':'RECTANGLE';
+  return '<div style="display:flex;align-items:center;justify-content:center;gap:14px;background:#F3EEFF;border-radius:16px;padding:10px 16px;margin:2px auto 12px;max-width:320px;box-shadow:var(--shadow)">'+
+    '<div>'+svg+'</div>'+
+    '<div style="font-family:var(--head);font-weight:800;color:#5B3FD6;font-size:16px;line-height:1.25">Make a '+word+'<br><span style="font-size:13px;font-weight:700;color:#7C5CFC">colour exactly '+f.target+' blocks</span></div>'+
+    '</div>';
+}
 function renderFill(){ const f=G.fs; const cell=Math.min(64,Math.floor(300/f.cols)); const count=Object.keys(f.filled).length;
   let cells='';
   for(let rr=0;rr<f.rows;rr++){ for(let cc=0;cc<f.cols;cc++){ const key=rr+'_'+cc; const isSeed=(f.seed.r===rr&&f.seed.c===cc); const fill=f.filled[key]; const isGoal=f.goal&&f.goal[key];
-    cells+='<div class="fscell '+(fill?'fill':'')+' '+(isSeed?'seed':'')+(isGoal?' goal':'')+'" data-r="'+rr+'" data-c="'+cc+'" style="width:'+cell+'px;height:'+cell+'px">'+(isSeed?('<span>'+f.target+'</span>'):'')+'</div>'; } }
+    cells+='<div class="fscell '+(fill?'fill':'')+' '+(isSeed?'seed':'')+(isGoal?' goal':'')+'" data-r="'+rr+'" data-c="'+cc+'" style="width:'+cell+'px;height:'+cell+'px">'+(isSeed?('<span style="font-weight:900;font-size:'+Math.round(cell*0.42)+'px">'+f.target+'</span>'):'')+'</div>'; } }
   view.innerHTML='<div class="screen">'+gameHead(G.topic,G.accent,G.ri,G.topic.rounds.length,G.stars)+
     '<div class="qcard"><p class="qtext">'+fsPrompt(f)+'</p></div>'+
+    fsShapeChip(f)+
     '<div class="puzcount" id="puzcount">Filled: '+count+' / '+f.target+'</div>'+
     '<div class="puzwrap" id="puzwrap"><div class="puzgrid" id="puzgrid" style="grid-template-columns:repeat('+f.cols+','+cell+'px)">'+cells+'</div></div>'+
     '<div class="puzbtns"><button class="kbtn puzbtn" onclick="fsUndo()">↶ Undo</button><button class="kbtn puzbtn" onclick="fsHint()">💡 Hint</button><button class="kbtn puzbtn" onclick="setupFill()">↺ Restart</button></div>'+
@@ -4377,13 +4391,84 @@ function fillNext(){ if(G.ri+1<G.topic.rounds.length){ G.ri++; setupFill(); } el
       var it=pick(Q);
       return mcqChoice(it.a+" goes with "+it.b+" , so "+it.c+" goes with...?", it.a+"→"+it.b+" , "+it.c+"→❓",
         {t:it.d,d:it.d}, [{t:it.w,d:it.w}], it.ex);
+    },
+    missing:function(lv){
+      var step=lv<=1?pick([1,1,2]):pick([1,2,2,5]); var start=ri(1, lv<=1?6:12);
+      var seq=[start,start+step,start+2*step]; var ans=seq[1];
+      var shown=start+' · ❓ · '+seq[2];
+      var dis=distract(ans,[ans+1,ans-1,ans+step,ans-step],2,0);
+      return mcqNum("What is the missing number?", shown, ans, dis, "The numbers go up by "+step+" each time.");
+    },
+    beforeafter:function(lv){
+      var max=lv<=1?10:(lv===2?20:50); var n=ri(1,max-1); var after=Math.random()<0.5;
+      var ans=after?n+1:n-1;
+      var dis=distract(ans,[n,ans+1,ans-1,ans+2],2,0);
+      return mcqNum("What comes just "+(after?"AFTER":"BEFORE")+" "+n+"?", (after?(n+' · ❓'):('❓ · '+n)), ans, dis, (after?("After "+n+" comes "+ans+"."):("Before "+n+" comes "+ans+".")));
+    },
+    placevalue:function(lv){
+      var tens=ri(1, lv<=1?5:9); var ones=ri(0,9); var ans=tens*10+ones;
+      var dis=distract(ans,[ones*10+tens, ans+10, ans-10, ans+1, ans-1],2,0);
+      return mcqNum(tens+" tens and "+ones+" ones make...?", "🧮 "+tens+" tens + "+ones+" ones", ans, dis, tens+" tens is "+(tens*10)+", plus "+ones+" ones makes "+ans+".");
+    },
+    doubles:function(lv){
+      var max=lv<=1?5:(lv===2?10:20); var n=ri(1,max); var ans=2*n;
+      var dis=distract(ans,[ans+1,ans-1,ans+2,n],2,0);
+      return mcqNum("Double "+n+" = ?", "✨ "+n+" + "+n, ans, dis, n+" and "+n+" makes "+ans+".");
+    },
+    maketen:function(lv){
+      var target=lv<=1?10:pick([10,10,20]); var a=ri(1,target-1); var ans=target-a;
+      var dis=distract(ans,[ans+1,ans-1,a,target],2,0);
+      return mcqNum(a+" + ? = "+target, "🔟 "+a+" + ❓ = "+target, ans, dis, a+" plus "+ans+" makes "+target+".");
+    },
+    biggroup:function(lv){
+      var e1=pick(['🍎','⭐','🐟','🎈','🌸','🍩']); var e2=pick(['🍌','🐶','🚗','🐤','🍓','🧁']);
+      var max=lv<=1?5:(lv===2?8:10); var n1=ri(2,max), n2=ri(2,max); while(n2===n1){ n2=ri(2,max); }
+      var more=Math.random()<0.5; var win=more?(n1>n2?1:2):(n1<n2?1:2);
+      var big='①  '+e1.repeat(n1)+'<br>②  '+e2.repeat(n2);
+      return mcqChoice("Which group has "+(more?"MORE":"FEWER")+"?", big,
+        {t:"Group "+win, d:(win===1?'①':'②')}, [{t:"Group "+(win===1?2:1), d:(win===1?'②':'①')}],
+        (more?("Group "+win+" has more."):("Group "+win+" has fewer.")));
+    },
+    ranking:function(lv){
+      var SETS=[['🐜','🐕','🐘'],['🐁','🐈','🦁'],['🫐','🍎','🍉'],['🌱','🌷','🌳'],['🚲','🚗','🚚'],['🐤','🦆','🦢']];
+      var s=pick(SETS); var big=Math.random()<0.5; var ans=big?2:0, o1=big?0:2;
+      var q=mcqChoice("Which is the "+(big?'BIGGEST':'SMALLEST')+" in real life?", s.join('   '),
+        {t:s[ans],d:s[ans]}, [{t:s[o1],d:s[o1]},{t:s[1],d:s[1]}], (big?'That one is the biggest.':'That one is the smallest.'));
+      q.options.forEach(function(o){ o.hideT=true; }); return q;
+    },
+    opposite:function(lv){
+      var P=[['big','small','🐘','🐜'],['hot','cold','🔥','🧊'],['up','down','⬆️','⬇️'],['day','night','☀️','🌙'],['fast','slow','🐆','🐢'],['happy','sad','😀','😢'],['tall','short','🦒','🐁'],['wet','dry','💧','🏜️']];
+      var p=pick(P); var askA=Math.random()<0.5;
+      var word=askA?p[0]:p[1], wEmo=askA?p[2]:p[3], ans=askA?p[1]:p[0], aEmo=askA?p[3]:p[2];
+      return mcqChoice("What is the OPPOSITE of "+word.toUpperCase()+"?", wEmo+" → ❓",
+        {t:ans,d:aEmo}, [{t:word,d:wEmo}], word+" and "+ans+" are opposites.");
+    },
+    category:function(lv){
+      var CATS={animal:['🐶','🐱','🐰','🦁','🐘'],fruit:['🍎','🍌','🍇','🍊','🍓'],vehicle:['🚗','🚌','✈️','🚂','🚲'],food:['🍕','🍔','🍩','🥕','🍞']};
+      var keys=Object.keys(CATS); var ck=pick(keys); var ans=pick(CATS[ck]);
+      var others=keys.filter(function(k){return k!==ck;});
+      var d1=pick(CATS[pick(others)]); var d2=pick(CATS[pick(others)]); while(d2===d1) d2=pick(CATS[pick(others)]);
+      var name={animal:'an ANIMAL',fruit:'a FRUIT',vehicle:'a VEHICLE',food:'a FOOD'}[ck];
+      var q=mcqChoice("Which one is "+name+"?", "🔎", {t:ans,d:ans}, [{t:d1,d:d1},{t:d2,d:d2}], "That one is "+name.replace(/^an? /,'')+".");
+      q.options.forEach(function(o){ o.hideT=true; }); return q;
+    },
+    logic:function(lv){
+      var L=[
+        {q:'All cats say meow. Tom is a cat. What does Tom say?',a:'Meow',d:'🔊',w:'Moo',wd:'🐄',ex:'All cats say meow, so Tom says meow.'},
+        {q:'If it rains, we use an umbrella. It is raining now. What do we use?',a:'Umbrella',d:'☂️',w:'Kite',wd:'🪁',ex:'The rule says rain means umbrella.'},
+        {q:'All birds have wings. A robin is a bird. So a robin has...?',a:'Wings',d:'🪽',w:'Fins',wd:'🐟',ex:'All birds have wings.'},
+        {q:'Fish live in water. Nemo is a fish. Where does Nemo live?',a:'Water',d:'🌊',w:'A tree',wd:'🌳',ex:'Fish live in water.'},
+        {q:'If the light is red, we STOP. The light is red. We should...?',a:'Stop',d:'🛑',w:'Go fast',wd:'🟢',ex:'Red means stop.'}
+      ];
+      var it=pick(L);
+      return mcqChoice(it.q, '🤔', {t:it.a,d:it.d}, [{t:it.w,d:it.wd}], it.ex);
     }
   };
   window.AKGEN=AKGEN;
 
-  var GENSET={ math:['series','add','sub','compare','count'],
-    reason:['oddout','pattern','analogy','series','compare'],
-    mixed:['series','add','sub','compare','count','oddout','pattern','analogy'] };
+  var GENSET={ math:['series','add','sub','compare','count','missing','beforeafter','placevalue','doubles','maketen'],
+    reason:['oddout','pattern','analogy','series','compare','missing','biggroup','ranking','opposite','category','logic'],
+    mixed:['series','add','sub','compare','count','oddout','pattern','analogy','missing','beforeafter','placevalue','doubles','maketen','biggroup','ranking','opposite','category','logic'] };
   var CATNAME={ math:'Endless Math', reason:'Endless Reasoning', mixed:'Endless Mix' };
   var CATEMO={ math:'🔢', reason:'🧠', mixed:'🎲' };
 
@@ -4806,6 +4891,110 @@ function fillNext(){ if(G.ri+1<G.topic.rounds.length){ G.ri++; setupFill(); } el
 })();
 </script>
 <script>
+/* ============ ALGO KID · TAP-ALL GAME + CURRICULUM PASS (v22) ============ */
+(function(){
+  /* ---------- styles for Tap All ---------- */
+  var st=document.createElement('style');
+  st.textContent=[
+    '.tagrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px auto;max-width:360px}',
+    '.tacell{aspect-ratio:1/1;border-radius:18px;background:#fff;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-size:40px;border:3px solid transparent;cursor:pointer}',
+    '.tacell.tagood{border-color:#22C55E;background:#DCFCE7;transform:scale(1.03)}',
+    '.tacell.tabad{animation:fsbad .34s ease}',
+    '@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}'
+  ].join('');
+  document.head.appendChild(st);
+
+  window.startTapAll=function(key,topic){ G={key:key,topic:topic,accent:topic.color,ri:0,stars:0,firstTry:0}; setupTapAll(); };
+  function setupTapAll(){ G.err=false; var r=G.topic.rounds[G.ri];
+    G.taOrder=shuffle(r.items.map(function(_,i){return i;})); G.taGot={};
+    G.taNeed=r.items.filter(function(it){return it.ok;}).length; renderTapAll();
+    setTimeout(function(){ speak(r.q); },300); }
+  function renderTapAll(){ var r=G.topic.rounds[G.ri]; var acc=G.accent;
+    var cells=G.taOrder.map(function(oi,i){ return '<button class="kbtn tacell" id="ta'+i+'" onclick="tapAllTap('+i+')">'+r.items[oi].e+'</button>'; }).join('');
+    view.innerHTML='<div class="screen">'+gameHead(G.topic,acc,G.ri,G.topic.rounds.length,G.stars)+
+      '<div class="qcard"><div class="qrow"><p class="qtext">'+r.q+'</p>'+
+      '<button class="kbtn readbtn" style="background:'+acc+'" onclick="speak('+JSON.stringify(r.q).replace(/"/g,'&quot;')+')">🔊</button></div></div>'+
+      '<div class="bwrap" id="bw"></div><div class="tagrid">'+cells+'</div></div>'; }
+  window.tapAllTap=function(i){ if(G.taGot[i]) return; var r=G.topic.rounds[G.ri]; var it=r.items[G.taOrder[i]]; var btn=document.getElementById('ta'+i); var bw=document.getElementById('bw');
+    if(it.ok){ G.taGot[i]=true; if(btn) btn.classList.add('tagood'); if(typeof ding==='function') ding();
+      if(Object.keys(G.taGot).length>=G.taNeed){ G.stars++; if(!G.err) G.firstTry++;
+        var pr=(typeof PRAISES!=='undefined')?PRAISES[Math.floor(Math.random()*PRAISES.length)]:'Great!';
+        if(bw) bw.innerHTML='<div class="banner" style="background:#DCFCE7">'+pr+'</div>';
+        if(typeof confetti==='function') confetti(); if(typeof happy==='function') happy();
+        speakThen(pr, function(){ if(G.ri+1<G.topic.rounds.length){ G.ri++; setupTapAll(); } else finish(G.topic.rounds.length, G.firstTry); }, {pitch:1.3});
+      }
+    } else { G.err=true; if(btn){ btn.classList.add('tabad'); setTimeout(function(){ btn&&btn.classList.remove('tabad'); },350); }
+      if(typeof oops==='function') oops(); if(bw){ bw.innerHTML='<div class="banner" style="background:#FEF3C7">Not that one — try again!</div>'; setTimeout(function(){ if(bw) bw.innerHTML=''; },1000); }
+      speak("Not that one!");
+    }
+  };
+
+  /* ---------- content ---------- */
+  var C=window.__CONTENT__; if(!C) return;
+  function topic(id){ for(var k in C){ var ts=C[k].topics||[]; for(var i=0;i<ts.length;i++){ if(ts[i].id===id) return ts[i]; } } return null; }
+  function addQ(id, arr){ var t=topic(id); if(t&&Array.isArray(t.questions)) t.questions=t.questions.concat(arr); }
+
+  /* Tap All topics in the Puzzles world */
+  if(C.puzzles && Array.isArray(C.puzzles.topics)){
+    C.puzzles.topics.push(
+      {level:1,id:'tapall-1',title:'Tap All',emoji:'👆',color:'#0EA5E9',type:'tapall',rounds:[
+        {q:"Tap ALL the fruits! 🍎",items:[{e:'🍎',ok:1},{e:'🚗'},{e:'🍌',ok:1},{e:'🐶'},{e:'🍇',ok:1},{e:'⚽'}]},
+        {q:"Tap ALL the animals! 🐾",items:[{e:'🐶',ok:1},{e:'🍕'},{e:'🐱',ok:1},{e:'🚌'},{e:'🐰',ok:1},{e:'🎈'}]},
+        {q:"Tap ALL the round things! ⭕",items:[{e:'⚽',ok:1},{e:'📚'},{e:'🍊',ok:1},{e:'✏️'},{e:'🔴',ok:1},{e:'📐'}]}
+      ]},
+      {level:2,id:'tapall-2',title:'Tap All · 2',emoji:'🎯',color:'#0EA5E9',type:'tapall',rounds:[
+        {q:"Tap ALL the things that FLY! ✈️",items:[{e:'✈️',ok:1},{e:'🚗'},{e:'🦅',ok:1},{e:'🚢'},{e:'🎈',ok:1},{e:'🚲'},{e:'🦋',ok:1},{e:'🚂'}]},
+        {q:"Tap ALL the vehicles! 🚗",items:[{e:'🚗',ok:1},{e:'🌳'},{e:'🚌',ok:1},{e:'🍎'},{e:'🚂',ok:1},{e:'🐶'},{e:'🚲',ok:1},{e:'⭐'}]},
+        {q:"Tap ALL the yellow things! 💛",items:[{e:'🍌',ok:1},{e:'🍎'},{e:'⭐',ok:1},{e:'🐟'},{e:'🌻',ok:1},{e:'🍇'}]}
+      ]}
+    );
+  }
+
+  /* Static curriculum pass — new questions WITH spoken explanations */
+  addQ('counting',[
+    {q:"How many stars? ⭐",big:"⭐⭐⭐⭐",options:[{t:"Four",d:"4"},{t:"Three",d:"3"}],correct:0,ex:"Count them: one, two, three, four."},
+    {q:"How many dogs? 🐶",big:"🐶🐶🐶",options:[{t:"Three",d:"3"},{t:"Five",d:"5"}],correct:0,ex:"One, two, three dogs."},
+    {q:"What comes after 6?",big:"6 · ❓",options:[{t:"Seven",d:"7"},{t:"Eight",d:"8"}],correct:0,ex:"After six comes seven."}
+  ]);
+  addQ('addsub',[
+    {q:"2 apples + 1 apple = ?",big:"🍎🍎 + 🍎",options:[{t:"Three",d:"3"},{t:"Two",d:"2"}],correct:0,ex:"Two and one more makes three."},
+    {q:"5 take away 2 = ?",big:"🎈🎈🎈🎈🎈 − 🎈🎈",options:[{t:"Three",d:"3"},{t:"Four",d:"4"}],correct:0,ex:"Five balloons, two pop, three are left."}
+  ]);
+  addQ('shapes',[
+    {q:"How many sides does a triangle have?",big:"🔺",options:[{t:"Three",d:"3"},{t:"Four",d:"4"}],correct:0,ex:"A triangle has three sides."},
+    {q:"Which shape is round?",big:"⭕ ⬛ 🔺",options:[{t:"Circle",d:"⭕"},{t:"Square",d:"⬛"}],correct:0,ex:"A circle is round with no corners."}
+  ]);
+  addQ('animals',[
+    {q:"Which animal gives us milk?",big:"🐄 🐍 🐟",options:[{t:"Cow",d:"🐄"},{t:"Snake",d:"🐍"}],correct:0,ex:"Cows give us milk."},
+    {q:"Which animal can fly?",big:"🐘 🦅 🐢",options:[{t:"Eagle",d:"🦅"},{t:"Elephant",d:"🐘"}],correct:0,ex:"Birds like eagles have wings to fly."}
+  ]);
+  addQ('plants',[
+    {q:"What do plants need to grow?",big:"🌱",options:[{t:"Water & sun",d:"💧☀️"},{t:"Toys",d:"🧸"}],correct:0,ex:"Plants need water and sunlight to grow."},
+    {q:"Which part is under the ground?",big:"🌳",options:[{t:"Roots",d:"🪴"},{t:"Leaves",d:"🍃"}],correct:0,ex:"Roots grow under the ground."}
+  ]);
+  addQ('weather',[
+    {q:"What do we see in the sky at night?",big:"🌙",options:[{t:"Moon",d:"🌙"},{t:"Sun",d:"☀️"}],correct:0,ex:"The moon comes out at night."},
+    {q:"What comes down when it rains?",big:"🌧️",options:[{t:"Water",d:"💧"},{t:"Sand",d:"🏖️"}],correct:0,ex:"Rain is water falling from clouds."}
+  ]);
+  addQ('opposites',[
+    {q:"What is the opposite of HOT?",big:"🔥 → ❓",options:[{t:"Cold",d:"🧊"},{t:"Big",d:"🐘"}],correct:0,ex:"Hot and cold are opposites."},
+    {q:"What is the opposite of UP?",big:"⬆️ → ❓",options:[{t:"Down",d:"⬇️"},{t:"Fast",d:"💨"}],correct:0,ex:"Up and down are opposites."}
+  ]);
+  addQ('body',[
+    {q:"What do we use to SEE?",big:"👀",options:[{t:"Eyes",d:"👀"},{t:"Ears",d:"👂"}],correct:0,ex:"We see with our eyes."},
+    {q:"What do we use to HEAR?",big:"👂",options:[{t:"Ears",d:"👂"},{t:"Nose",d:"👃"}],correct:0,ex:"We hear with our ears."}
+  ]);
+  addQ('samediff',[
+    {q:"Which one is DIFFERENT?",big:"🍎 🍎 🍌",options:[{t:"Banana",d:"🍌"},{t:"Apple",d:"🍎"}],correct:0,ex:"Two apples are the same; the banana is different."}
+  ]);
+  addQ('numorder',[
+    {q:"Which number is the SMALLEST?",big:"5 · 2 · 8",options:[{t:"Two",d:"2"},{t:"Eight",d:"8"}],correct:0,ex:"2 is the smallest of these numbers."}
+  ]);
+
+  if(window.console&&console.log) console.log('[AlgoKid tap-all + curriculum v22] ready');
+})();
+</script>
+<script>
 /* Keep the screen awake while a child is listening/playing (fully guarded). */
 (function(){
   if(!('wakeLock' in navigator)) return;
@@ -4816,6 +5005,21 @@ function fillNext(){ if(G.ri+1<G.topic.rounds.length){ G.ri++; setupFill(); } el
   ['pointerdown','touchstart','click'].forEach(function(ev){ document.addEventListener(ev, arm, {once:true, passive:true}); });
 })();
 </script>
+<script>
+/* ============ ALGO KID · numeric option de-dup (v21) ============ */
+(function(){
+  if(typeof window.AKGEN==='undefined') return;
+  var AK=window.AKGEN;
+  /* Generated number questions used to show the value twice (big + label).
+     Show it once by hiding the redundant small label; TTS still reads it. */
+  ['compare','add','sub','series','count'].forEach(function(id){
+    var f=AK[id]; if(typeof f!=='function') return;
+    AK[id]=function(lv){ var q=f(lv); if(q&&q.options) q.options.forEach(function(o){ o.hideT=true; }); return q; };
+  });
+  if(window.console&&console.log) console.log('[AlgoKid numeric de-dup v21] ready');
+})();
+</script>
+
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', function () {

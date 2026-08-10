@@ -1,5 +1,5 @@
 /* Algo Kid service worker — offline app shell caching */
-const CACHE = 'algokid-v19';
+const CACHE = 'algokid-v22';
 const ASSETS = [
   './',
   './index.html',
