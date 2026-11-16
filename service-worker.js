@@ -1,8 +1,10 @@
 /* Algo Kid service worker — offline app shell caching */
-const CACHE = 'algokid-v22';
+const CACHE = 'algokid-v27';
 const ASSETS = [
   './',
   './index.html',
+  './content.js',
+  './content-class2.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',

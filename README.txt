@@ -6,7 +6,9 @@ address (https://...), Chrome/Edge/Safari will offer to INSTALL it, and it
 will run FULL-SCREEN and OFFLINE with the Algo robot icon.
 
 Files:
-  index.html            The whole app (self-contained).
+  index.html            The app shell and all game logic.
+  content.js            Core questions/topics data (loaded by index.html).
+  content-class2.js     Class 2 (Level 3) topic pack (loaded by index.html).
   manifest.json         App name, colors, icons (makes it installable).
   service-worker.js     Caches the app so it works with no internet.
   icons/                App icons (192, 512, maskable, apple, favicon).
