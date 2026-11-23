@@ -1,5 +1,11 @@
-ALGO KID — Installable PWA package
+ALGO KID — Installable PWA package  (v28)
 ===================================
+
+v28: New "Find the Path" maze game (Puzzles). In-app "What's New" changelog +
+     "Check for Updates" button in Settings. Installed apps auto-detect a new
+     deploy on open/focus and show an Update popup; bump CACHE in
+     service-worker.js on every deploy so users get pulled to the new build.
+
 
 This folder is a complete Progressive Web App. Once it's served from a web
 address (https://...), Chrome/Edge/Safari will offer to INSTALL it, and it

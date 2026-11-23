@@ -485,7 +485,7 @@ function conf(acc,plays){
   return {label:"Starting",color:"#EF4444",pct};
 }
 function allTopics(){ const arr=[]; for(const k in CONTENT){ CONTENT[k].topics.forEach(t=>arr.push({sec:k,secTitle:CONTENT[k].title,secColor:CONTENT[k].color,topic:t})); } return arr; }
-function topicCount(t){ return t.type==='order'?t.rounds.length : t.type==='memory'?1 : t.type==='tapcount'?t.rounds.length : (t.questions?t.questions.length:0); }
+function topicCount(t){ return t.type==='order'?t.rounds.length : t.type==='memory'?1 : t.type==='tapcount'?t.rounds.length : t.type==='findpath'?t.rounds.length : (t.questions?t.questions.length:0); }
 
 /* ---------------- CONFETTI ---------------- */
 function confetti(){ const box=document.getElementById('confetti'); const items=['⭐','✨','🌟','🎈','🎊','🎉'];
@@ -613,7 +613,7 @@ function renderSection(key){ setTab('home'); showNav(true); window.scrollTo(0,0)
       if(!subjMeta && t.group&&t.group!==lastGroup){ html+=`<div class="grouphdr">${t.group}<span class="line"></span></div>`; lastGroup=t.group; }
       const pr=prog[t.id]||{plays:0,best:0}; const c=conf(pr.best,pr.plays);
       const ms = pr.best>=0.95?3:pr.best>=0.8?2:pr.best>=0.5?1:0;
-      const gt = t.type==='numpath'||t.type==='fillsquares'?'🧩 Puzzle': t.type==='order'?'🎮 Order game': t.type==='memory'?'🧠 Memory game': t.type==='tapcount'?'👆 Tap game': t.type==='truefalse'?'✅ True or False':'❓ '+topicCount(t)+' questions';
+      const gt = t.type==='numpath'||t.type==='fillsquares'?'🧩 Puzzle': t.type==='findpath'?'🧭 Maze': t.type==='order'?'🎮 Order game': t.type==='memory'?'🧠 Memory game': t.type==='tapcount'?'👆 Tap game': t.type==='truefalse'?'✅ True or False':'❓ '+topicCount(t)+' questions';
       html+=`<button class="kbtn topic" onclick="startTopic('${key}','${t.id}')">
         <span class="ic" style="background:${t.color}22">${t.emoji}</span>
         <span class="mid"><span class="t">${t.title}</span>
@@ -692,12 +692,13 @@ function renderReport(){ setTab('report'); showNav(true); window.scrollTo(0,0);
 
 /* ---------------- GAME DISPATCH ---------------- */
 let G=null;
-function shuffledTopic(t){ const c=Object.assign({}, t); const noShuf=(t.type==='numpath'||t.type==='fillsquares'||t.type==='oddgrid'||t.type==='tapall');
+function shuffledTopic(t){ const c=Object.assign({}, t); const noShuf=(t.type==='numpath'||t.type==='fillsquares'||t.type==='oddgrid'||t.type==='tapall'||t.type==='findpath');
   if(!noShuf){ if(Array.isArray(c.questions)) c.questions=shuffle(c.questions);
     if(Array.isArray(c.rounds)) c.rounds=shuffle(c.rounds); }
   return c; }
 function startTopic(key,topicId){ const s=CONTENT[key]; const t0=s.topics.find(x=>x.id===topicId); const t=shuffledTopic(t0);
   showNav(false); window.scrollTo(0,0);
+  if(t.type==='findpath') return startFindPath(key,t);
   if(t.type==='numpath') return startNumPath(key,t);
   if(t.type==='fillsquares') return startFill(key,t);
   if(t.type==='oddgrid') return startOddGrid(key,t);
@@ -4199,9 +4200,246 @@ function fillNext(){ if(G.ri+1<G.topic.rounds.length){ G.ri++; setupFill(); } el
 </script>
 
 <script>
+/* [AlgoKid Find the Path v28] — maze game: home -> school, picking up stars.
+   Logic validated offline (BFS/IDDFS simple-path solver). Render layer mirrors the numpath engine. */
+(function(){
+  function key(r,c){ return r+'_'+c; }
+  var DIRS=[[-1,0],[1,0],[0,-1],[0,1]];
+  function fpParse(grid){ var rows=grid.length, cols=grid[0].length, walls={}, items=[], start=null, goal=null;
+    for(var r=0;r<rows;r++){ var line=grid[r];
+      for(var c=0;c<cols;c++){ var ch=line[c];
+        if(ch==='#') walls[key(r,c)]=1; else if(ch==='H') start=[r,c];
+        else if(ch==='G') goal=[r,c]; else if(ch==='*') items.push([r,c]); } }
+    return {rows:rows,cols:cols,walls:walls,items:items,start:start,goal:goal}; }
+  function fpSolve(p){ if(!p.start||!p.goal) return null; var need=p.items.length, maxCells=p.rows*p.cols;
+    var startItem=p.items.some(function(it){return it[0]===p.start[0]&&it[1]===p.start[1];});
+    for(var limit=1; limit<=maxCells; limit++){ var visited={}; visited[key(p.start[0],p.start[1])]=1; var budget={n:300000};
+      var res=dfs(p.start[0],p.start[1], startItem?1:0, [[p.start[0],p.start[1]]], limit, visited, budget); if(res) return res; }
+    return null;
+    function dfs(r,c,got,path,limit,visited,budget){ if(budget.n--<=0) return null;
+      if(r===p.goal[0]&&c===p.goal[1]) return got===need ? path.slice() : null;
+      if(path.length>=limit) return null;
+      for(var d=0;d<DIRS.length;d++){ var nr=r+DIRS[d][0], nc=c+DIRS[d][1];
+        if(nr<0||nc<0||nr>=p.rows||nc>=p.cols) continue; if(p.walls[key(nr,nc)]) continue;
+        var k=key(nr,nc); if(visited[k]) continue;
+        var isItem=p.items.some(function(it){return it[0]===nr&&it[1]===nc;});
+        visited[k]=1; path.push([nr,nc]); var r2=dfs(nr,nc,got+(isItem?1:0),path,limit,visited,budget);
+        if(r2) return r2; path.pop(); delete visited[k]; }
+      return null; } }
+  function fpCollected(fp){ var n=0; fp.items.forEach(function(it){ if(fp.path.some(function(p){return p[0]===it[0]&&p[1]===it[1];})) n++; }); return n; }
+  function fpWin(fp){ if(!fp.path.length) return false; var last=fp.path[fp.path.length-1];
+    return last[0]===fp.goal[0]&&last[1]===fp.goal[1]&&fpCollected(fp)===fp.items.length; }
+  function fpStep(fp,r,c){ if(r<0||c<0||r>=fp.rows||c>=fp.cols) return {ok:false};
+    if(fp.walls[key(r,c)]) return {ok:false}; var path=fp.path;
+    if(path.length===0){ if(fp.start[0]===r&&fp.start[1]===c){ path.push([r,c]); return {ok:true,win:fpWin(fp)}; } return {ok:false,badstart:true}; }
+    for(var i=0;i<path.length;i++){ if(path[i][0]===r&&path[i][1]===c){ if(i===path.length-1) return {ok:false}; fp.path=path.slice(0,i+1); return {ok:true,trunc:true}; } }
+    var last=path[path.length-1]; if(Math.abs(last[0]-r)+Math.abs(last[1]-c)!==1) return {ok:false};
+    path.push([r,c]); return {ok:true,win:fpWin(fp)}; }
+
+  var LEVELS = {
+    'fp-1':{ level:1, id:'fp-1', title:'Find the Path', emoji:'🧭', color:'#EC4899', type:'findpath',
+      intro:'Help Pip walk from home to school!', rounds:[
+      { grid:['H..','...','..G'], story:'Draw a path from home to school.' },
+      { grid:['H.#','.##','..G'], story:'Go around the wall to reach school.' },
+      { grid:['..H','...','G..'], story:'Find the way to school.' },
+      { grid:['H...','##.#','G...'], story:'Wind your way to school.' } ]},
+    'fp-2':{ level:2, id:'fp-2', title:'Find the Path · 2', emoji:'🗺️', color:'#EC4899', type:'findpath',
+      intro:'Longer paths — and sometimes pick up a star!', rounds:[
+      { grid:['H..#','##..','...#','#..G'], story:'Find the longer way to school.' },
+      { grid:['H.*.','.##.','.#..','...G'], story:'Pick up the star, then reach school.' },
+      { grid:['H#..','..#.','.#.*','...G'], story:'Grab the star on your way.' },
+      { grid:['H.#..','..#*.','.##..','....G'], story:'Collect the star and get to school.' } ]},
+    'fp-3':{ level:3, id:'fp-3', title:'Path Master', emoji:'🚀', color:'#EC4899', type:'findpath',
+      intro:'Big mazes! Pick up every star, then reach school.', rounds:[
+      { grid:['H...#','###.#','*...#','.####','....G'], story:'Long maze — grab the star!' },
+      { grid:['H....','####.','..*..','.####','....G'], story:'Find the star then school.' },
+      { grid:['H...*','.###.','.....','.###.','*...G'], story:'Pick up BOTH stars, then school.' },
+      { grid:['H#...','.#.#*','.#.#.','.#.#.','...#G'], story:'Twist through the maze to school.' } ]}
+  };
+
+  /* ---------- render layer (mirrors numpath) ---------- */
+  function fpEmojiAt(fp,r,c){ if(fp.start[0]===r&&fp.start[1]===c) return fp.homeE;
+    if(fp.goal[0]===r&&fp.goal[1]===c) return fp.goalE;
+    if(fp.items.some(function(it){return it[0]===r&&it[1]===c;})){ var done=fp.path.some(function(p){return p[0]===r&&p[1]===c;}); return done?'✨':fp.itemE; }
+    return ''; }
+  function fpInPath(fp,r,c){ return fp.path.some(function(p){return p[0]===r&&p[1]===c;}); }
+
+  window.startFindPath=function(key2,topic){ G={key:key2,topic:topic,accent:topic.color,ri:0,stars:0}; fpSetup(); };
+  function fpSetup(){ var rd=G.topic.rounds[G.ri]; var p=fpParse(rd.grid); var sol=fpSolve(p);
+    G.fp={rows:p.rows,cols:p.cols,walls:p.walls,items:p.items,start:p.start,goal:p.goal,path:[],sol:sol,hint:null,
+      homeE:rd.homeEmoji||'🏠', goalE:rd.goalEmoji||'🏫', itemE:rd.item||'⭐', story:rd.story||'Find the path to school!'};
+    fpRender();
+    setTimeout(function(){ try{ if(typeof speak==='function') speak(G.fp.story); }catch(e){} },300); }
+  function fpGeom(fp){ var cell=Math.min(66, Math.floor(320/fp.cols)); return {cell:cell, gap:4}; }
+  function fpSvg(fp,geom){ var cell=geom.cell, gap=geom.gap; var ctr=function(i){return i*(cell+gap)+cell/2;};
+    if(fp.path.length<2) return '';
+    return '<polyline points="'+fp.path.map(function(p){return ctr(p[1])+','+ctr(p[0]);}).join(' ')+'" fill="none" stroke="'+G.accent+'" stroke-width="'+(cell*0.42).toFixed(0)+'" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>'; }
+  function fpCells(fp,geom){ var cell=geom.cell; var out='';
+    for(var r=0;r<fp.rows;r++){ for(var c=0;c<fp.cols;c++){
+      var wall=!!fp.walls[key(r,c)]; var em=fpEmojiAt(fp,r,c); var onp=fpInPath(fp,r,c);
+      var hint=fp.hint&&fp.hint[0]===r&&fp.hint[1]===c;
+      out+='<div class="npcell fpcell '+(wall?'fpwall':'')+' '+(onp?'onpath':'')+' '+(hint?'hintcell':'')+'" data-r="'+r+'" data-c="'+c+'" style="width:'+cell+'px;height:'+cell+'px;font-size:'+(cell*0.52).toFixed(0)+'px">'+(wall?'':em)+'</div>'; } }
+    return out; }
+  function fpRender(){ var fp=G.fp; var geom=fpGeom(fp); fp.geom=geom;
+    var cell=geom.cell, gap=geom.gap; var W=fp.cols*cell+(fp.cols-1)*gap, H=fp.rows*cell+(fp.rows-1)*gap;
+    var starLine=fp.items.length?('<div class="puzcount">⭐ '+fpCollected(fp)+' / '+fp.items.length+'</div>'):'';
+    view.innerHTML='<div class="screen">'+gameHead(G.topic,G.accent,G.ri,G.topic.rounds.length,G.stars)+
+      '<div class="qcard"><p class="qtext">'+fp.homeE+' → '+fp.goalE+'  '+fp.story+'</p></div>'+
+      starLine+
+      '<div class="puzwrap"><svg class="puzsvg" id="fpsvg" style="z-index:1" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">'+fpSvg(fp,geom)+'</svg>'+
+      '<div class="puzgrid" id="puzgrid" style="grid-template-columns:repeat('+fp.cols+','+cell+'px)">'+fpCells(fp,geom)+'</div></div>'+
+      '<div class="puzbtns"><button class="kbtn puzbtn" onclick="fpUndo()">↶ Undo</button><button class="kbtn puzbtn" onclick="fpHint()">💡 Hint</button><button class="kbtn puzbtn" onclick="fpSetupRestart()">↺ Restart</button></div>'+
+      '</div>';
+    if(typeof attachSwipe==='function') attachSwipe('fpcell', fpTap); }
+  function fpPaint(){ var fp=G.fp; if(!fp||!fp.geom){ fpRender(); return; }
+    var svg=document.getElementById('fpsvg'); if(!svg){ fpRender(); return; }
+    svg.innerHTML=fpSvg(fp,fp.geom);
+    var cells=document.querySelectorAll('#puzgrid .fpcell');
+    for(var i=0;i<cells.length;i++){ var el=cells[i]; var r=+el.getAttribute('data-r'), c=+el.getAttribute('data-c');
+      var wall=!!fp.walls[key(r,c)]; el.classList.toggle('onpath', fpInPath(fp,r,c));
+      el.classList.toggle('hintcell', !!(fp.hint&&fp.hint[0]===r&&fp.hint[1]===c));
+      if(!wall) el.innerHTML=fpEmojiAt(fp,r,c); }
+    var sc=document.querySelector('.puzcount'); if(sc && fp.items.length) sc.textContent='⭐ '+fpCollected(fp)+' / '+fp.items.length; }
+  function fpTap(r,c){ var fp=G.fp; fp.hint=null; var res=fpStep(fp,r,c);
+    if(!res.ok){ if(res.badstart && typeof oops==='function'){ oops(); try{ speak('Start at the home!'); }catch(e){} } return; }
+    if(typeof pop==='function') pop();
+    if(res.win){ G.stars++; fpPaint(); if(typeof happy==='function')happy(); if(typeof confetti==='function')confetti(); if(typeof partyCharacters==='function')partyCharacters();
+      if(typeof speakThen==='function') speakThen('You found the way to school! Wonderful!', fpNext); else setTimeout(fpNext,900); return; }
+    fpPaint(); }
+  window.fpUndo=function(){ var fp=G.fp; if(fp.path.length){ fp.path.pop(); fp.hint=null; if(typeof pop==='function')pop(); fpPaint(); } };
+  window.fpHint=function(){ var fp=G.fp; var sol=fp.sol; if(!sol){ try{speak('Try going toward the school!');}catch(e){} return; }
+    var k=0; while(k<fp.path.length && k<sol.length && fp.path[k][0]===sol[k][0] && fp.path[k][1]===sol[k][1]) k++;
+    fp.path=sol.slice(0, Math.min(k+1, sol.length)); fp.hint=sol[Math.min(k,sol.length-1)]?sol[Math.min(k,sol.length-1)].slice():null;
+    if(typeof pop==='function')pop();
+    if(fpWin(fp)){ G.stars++; fpPaint(); if(typeof happy==='function')happy(); if(typeof confetti==='function')confetti();
+      if(typeof speakThen==='function') speakThen('There it is! You made it!', fpNext); else setTimeout(fpNext,900); return; }
+    fpPaint(); };
+  window.fpSetupRestart=function(){ fpSetup(); };
+  function fpNext(){ if(G.ri+1<G.topic.rounds.length){ G.ri++; fpSetup(); } else finish(G.topic.rounds.length, G.topic.rounds.length); }
+
+  /* ---------- register topics into the Puzzles world ---------- */
+  try{
+    var C=window.__CONTENT__;
+    if(C && C.puzzles && Array.isArray(C.puzzles.topics)){
+      var existing={}; C.puzzles.topics.forEach(function(t){ existing[t.id]=1; });
+      ['fp-1','fp-2','fp-3'].forEach(function(id){ if(!existing[id]) C.puzzles.topics.push(LEVELS[id]); });
+      if(window.console&&console.log) console.log('[AlgoKid Find the Path v28] 3 maze topics added');
+    }
+  }catch(e){}
+
+  /* ---------- tiny CSS for walls (reuses .npcell / .onpath / .puz*) ---------- */
+  try{
+    var st=document.createElement('style');
+    st.textContent='.fpcell{display:flex;align-items:center;justify-content:center;line-height:1}.npcell.fpwall{background:#2A1E47;opacity:.55}.npcell.fpcell.onpath{background:#FBD9EC}';
+    document.head.appendChild(st);
+  }catch(e){}
+})();
+
+</script>
+<script>
+/* [AlgoKid version + whatsnew v28] — in-app version label, "What's New" changelog,
+   and a "Check for Updates" button in Settings. Works with the existing SW update banner. */
+(function(){
+  window.AK_VERSION='v28';
+  window.AK_WHATSNEW={
+    'v28':['🧭 New game: Find the Path — guide Pip through mazes from home to school, picking up stars along the way',
+           '🔄 Check for updates anytime from Settings',
+           '✨ This "What\'s New" screen, so you can see each update'],
+    'v27':['📚 New Class 2 topics: telling time, measurement, fractions, carrying & borrowing, odd/even, symmetry and more',
+           '🎲 Endless Practice now includes word problems, skip-counting, shapes and coding-decoding puzzles'],
+    'v26':['🗣️ Every question now explains the "why" out loud',
+           '🎉 Correct answers teach the reason too, not just praise']
+  };
+
+  /* ----- Check for Updates (drives the existing SW registration) ----- */
+  window.akCheckForUpdates=function(cb){
+    var reg=window.__akReg;
+    if(!reg || !('serviceWorker' in navigator)){ cb('unsupported'); return; }
+    if(reg.waiting && navigator.serviceWorker.controller){ cb('ready', reg.waiting); return; }
+    cb('checking');
+    reg.update().then(function(){
+      if(reg.waiting && navigator.serviceWorker.controller){ cb('ready', reg.waiting); return; }
+      var nw=reg.installing;
+      if(nw){ nw.addEventListener('statechange', function(){
+        if(nw.state==='installed'){ cb(navigator.serviceWorker.controller?'ready':'fresh', nw); }
+        else if(nw.state==='redundant'){ cb('uptodate'); } }); }
+      else { cb('uptodate'); }
+    }).catch(function(){ cb('error'); });
+  };
+
+  /* ----- "What's New" popup ----- */
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  window.akShowWhatsNew=function(auto){
+    if(document.getElementById('ak-wn-ov')) return;
+    var v=window.AK_VERSION; var notes=(window.AK_WHATSNEW&&window.AK_WHATSNEW[v])||[];
+    var items=notes.map(function(n){ return '<li style="margin:8px 0;line-height:1.4">'+esc(n)+'</li>'; }).join('');
+    var ov=document.createElement('div'); ov.id='ak-wn-ov';
+    ov.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(40,20,70,.5);display:flex;align-items:center;justify-content:center;padding:18px;font-family:var(--body,sans-serif)';
+    ov.innerHTML='<div style="background:#fff;border-radius:22px;max-width:360px;width:100%;padding:22px;box-shadow:0 16px 48px rgba(0,0,0,.3)">'+
+      '<div style="font-family:var(--head,sans-serif);font-weight:800;font-size:20px;color:#7C5CFC;text-align:center">✨ What\'s New</div>'+
+      '<div style="text-align:center;font-weight:800;color:#9a7bff;margin:2px 0 10px;font-size:13px">Algo Kid '+esc(v)+(auto?' · just updated!':'')+'</div>'+
+      '<ul style="margin:0;padding-left:20px;font-size:14px;color:#333">'+items+'</ul>'+
+      '<button id="ak-wn-ok" class="kbtn btn-primary" style="width:100%;margin-top:16px;border-radius:14px;padding:12px;font-family:var(--head,sans-serif);font-weight:800;border:none;background:#7C5CFC;color:#fff">Got it!</button>'+
+      '</div>';
+    document.body.appendChild(ov);
+    var ok=document.getElementById('ak-wn-ok');
+    ok.onclick=function(){ ov.remove(); };
+    ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+    try{ if(typeof speak==='function') speak("Here's what's new in Algo Kid!"); }catch(e){}
+  };
+
+  /* ----- show automatically once, after an update (returning users) ----- */
+  function maybeAutoShow(){
+    try{
+      var seen=localStorage.getItem('ak_seen_ver');
+      var returning=!!(localStorage.getItem('ak_prog')||localStorage.getItem('ak_active')||localStorage.getItem('ak_profiles')||localStorage.getItem('ak_stars'));
+      if(seen!==window.AK_VERSION){
+        if(seen || returning){ setTimeout(function(){ try{ akShowWhatsNew(true); }catch(e){} }, 1600); }
+        localStorage.setItem('ak_seen_ver', window.AK_VERSION);
+      }
+    }catch(e){}
+  }
+  maybeAutoShow();
+
+  /* ----- inject version + buttons into Settings ----- */
+  function injectVersionBox(){
+    var sheet=document.querySelector('#settings .sheet'); if(!sheet || document.getElementById('ak-versionbox')) return;
+    var box=document.createElement('div'); box.id='ak-versionbox';
+    box.style.cssText='margin-top:18px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08);text-align:center';
+    box.innerHTML='<div style="font-family:var(--head,sans-serif);font-weight:800;color:#7C5CFC;font-size:15px">Algo Kid '+esc(window.AK_VERSION)+'</div>'+
+      '<div style="display:flex;gap:8px;margin-top:10px">'+
+        '<button class="kbtn" id="ak-checkupd" style="flex:1;background:#F3EEFF;color:#7C5CFC;border:none;border-radius:14px;padding:12px;font-family:var(--head,sans-serif);font-weight:800;font-size:14px">🔄 Check for Updates</button>'+
+        '<button class="kbtn" id="ak-whatsnew" style="flex:1;background:#F3EEFF;color:#7C5CFC;border:none;border-radius:14px;padding:12px;font-family:var(--head,sans-serif);font-weight:800;font-size:14px">✨ What\'s New</button>'+
+      '</div>'+
+      '<div id="ak-updmsg" style="font-size:13px;margin-top:8px;min-height:16px;color:#777;font-family:var(--body,sans-serif)"></div>';
+    sheet.appendChild(box);
+    document.getElementById('ak-whatsnew').onclick=function(){ akShowWhatsNew(false); };
+    document.getElementById('ak-checkupd').onclick=function(){
+      var msg=document.getElementById('ak-updmsg');
+      akCheckForUpdates(function(status, worker){
+        if(status==='checking'){ msg.textContent='Checking for updates…'; msg.style.color='#777'; }
+        else if(status==='ready'){ msg.textContent='✨ New version found! Updating…'; msg.style.color='#7C5CFC';
+          if(window.__akShowUpdateBar && worker){ window.__akShowUpdateBar(worker); }
+          else if(worker){ worker.postMessage('skipWaiting'); setTimeout(function(){ location.reload(); }, 600); } }
+        else if(status==='uptodate' || status==='fresh'){ msg.textContent='✅ You have the latest version!'; msg.style.color='#22A06B'; }
+        else if(status==='unsupported'){ msg.textContent='Updates are managed by your app store.'; msg.style.color='#777'; }
+        else { msg.textContent='Could not check right now — please try again when online.'; msg.style.color='#B45309'; }
+      });
+    };
+  }
+  if(typeof window.openSettings==='function'){ var _os=window.openSettings; window.openSettings=function(){ _os.apply(this,arguments); try{ injectVersionBox(); }catch(e){} }; }
+  else { document.addEventListener('click', function(){ setTimeout(injectVersionBox,50); }, {once:false}); }
+
+  if(window.console&&console.log) console.log('[AlgoKid version '+window.AK_VERSION+'] what\'s-new + update-check ready');
+})();
+
+</script>
+
+<script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   window.addEventListener('load', function () {
     navigator.serviceWorker.register('service-worker.js').then(function(reg){
+      window.__akReg = reg;
       function showUpdateBanner(worker){
         if (document.getElementById('akUpdateBar')) return;
         var bar = document.createElement('div'); bar.id='akUpdateBar';
@@ -4216,6 +4454,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
         bar.appendChild(btn); bar.appendChild(later); document.body.appendChild(bar);
         try{ if(typeof speak==='function') speak('A new version of Algo Kid is ready! Ask a grown-up to tap Update.'); }catch(e){}
       }
+      window.__akShowUpdateBar = showUpdateBanner;
       if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner(reg.waiting);
       reg.addEventListener('updatefound', function(){
         var nw = reg.installing; if(!nw) return;
