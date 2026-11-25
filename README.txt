@@ -1,6 +1,9 @@
-ALGO KID — Installable PWA package  (v28)
+ALGO KID — Installable PWA package  (v29)
 ===================================
 
+v29: "Find the Path" maze rebuilt — slide-to-draw trail, 10 deceptive mazes,
+     collectible stars, happy sounds, and themed walls that follow the app
+     theme (jungle bushes / ice / metal / coral / candy ...).
 v28: New "Find the Path" maze game (Puzzles). In-app "What's New" changelog +
      "Check for Updates" button in Settings. Installed apps auto-detect a new
      deploy on open/focus and show an Update popup; bump CACHE in
